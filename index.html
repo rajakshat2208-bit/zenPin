@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ZenPin — Where Ideas Come to Life</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<nav class="navbar" id="navbar">
+  <div class="nav-inner">
+    <a class="nav-logo" href="#" data-page="home">
+      <div class="logo-gem">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="white" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <span class="logo-wordmark">ZenPin</span>
+    </a>
+    <div class="nav-search-wrap">
+      <svg class="nav-search-ico" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input class="nav-search-input" id="globalSearch" type="text" placeholder="Search for ideas, projects, inspiration…"/>
+      <span class="nav-search-kbd">/</span>
+    </div>
+    <ul class="nav-links" id="navLinks">
+      <li><button class="nav-link active" data-page="home">Home</button></li>
+      <li><button class="nav-link" data-page="explore">Explore</button></li>
+      <li><button class="nav-link" data-page="boards">Boards</button></li>
+      <li><button class="nav-link" data-page="collab">Collab</button></li>
+    </ul>
+    <div class="nav-actions">
+      <button class="nav-btn-create" data-page="ai">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Create
+      </button>
+      <button class="nav-btn-profile" id="navProfileBtn" data-page="profile">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </button>
+      <button class="nav-hamburger" id="hamburger">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- PAGE: HOME -->
+<div id="page-home" class="page active">
+  <section class="hero">
+    <div class="hero-blobs">
+      <div class="blob blob-1"></div>
+      <div class="blob blob-2"></div>
+      <div class="blob blob-3"></div>
+    </div>
+    <div class="hero-grid-lines"></div>
+    <div class="hero-body">
+      <div class="hero-eyebrow">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+        Discover &middot; Create &middot; Collaborate
+      </div>
+      <h1 class="hero-title">Where Ideas<br><em>Come to Life</em></h1>
+      <p class="hero-sub">Discover millions of creative ideas, organise them into beautiful boards, and collaborate with a global community of creators.</p>
+      <div class="hero-cta-row">
+        <button class="btn-primary btn-lg" data-page="explore">Start Exploring</button>
+        <button class="btn-glass btn-lg" data-page="ai">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          Generate with AI
+        </button>
+      </div>
+      <div class="hero-stats-row">
+        <div class="stat-card">
+          <div class="stat-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          </div>
+          <div><div class="stat-num">10M+</div><div class="stat-lbl">Ideas</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div><div class="stat-num">500K+</div><div class="stat-lbl">Creators</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          </div>
+          <div><div class="stat-num">AI</div><div class="stat-lbl">Powered</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="controls-bar">
+    <div class="filter-chips" id="homeFilters">
+      <button class="chip active" data-filter="all">All Ideas</button>
+      <button class="chip" data-filter="Interior Design">Interior</button>
+      <button class="chip" data-filter="Workspace">Workspace</button>
+      <button class="chip" data-filter="Architecture">Architecture</button>
+      <button class="chip" data-filter="Art">Art &amp; Design</button>
+      <button class="chip" data-filter="Nature">Nature</button>
+      <button class="chip" data-filter="Food">Food</button>
+      <button class="chip" data-filter="Fashion">Fashion</button>
+      <button class="chip" data-filter="Travel">Travel</button>
+      <button class="chip" data-filter="Tech">Tech</button>
+    </div>
+    <select class="sort-sel" id="homeSort">
+      <option value="trending">Trending</option>
+      <option value="newest">Newest</option>
+      <option value="saves">Most Saved</option>
+    </select>
+  </div>
+
+  <div class="feed-wrap">
+    <div class="masonry" id="homeGrid"></div>
+    <div class="load-more-row">
+      <button class="btn-load-more" id="loadMoreBtn">
+        <span>Load more ideas</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE: EXPLORE -->
+<div id="page-explore" class="page">
+  <div class="inner-page-header">
+    <div>
+      <h2 class="inner-page-title">Explore Ideas</h2>
+      <p class="inner-page-sub">Discover what the community is creating right now</p>
+    </div>
+  </div>
+  <div class="controls-bar">
+    <div class="filter-chips" id="exploreFilters">
+      <button class="chip active" data-filter="all">All</button>
+      <button class="chip" data-filter="Interior Design">Interior</button>
+      <button class="chip" data-filter="Architecture">Architecture</button>
+      <button class="chip" data-filter="Art">Art</button>
+      <button class="chip" data-filter="Nature">Nature</button>
+      <button class="chip" data-filter="Food">Food</button>
+      <button class="chip" data-filter="Fashion">Fashion</button>
+      <button class="chip" data-filter="Travel">Travel</button>
+    </div>
+  </div>
+  <div class="feed-wrap">
+    <div class="masonry" id="exploreGrid"></div>
+  </div>
+</div>
+
+<!-- PAGE: BOARDS -->
+<div id="page-boards" class="page">
+  <div class="inner-page-header">
+    <div>
+      <h2 class="inner-page-title">Your Boards</h2>
+      <p class="inner-page-sub">Collections you've curated and love</p>
+    </div>
+    <button class="btn-primary" id="newBoardBtn">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      New Board
+    </button>
+  </div>
+  <div class="boards-grid-wrap">
+    <div class="boards-grid" id="boardsGrid"></div>
+  </div>
+  <div class="section-rule"><span>Collaboration Boards</span></div>
+  <div class="boards-grid-wrap">
+    <div class="collab-boards-list" id="collabBoardsList"></div>
+  </div>
+</div>
+
+<!-- PAGE: COLLABORATION -->
+<div id="page-collab" class="page">
+  <div class="inner-page-header">
+    <div>
+      <h2 class="inner-page-title">Collaboration Hub</h2>
+      <p class="inner-page-sub">Build together in real-time</p>
+    </div>
+    <div class="collab-live-badge">
+      <span class="live-dot-pulse"></span>
+      3 people online
+    </div>
+  </div>
+  <div class="collab-layout">
+    <div class="collab-canvas-panel">
+      <div class="canvas-toolbar">
+        <button class="tool-btn active" data-tool="select">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3l14 9-7 1-3 7z"/></svg>
+        </button>
+        <button class="tool-btn" data-tool="pin">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+        </button>
+        <button class="tool-btn" data-tool="note">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+        </button>
+        <div class="toolbar-divider"></div>
+        <div class="collab-avatars-row">
+          <div class="collab-av" style="background:var(--grad-brand)">Y</div>
+          <div class="collab-av" style="background:linear-gradient(135deg,#f97316,#ec4899)">A</div>
+          <div class="collab-av" style="background:linear-gradient(135deg,#06b6d4,#7c3aed)">S</div>
+        </div>
+      </div>
+      <div class="collab-canvas" id="collabCanvas">
+        <div class="canvas-empty-hint" id="canvasHint">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="m9 9 6 6m0-6-6 6"/></svg>
+          <p>Click ideas on the right to pin them here</p>
+        </div>
+      </div>
+    </div>
+    <div class="collab-sidebar">
+      <div class="collab-sidebar-section">
+        <h4 class="sidebar-heading">Ideas to Pin</h4>
+        <div class="pin-idea-list" id="pinIdeaList"></div>
+      </div>
+      <div class="collab-sidebar-section">
+        <h4 class="sidebar-heading">Team Chat</h4>
+        <div class="chat-box">
+          <div class="chat-msgs" id="chatMsgs">
+            <div class="chat-msg">
+              <div class="chat-av" style="background:linear-gradient(135deg,#f97316,#ec4899)">A</div>
+              <div class="chat-bubble"><span class="chat-name">Alex</span>Love the interior board! Adding more now 🔥</div>
+            </div>
+            <div class="chat-msg">
+              <div class="chat-av" style="background:linear-gradient(135deg,#06b6d4,#7c3aed)">S</div>
+              <div class="chat-bubble"><span class="chat-name">Sam</span>Architecture refs are uploaded ✓</div>
+            </div>
+          </div>
+          <div class="chat-input-row">
+            <input class="chat-input" id="chatInput" type="text" placeholder="Say something…"/>
+            <button class="chat-send-btn" id="chatSendBtn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE: AI GENERATOR -->
+<div id="page-ai" class="page">
+  <div class="ai-page">
+    <div class="ai-hero-section">
+      <div class="ai-star-icon">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+      </div>
+      <h2 class="ai-page-title">AI Idea Generator</h2>
+      <p class="ai-page-sub">Describe a topic and watch ZenPin build a complete inspiration board in seconds.</p>
+    </div>
+    <div class="ai-input-card">
+      <div class="ai-input-row">
+        <input class="ai-text-input" id="aiInput" type="text" placeholder="e.g. Minimalist Japanese kitchen with oak wood tones…"/>
+        <button class="ai-gen-btn" id="aiGenBtn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          Generate Board
+        </button>
+      </div>
+      <div class="quick-prompts-row">
+        <span class="quick-label">Try:</span>
+        <button class="quick-btn">Wabi-sabi living room</button>
+        <button class="quick-btn">Cyberpunk home office</button>
+        <button class="quick-btn">Cottagecore garden</button>
+        <button class="quick-btn">Brutalist architecture</button>
+        <button class="quick-btn">Pastel café branding</button>
+      </div>
+    </div>
+    <div class="ai-loading-state" id="aiLoading" style="display:none">
+      <div class="ai-dots"><span></span><span></span><span></span></div>
+      <p>Building your inspiration board…</p>
+    </div>
+    <div class="ai-output-section" id="aiOutput" style="display:none">
+      <div class="ai-output-header">
+        <h3 class="ai-output-title" id="aiOutputTitle">Generated Board</h3>
+        <div class="ai-output-btns">
+          <button class="btn-ghost btn-sm" id="aiSaveBtn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+            Save Board
+          </button>
+          <button class="btn-primary btn-sm">Share</button>
+        </div>
+      </div>
+      <div class="masonry ai-masonry" id="aiGrid"></div>
+    </div>
+    <div class="ai-history-section">
+      <h4 class="sidebar-heading">Recent Generations</h4>
+      <div id="aiHistoryList"><p class="empty-note">Your generated boards will appear here.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE: PROFILE -->
+<div id="page-profile" class="page">
+  <div class="profile-cover-area">
+    <div class="profile-cover-bg"></div>
+    <div class="profile-cover-inner">
+      <div class="profile-av-wrap">
+        <div class="profile-av">Y</div>
+      </div>
+      <div class="profile-meta-wrap">
+        <h2 class="profile-name">Your Studio</h2>
+        <p class="profile-handle">@yourstudio</p>
+        <p class="profile-bio">Visual thinker &amp; creative explorer. Curating the world's best ideas.</p>
+        <div class="profile-stats">
+          <div class="profile-stat"><strong>247</strong><span>Ideas</span></div>
+          <div class="profile-stat"><strong>18</strong><span>Boards</span></div>
+          <div class="profile-stat"><strong>1.4K</strong><span>Followers</span></div>
+          <div class="profile-stat"><strong>320</strong><span>Following</span></div>
+        </div>
+      </div>
+      <button class="btn-ghost">Edit Profile</button>
+    </div>
+  </div>
+  <div class="profile-tabs-bar" id="profileTabsBar">
+    <button class="profile-tab active" data-tab="saved">Saved</button>
+    <button class="profile-tab" data-tab="boards">Boards</button>
+    <button class="profile-tab" data-tab="created">Created</button>
+  </div>
+  <div class="feed-wrap">
+    <div class="masonry" id="profileGrid"></div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-backdrop" id="modalBackdrop">
+  <button class="modal-x-btn" id="modalCloseBtn">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+  </button>
+  <div class="modal-card" id="modalCard">
+    <div class="modal-image-col">
+      <img class="modal-img" id="modalImg" src="" alt=""/>
+    </div>
+    <div class="modal-detail-col" id="modalDetailCol">
+      <div class="modal-category-tag" id="modalCatTag"></div>
+      <h2 class="modal-title" id="modalTitle"></h2>
+      <div class="modal-ratings-row" id="modalRatings"></div>
+      <p class="modal-desc" id="modalDesc"></p>
+      <div class="modal-section">
+        <h4 class="modal-section-head">Project Steps</h4>
+        <ol class="steps-ol" id="modalSteps"></ol>
+      </div>
+      <div class="modal-section">
+        <h4 class="modal-section-head">Tools Required</h4>
+        <div class="tools-row" id="modalTools"></div>
+      </div>
+      <div class="modal-action-row">
+        <button class="btn-primary" id="modalSaveBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+          Save Idea
+        </button>
+        <button class="btn-ghost">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          Share
+        </button>
+      </div>
+      <div class="modal-section">
+        <h4 class="modal-section-head">More like this</h4>
+        <div class="related-row" id="relatedRow"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast-bar" id="toastBar">
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+  <span id="toastText">Saved!</span>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
