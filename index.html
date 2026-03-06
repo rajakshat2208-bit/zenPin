@@ -373,37 +373,153 @@
 ============================================================ -->
 <div id="page-profile" class="page">
 
-  <div class="profile-cover-area">
-    <div class="profile-cover-bg"></div>
-    <div class="profile-cover-inner">
-      <div class="profile-av-wrap">
-        <div class="profile-av" id="profileAvatar">?</div>
-      </div>
-      <div class="profile-meta-wrap">
-        <h2 class="profile-name" id="profileName">Your Studio</h2>
-        <p class="profile-handle" id="profileHandle">@yourstudio</p>
-        <p class="profile-bio" id="profileBio">Visual thinker &amp; creative explorer.</p>
-        <div class="profile-stats">
-          <div class="profile-stat"><strong>247</strong><span>Ideas</span></div>
-          <div class="profile-stat"><strong>18</strong><span>Boards</span></div>
-          <div class="profile-stat"><strong>1.4K</strong><span>Followers</span></div>
-          <div class="profile-stat"><strong>320</strong><span>Following</span></div>
+  <!-- Cover banner -->
+  <div class="profile-cover-bg" id="profileCoverBg"></div>
+
+  <!-- Profile card -->
+  <div class="profile-card-wrap">
+    <div class="profile-card">
+
+      <!-- Avatar + actions row -->
+      <div class="profile-top-row">
+        <div class="profile-av-ring">
+          <div class="profile-av" id="profileAvatar">?</div>
+          <button class="profile-av-edit-btn" id="profileAvEditBtn" title="Change avatar">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+          </button>
+        </div>
+        <div class="profile-actions-row">
+          <button class="profile-edit-btn" id="editProfileBtn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+            Edit Profile
+          </button>
+          <button class="profile-share-btn" id="profileShareBtn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+            </svg>
+          </button>
         </div>
       </div>
-      <button class="btn-ghost" id="editProfileBtn">Edit Profile</button>
+
+      <!-- Name & bio -->
+      <div class="profile-identity">
+        <h2 class="profile-name" id="profileName">Your Studio</h2>
+        <p class="profile-handle" id="profileHandle">@yourstudio</p>
+        <p class="profile-bio" id="profileBio">Visual thinker &amp; creative explorer. Curating the world's best ideas.</p>
+      </div>
+
+      <!-- Stats row -->
+      <div class="profile-stats-row">
+        <div class="profile-stat-pill">
+          <strong id="statIdeas">0</strong>
+          <span>Ideas</span>
+        </div>
+        <div class="profile-stat-divider"></div>
+        <div class="profile-stat-pill">
+          <strong id="statSaved">0</strong>
+          <span>Saved</span>
+        </div>
+        <div class="profile-stat-divider"></div>
+        <div class="profile-stat-pill">
+          <strong id="statBoards">0</strong>
+          <span>Boards</span>
+        </div>
+        <div class="profile-stat-divider"></div>
+        <div class="profile-stat-pill">
+          <strong>Free</strong>
+          <span>Plan</span>
+        </div>
+      </div>
+
+      <!-- Member since badge -->
+      <div class="profile-badge-row">
+        <div class="profile-badge">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+          ZenPin Creator
+        </div>
+        <div class="profile-badge profile-badge-date">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Joined <span id="profileJoined">recently</span>
+        </div>
+      </div>
+
     </div>
   </div>
 
+  <!-- Tabs -->
   <div class="profile-tabs-bar" id="profileTabsBar">
-    <button class="profile-tab active" data-tab="saved">Saved</button>
-    <button class="profile-tab" data-tab="boards">Boards</button>
-    <button class="profile-tab" data-tab="created">Created</button>
+    <button class="profile-tab active" data-tab="saved">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+      Saved
+    </button>
+    <button class="profile-tab" data-tab="boards">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Boards
+    </button>
+    <button class="profile-tab" data-tab="created">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      Created
+    </button>
   </div>
 
   <div class="feed-wrap">
     <div class="masonry" id="profileGrid"></div>
+    <div class="profile-empty-state" id="profileEmptyState" style="display:none">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" style="color:#4b5563"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+      <p>Nothing here yet — go save some ideas!</p>
+      <button class="btn-primary btn-sm" data-page="explore">Explore Ideas</button>
+    </div>
   </div>
 
+</div>
+
+<!-- ── Edit Profile Modal ─────────────────────────────────────── -->
+<div class="zp-modal-backdrop" id="editProfileModal">
+  <div class="zp-modal">
+    <div class="zp-modal-header">
+      <h3>Edit Profile</h3>
+      <button class="zp-modal-close" id="editProfileClose">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="zp-modal-body">
+      <!-- Avatar preview -->
+      <div class="ep-avatar-section">
+        <div class="ep-avatar-preview" id="epAvatarPreview">?</div>
+        <div class="ep-avatar-info">
+          <p class="ep-avatar-label">Profile Initial</p>
+          <p class="ep-avatar-hint">Your avatar shows the first letter of your username</p>
+        </div>
+      </div>
+      <!-- Fields -->
+      <div class="ep-field">
+        <label class="ep-label">Username</label>
+        <input class="ep-input" id="epUsername" type="text" maxlength="30" placeholder="your username"/>
+        <span class="ep-hint">2–30 characters, shown publicly</span>
+      </div>
+      <div class="ep-field">
+        <label class="ep-label">Bio</label>
+        <textarea class="ep-input ep-textarea" id="epBio" maxlength="300" placeholder="Tell the world about your creative style…"></textarea>
+        <span class="ep-char-count"><span id="epBioCount">0</span>/300</span>
+      </div>
+    </div>
+    <div class="zp-modal-footer">
+      <span class="ep-error-msg" id="epError"></span>
+      <button class="zp-btn-cancel" id="epCancel">Cancel</button>
+      <button class="zp-btn-save" id="epSave">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Save Changes
+      </button>
+    </div>
+  </div>
 </div>
 
 
