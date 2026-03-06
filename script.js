@@ -3,7 +3,7 @@
 // Fully wired to https://zenpin-api.onrender.com
 // ============================================================
 
-const API_URL = "https://zenpin-api.onrender.com"
+const API_URL = "https://zenpin-api.onrender.com";
 
 // ─────────────────────────────────────────────────────────────
 // STATE
@@ -47,6 +47,8 @@ async function apiFetch(method, path, body = null, isForm = false) {
 
   const res  = await fetch(`${API_URL}${path}`, {
     method,
+    mode: "cors",
+    credentials: "omit",
     headers,
     body: body ? (isForm ? body : JSON.stringify(body)) : undefined,
   });
@@ -520,26 +522,88 @@ function setupVoting() {
 
 // Chat
 function setupChat() {
-  const sendBtn  = $("chatSendBtn");
+  const sendBtn   = $("chatSendBtn");
   const chatInput = $("chatInput");
-  const chatMsgs = $("chatMsgs");
+  const chatMsgs  = $("chatMsgs");
   if (!sendBtn) return;
 
-  function sendMsg() {
-    const msg = chatInput.value.trim();
-    if (!msg) return;
-    const user = getUser();
+  // Conversation history for context
+  let _chatHistory = [];
+
+  function appendMsg(role, text, isLoading = false) {
+    const user    = getUser();
     const initial = (user?.username || "Y")[0].toUpperCase();
+    const isUser  = role === "user";
+    const id      = isLoading ? "aiTyping" : "";
     chatMsgs.innerHTML += `
-      <div class="chat-msg">
-        <div class="chat-av" style="background:var(--grad-brand)">${initial}</div>
-        <div class="chat-bubble"><span class="chat-name">${user?.username || "You"}</span>${msg}</div>
+      <div class="chat-msg${isUser ? "" : " chat-msg-ai"}" ${id ? `id="${id}"` : ""}>
+        <div class="chat-av" style="background:${isUser ? "var(--grad-brand)" : "linear-gradient(135deg,#7c3aed,#db2777)"}">
+          ${isUser ? initial : "✦"}
+        </div>
+        <div class="chat-bubble">
+          <span class="chat-name">${isUser ? (user?.username || "You") : "ZenPin AI"}</span>
+          ${isLoading ? `<span class="chat-typing"><span></span><span></span><span></span></span>` : text}
+        </div>
       </div>`;
-    chatInput.value = "";
     chatMsgs.scrollTop = chatMsgs.scrollHeight;
   }
+
+  async function sendMsg() {
+    const msg = chatInput.value.trim();
+    if (!msg) return;
+    chatInput.value = "";
+    sendBtn.disabled = true;
+
+    appendMsg("user", msg);
+    _chatHistory.push({ role: "user", content: msg });
+
+    appendMsg("assistant", "", true); // typing indicator
+
+    try {
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1000,
+          system: `You are ZenPin AI — a creative assistant for ZenPin, a visual inspiration platform.
+You help users discover ideas, plan creative projects, suggest aesthetics, and explore design concepts.
+You know about interior design, architecture, fashion, food, travel, art, tech, and workspace aesthetics.
+Keep responses concise, inspiring, and practical. Use emojis sparingly to add warmth.
+The user is browsing ZenPin — a Pinterest-like platform for creative inspiration.`,
+          messages: _chatHistory
+        })
+      });
+
+      const data = await response.json();
+      const reply = data.content?.[0]?.text || "I couldn't generate a response. Please try again.";
+
+      // Remove typing indicator
+      $("aiTyping")?.remove();
+
+      _chatHistory.push({ role: "assistant", content: reply });
+      // Keep last 20 messages for context
+      if (_chatHistory.length > 20) _chatHistory = _chatHistory.slice(-20);
+
+      appendMsg("assistant", reply.replace(/\n/g, "<br>"));
+
+    } catch (err) {
+      $("aiTyping")?.remove();
+      appendMsg("assistant", "Sorry, I couldn't connect right now. Try again in a moment.");
+      console.error("AI chat error:", err);
+    } finally {
+      sendBtn.disabled = false;
+      chatInput.focus();
+    }
+  }
+
+  // Welcome message
+  if (!chatMsgs.innerHTML.trim()) {
+    appendMsg("assistant", "Hi! I'm ZenPin AI ✦ Ask me anything — design ideas, aesthetic advice, project inspiration, or help exploring the platform!");
+  }
+
   sendBtn.addEventListener("click", sendMsg);
-  chatInput.addEventListener("keydown", e => { if (e.key === "Enter") sendMsg(); });
+  chatInput.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) sendMsg(); });
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -613,6 +677,14 @@ async function runAI() {
 // ─────────────────────────────────────────────────────────────
 async function initProfile() {
   const user = getUser();
+  if (!user) { navigate("home"); return; }
+
+  // Populate real profile data
+  const av = $("profileAvatar");
+  if (av) av.textContent = (user.username || "?")[0].toUpperCase();
+  if ($("profileName"))   $("profileName").textContent   = user.username || "Your Studio";
+  if ($("profileHandle")) $("profileHandle").textContent = "@" + (user.username || "yourstudio").toLowerCase();
+  if ($("profileBio"))    $("profileBio").textContent    = user.bio || "Visual thinker & creative explorer.";
   if (!user) {
     $("profileGrid").innerHTML = `
       <div class="boards-login-prompt" style="grid-column:1/-1">
@@ -1050,6 +1122,89 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // ── New board button ───────────────────────────────────────
   $("newBoardBtn")?.addEventListener("click", showNewBoardModal);
+
+  // ── Edit Profile ──────────────────────────────────────────
+  $("editProfileBtn")?.addEventListener("click", () => {
+    const user = getUser();
+    if (!user) return;
+
+    // Build modal
+    let m = $("editProfileModal");
+    if (!m) {
+      m = document.createElement("div");
+      m.id = "editProfileModal";
+      m.className = "simple-modal-backdrop";
+      m.innerHTML = `
+        <div class="simple-modal-card" style="max-width:420px">
+          <h3 class="simple-modal-title">Edit Profile</h3>
+          <p style="font-size:13px;color:#9ca3af;margin:-8px 0 16px">Update your display name and bio.</p>
+          <label style="font-size:12px;color:#9ca3af;display:block;margin-bottom:4px">Username</label>
+          <input class="simple-modal-input" id="epUsername" type="text" maxlength="30" />
+          <label style="font-size:12px;color:#9ca3af;display:block;margin-bottom:4px;margin-top:8px">Bio</label>
+          <textarea class="simple-modal-input" id="epBio" rows="3" maxlength="300"
+            style="resize:vertical;height:80px"></textarea>
+          <div id="epError" style="color:#ef4444;font-size:12px;margin-top:4px;display:none"></div>
+          <div class="simple-modal-btns">
+            <button class="simple-modal-btn-cancel" id="epCancel">Cancel</button>
+            <button class="simple-modal-btn-ok" id="epSave">Save Changes</button>
+          </div>
+        </div>`;
+      document.body.appendChild(m);
+      $("epCancel").onclick = () => m.classList.remove("open");
+      m.addEventListener("click", e => { if (e.target === m) m.classList.remove("open"); });
+      $("epSave").onclick = async () => {
+        const bio = $("epBio").value.trim();
+        const btn = $("epSave");
+        btn.textContent = "Saving…"; btn.disabled = true;
+        $("epError").style.display = "none";
+        try {
+          await apiFetch("PATCH", "/auth/me", { bio });
+          // Update stored user
+          const stored = JSON.parse(localStorage.getItem("zenpin_user") || "{}");
+          stored.bio = bio;
+          localStorage.setItem("zenpin_user", JSON.stringify(stored));
+          // Update UI
+          if ($("profileBio")) $("profileBio").textContent = bio || "Visual thinker & creative explorer.";
+          m.classList.remove("open");
+          toast("Profile updated!");
+        } catch(e) {
+          $("epError").textContent = e.message || "Update failed.";
+          $("epError").style.display = "block";
+        } finally {
+          btn.textContent = "Save Changes"; btn.disabled = false;
+        }
+      };
+    }
+    // Pre-fill values
+    $("epUsername").value = user.username || "";
+    $("epBio").value = user.bio || "";
+    requestAnimationFrame(() => m.classList.add("open"));
+  });
+
+  // ── AI Share Board ────────────────────────────────────────
+  $("aiShareBtn")?.addEventListener("click", () => {
+    const topic = $("aiInput")?.value.trim() || "ZenPin Board";
+    const url   = window.location.href.split("#")[0] + "#ai";
+    if (navigator.share) {
+      navigator.share({ title: `ZenPin — ${topic}`, url });
+    } else {
+      navigator.clipboard?.writeText(url);
+      toast("Link copied to clipboard!");
+    }
+  });
+
+  // ── Modal Share ───────────────────────────────────────────
+  $("modalShareBtn")?.addEventListener("click", () => {
+    const idea = S.modalId ? null : null;
+    const url  = window.location.href.split("#")[0] + (S.modalId ? `#idea-${S.modalId}` : "");
+    const title = $("modalTitle")?.textContent || "ZenPin Idea";
+    if (navigator.share) {
+      navigator.share({ title: `ZenPin — ${title}`, url });
+    } else {
+      navigator.clipboard?.writeText(url);
+      toast("Link copied!");
+    }
+  });
 
   // ── Login btn in navbar ────────────────────────────────────
   $("navLoginBtn")?.addEventListener("click", () => { window.location.href = "login.html"; });
