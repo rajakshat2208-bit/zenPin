@@ -225,7 +225,10 @@
     btn.classList.add("loading"); btn.disabled = true;
     try {
       const res  = await fetch(`${API_URL}/auth/signup`, {
-        method:"POST", headers:{"Content-Type":"application/json"},
+        method:"POST",
+        mode: "cors",
+        credentials: "omit",
+        headers:{"Content-Type":"application/json"},
         body: JSON.stringify({ username, email, password }),
       });
       const data = await res.json().catch(() => ({}));
@@ -234,7 +237,7 @@
       localStorage.setItem("zenpin_user", JSON.stringify(data.user));
       localStorage.setItem("zenpin_skill", skillLevel);
       window.location.href = "index.html";
-    } catch { setBanner("Could not reach the server. Check your connection."); }
+    } catch (err) { setBanner("Error: " + (err.message || "Could not reach server. Open F12 Console for details.")); console.error("Signup error:", err); }
     finally { btn.classList.remove("loading"); btn.disabled = false; }
   };
 </script>
