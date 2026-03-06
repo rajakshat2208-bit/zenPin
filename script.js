@@ -29,7 +29,7 @@ const S = {
 const $ = id => document.getElementById(id);
 const fmt = n => n >= 1000 ? (n/1000).toFixed(1).replace(".0","")+"k" : String(n||0);
 
-function token()     { return localStorage.getItem("token"); }
+function token()     { return localStorage.getItem("zenpin_token"); }
 function isLoggedIn(){ return !!token(); }
 
 function getUser() {
@@ -610,7 +610,7 @@ The user is browsing ZenPin — a Pinterest-like platform for creative inspirati
 // PAGE: AI GENERATOR
 // ─────────────────────────────────────────────────────────────
 async function initAI() {
-  if (window.AI) AI.renderHistory("aiHistoryList");
+  if (window.AIModule) AIModule.renderHistory($("aiHistoryList"));
 }
 
 async function runAI() {
@@ -644,22 +644,26 @@ async function runAI() {
     renderGrid($("aiGrid"), ideas);
 
     // Color palette
-    if (window.AI) {
-      const palette = AI.getPalette(topic);
-      AI.renderPalette(palette, "aiPaletteWrap");
+    if (window.AIModule) {
+      // Color palette
+      const palette = AIModule.generatePalette(topic);
+      AIModule.renderPalette(palette, $("aiPaletteWrap"));
 
-      // Style card
-      const style = AI.getStyleInfo(topic);
+      // Style tags as a simple label row
+      const tags = AIModule.getStyleTags(topic);
       const styleEl = $("aiStyleCard");
-      if (styleEl) {
-        styleEl.innerHTML = `
-          <div class="ai-style-name">${style.name}</div>
-          <div class="ai-style-desc">${style.desc}</div>`;
-        styleEl.style.display = "block";
+      if (styleEl && tags.length) {
+        styleEl.innerHTML = tags.map(t =>
+          `<span style="background:rgba(124,58,237,0.2);border:1px solid rgba(124,58,237,0.4);
+            padding:4px 10px;border-radius:20px;font-size:12px;color:#c4b5fd">${t}</span>`
+        ).join(" ");
+        styleEl.style.display = "flex";
+        styleEl.style.flexWrap = "wrap";
+        styleEl.style.gap = "6px";
       }
 
-      AI.saveToHistory(topic, ideas);
-      AI.renderHistory("aiHistoryList");
+      // Save to history
+      AIModule.renderHistory($("aiHistoryList"));
     }
 
     toast(`✨ Board generated for "${topic}"`);
@@ -675,43 +679,38 @@ async function runAI() {
 // ─────────────────────────────────────────────────────────────
 // PAGE: PROFILE
 // ─────────────────────────────────────────────────────────────
+function fillProfileHeader(user) {
+  const initial = (user.username || "?")[0].toUpperCase();
+  if ($("profileAvatar"))  $("profileAvatar").textContent  = initial;
+  if ($("profileName"))    $("profileName").textContent    = user.username || "Your Studio";
+  if ($("profileHandle"))  $("profileHandle").textContent  = "@" + (user.username || "yourstudio").toLowerCase();
+  if ($("profileBio"))     $("profileBio").textContent     = user.bio || "Visual thinker & creative explorer. Curating the world's best ideas.";
+  if ($("epAvatarPreview")) $("epAvatarPreview").textContent = initial;
+  // Member since
+  if ($("profileJoined") && user.created_at) {
+    const d = new Date(user.created_at);
+    $("profileJoined").textContent = d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+  }
+}
+
 async function initProfile() {
   const user = getUser();
   if (!user) { navigate("home"); return; }
+  fillProfileHeader(user);
 
-  // Populate real profile data
-  const av = $("profileAvatar");
-  if (av) av.textContent = (user.username || "?")[0].toUpperCase();
-  if ($("profileName"))   $("profileName").textContent   = user.username || "Your Studio";
-  if ($("profileHandle")) $("profileHandle").textContent = "@" + (user.username || "yourstudio").toLowerCase();
-  if ($("profileBio"))    $("profileBio").textContent    = user.bio || "Visual thinker & creative explorer.";
-  if (!user) {
-    $("profileGrid").innerHTML = `
-      <div class="boards-login-prompt" style="grid-column:1/-1">
-        <p>Sign in to view your profile</p>
-        <a href="login.html" class="btn-primary" style="margin-top:12px;display:inline-flex">Sign In</a>
-      </div>`;
-    return;
-  }
+  // Fetch real stats
+  try {
+    const [savedData, boardsData] = await Promise.allSettled([
+      apiFetch("GET", `/users/${user.id}/saves`),
+      apiFetch("GET", "/boards"),
+    ]);
+    const savedCount  = savedData.status  === "fulfilled" ? (savedData.value.ideas  || []).length : 0;
+    const boardsCount = boardsData.status === "fulfilled" ? (boardsData.value.boards || []).length : 0;
+    if ($("statSaved"))  $("statSaved").textContent  = savedCount;
+    if ($("statBoards")) $("statBoards").textContent = boardsCount;
+  } catch {}
 
-  // Fill in profile header
-  const nameEl   = document.querySelector(".profile-name");
-  const handleEl = document.querySelector(".profile-handle");
-  const bioEl    = document.querySelector(".profile-bio");
-  const avEl     = document.querySelector(".profile-av");
-  if (nameEl)   nameEl.textContent   = user.username || "Your Studio";
-  if (handleEl) handleEl.textContent = "@" + (user.username || "yourstudio");
-  if (bioEl)    bioEl.textContent    = user.bio || "Visual thinker & creative explorer.";
-  if (avEl) {
-    avEl.textContent = (user.username || "Y")[0].toUpperCase();
-    if (user.avatar_url) {
-      avEl.style.backgroundImage = `url(${user.avatar_url})`;
-      avEl.style.backgroundSize  = "cover";
-      avEl.textContent           = "";
-    }
-  }
-
-  renderProfileTab(S.profileTab);
+  renderProfileTab(S.profileTab || "saved");
 }
 
 async function renderProfileTab(tab) {
@@ -719,42 +718,69 @@ async function renderProfileTab(tab) {
   document.querySelectorAll(".profile-tab").forEach(t =>
     t.classList.toggle("active", t.dataset.tab === tab)
   );
-  const grid = $("profileGrid");
-  grid.innerHTML = skeletonHTML(8);
+  const grid  = $("profileGrid");
+  const empty = $("profileEmptyState");
+  if (empty) empty.style.display = "none";
+  grid.innerHTML = skeletonHTML(6);
 
   try {
-    let ideas = [];
+    const user = getUser();
+    if (!user) { grid.innerHTML = ""; return; }
+
     if (tab === "saved") {
-      const user = getUser();
-      if (user) {
-        const data = await apiFetch("GET", `/users/${user.id}/saves`);
-        ideas = data.ideas || [];
+      const data = await apiFetch("GET", `/users/${user.id}/saves`);
+      const ideas = data.ideas || [];
+      if ($("statSaved")) $("statSaved").textContent = ideas.length;
+      if (!ideas.length) {
+        grid.innerHTML = "";
+        if (empty) empty.style.display = "flex";
+        return;
       }
+      renderGrid(grid, ideas);
+
     } else if (tab === "boards") {
-      // Show board preview cards
       const { boards } = await apiFetch("GET", "/boards");
+      if ($("statBoards")) $("statBoards").textContent = boards.length;
+      if (!boards.length) {
+        grid.innerHTML = `
+          <div class="profile-empty-state" style="display:flex;grid-column:1/-1">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" style="color:#4b5563"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            <p>No boards yet — create your first one!</p>
+            <button class="btn-primary btn-sm" onclick="navigate('boards')">Go to Boards</button>
+          </div>`;
+        return;
+      }
       grid.innerHTML = boards.map((b, i) => `
-        <div class="idea-card" style="--i:${i}">
-          <div class="card-img-wrap" style="min-height:120px;background:var(--surface-2);display:flex;align-items:center;justify-content:center">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" stroke-width="1.5"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+        <div class="idea-card" style="--i:${i};cursor:pointer" onclick="navigate('boards')">
+          <div class="card-img-wrap" style="min-height:130px;background:linear-gradient(135deg,rgba(124,58,237,0.15),rgba(219,39,119,0.1));display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;padding:12px">
+            ${(b.preview_images||[]).slice(0,4).map(u =>
+              `<img src="${u}" style="width:48%;height:55px;object-fit:cover;border-radius:6px" loading="lazy"/>`
+            ).join("") || `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(124,58,237,0.5)" stroke-width="1.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>`}
           </div>
-          <div class="card-footer" style="flex-direction:column;align-items:flex-start;gap:2px">
-            <div style="font-weight:700;font-size:0.85rem">${b.name}</div>
-            <div style="font-size:0.72rem;color:var(--text-3)">${b.idea_count||0} ideas</div>
+          <div class="card-footer" style="flex-direction:column;align-items:flex-start;gap:3px;padding:12px 14px">
+            <div style="font-weight:700;font-size:0.88rem;color:var(--text)">${b.name}</div>
+            <div style="font-size:0.72rem;color:var(--text-3)">${b.idea_count||0} ideas${b.description ? " · " + b.description.slice(0,40) : ""}</div>
           </div>
         </div>`).join("");
-      return;
+
     } else {
-      // Created — get ideas by this user (fallback: show all)
-      const { ideas: all } = await apiFetch("GET", "/ideas?limit=12");
-      ideas = all;
+      // Created tab — ideas created by this user
+      const { ideas: all } = await apiFetch("GET", `/ideas?limit=50`);
+      const mine = all.filter(i => i.user_id === user.id || i.username === user.username);
+      if ($("statIdeas")) $("statIdeas").textContent = mine.length;
+      if (!mine.length) {
+        grid.innerHTML = `
+          <div class="profile-empty-state" style="display:flex;grid-column:1/-1">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" style="color:#4b5563"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+            <p>You haven't created any ideas yet.</p>
+            <button class="btn-primary btn-sm" onclick="navigate('explore')">Get Inspired</button>
+          </div>`;
+        return;
+      }
+      renderGrid(grid, mine);
     }
-    renderGrid(grid, ideas);
-    if (!ideas.length) {
-      grid.innerHTML = `<p class="empty-note" style="padding:24px;grid-column:1/-1">Nothing here yet.</p>`;
-    }
-  } catch {
-    grid.innerHTML = `<div class="load-error">Could not load.</div>`;
+  } catch (e) {
+    grid.innerHTML = `<div class="load-error" style="grid-column:1/-1;padding:24px;color:var(--text-3);text-align:center">Could not load. <button onclick="renderProfileTab('${tab}')" style="color:var(--purple);cursor:pointer">Retry</button></div>`;
   }
 }
 
@@ -1124,67 +1150,76 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("newBoardBtn")?.addEventListener("click", showNewBoardModal);
 
   // ── Edit Profile ──────────────────────────────────────────
-  $("editProfileBtn")?.addEventListener("click", () => {
+  function openEditProfile() {
     const user = getUser();
     if (!user) return;
+    const m = $("editProfileModal");
+    if (!m) return;
+    // Pre-fill
+    if ($("epUsername")) $("epUsername").value = user.username || "";
+    if ($("epBio"))      $("epBio").value      = user.bio || "";
+    if ($("epBioCount")) $("epBioCount").textContent = (user.bio || "").length;
+    if ($("epAvatarPreview")) $("epAvatarPreview").textContent = (user.username || "?")[0].toUpperCase();
+    if ($("epError"))    $("epError").textContent = "";
+    m.classList.add("open");
+  }
 
-    // Build modal
-    let m = $("editProfileModal");
-    if (!m) {
-      m = document.createElement("div");
-      m.id = "editProfileModal";
-      m.className = "simple-modal-backdrop";
-      m.innerHTML = `
-        <div class="simple-modal-card" style="max-width:420px">
-          <h3 class="simple-modal-title">Edit Profile</h3>
-          <p style="font-size:13px;color:#9ca3af;margin:-8px 0 16px">Update your display name and bio.</p>
-          <label style="font-size:12px;color:#9ca3af;display:block;margin-bottom:4px">Username</label>
-          <input class="simple-modal-input" id="epUsername" type="text" maxlength="30" />
-          <label style="font-size:12px;color:#9ca3af;display:block;margin-bottom:4px;margin-top:8px">Bio</label>
-          <textarea class="simple-modal-input" id="epBio" rows="3" maxlength="300"
-            style="resize:vertical;height:80px"></textarea>
-          <div id="epError" style="color:#ef4444;font-size:12px;margin-top:4px;display:none"></div>
-          <div class="simple-modal-btns">
-            <button class="simple-modal-btn-cancel" id="epCancel">Cancel</button>
-            <button class="simple-modal-btn-ok" id="epSave">Save Changes</button>
-          </div>
-        </div>`;
-      document.body.appendChild(m);
-      $("epCancel").onclick = () => m.classList.remove("open");
-      m.addEventListener("click", e => { if (e.target === m) m.classList.remove("open"); });
-      $("epSave").onclick = async () => {
-        const bio = $("epBio").value.trim();
-        const btn = $("epSave");
-        btn.textContent = "Saving…"; btn.disabled = true;
-        $("epError").style.display = "none";
-        try {
-          await apiFetch("PATCH", "/auth/me", { bio });
-          // Update stored user
-          const stored = JSON.parse(localStorage.getItem("zenpin_user") || "{}");
-          stored.bio = bio;
-          localStorage.setItem("zenpin_user", JSON.stringify(stored));
-          // Update UI
-          if ($("profileBio")) $("profileBio").textContent = bio || "Visual thinker & creative explorer.";
-          m.classList.remove("open");
-          toast("Profile updated!");
-        } catch(e) {
-          $("epError").textContent = e.message || "Update failed.";
-          $("epError").style.display = "block";
-        } finally {
-          btn.textContent = "Save Changes"; btn.disabled = false;
-        }
-      };
+  $("editProfileBtn")?.addEventListener("click", openEditProfile);
+  $("profileAvEditBtn")?.addEventListener("click", openEditProfile);
+
+  $("editProfileClose")?.addEventListener("click", () => $("editProfileModal")?.classList.remove("open"));
+  $("epCancel")?.addEventListener("click",        () => $("editProfileModal")?.classList.remove("open"));
+  $("editProfileModal")?.addEventListener("click", e => {
+    if (e.target === $("editProfileModal")) $("editProfileModal").classList.remove("open");
+  });
+
+  // Live char count
+  $("epBio")?.addEventListener("input", () => {
+    if ($("epBioCount")) $("epBioCount").textContent = ($("epBio").value || "").length;
+  });
+
+  $("epSave")?.addEventListener("click", async () => {
+    const bio = ($("epBio")?.value || "").trim();
+    const btn = $("epSave");
+    const errEl = $("epError");
+    if (errEl) errEl.textContent = "";
+    btn.disabled = true;
+    btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation:spin 0.8s linear infinite"><path d="M12 2a10 10 0 1 0 10 10"/></svg> Saving…`;
+    try {
+      await apiFetch("PATCH", "/auth/me", { bio });
+      // Persist locally
+      const stored = JSON.parse(localStorage.getItem("zenpin_user") || "{}");
+      stored.bio = bio;
+      localStorage.setItem("zenpin_user", JSON.stringify(stored));
+      // Update UI
+      fillProfileHeader(stored);
+      $("editProfileModal").classList.remove("open");
+      toast("✓ Profile updated!");
+    } catch(e) {
+      if (errEl) errEl.textContent = e.message || "Update failed. Please try again.";
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Save Changes`;
     }
-    // Pre-fill values
-    $("epUsername").value = user.username || "";
-    $("epBio").value = user.bio || "";
-    requestAnimationFrame(() => m.classList.add("open"));
+  });
+
+  // ── Profile Share ──────────────────────────────────────────
+  $("profileShareBtn")?.addEventListener("click", () => {
+    const user = getUser();
+    const url  = window.location.href.split("?")[0];
+    const text = `Check out ${user?.username || "my"} profile on ZenPin!`;
+    if (navigator.share) {
+      navigator.share({ title: "ZenPin Profile", text, url });
+    } else {
+      navigator.clipboard?.writeText(url);
+      toast("Profile link copied!");
+    }
   });
 
   // ── AI Share Board ────────────────────────────────────────
   $("aiShareBtn")?.addEventListener("click", () => {
     const topic = $("aiInput")?.value.trim() || "ZenPin Board";
-    const url   = window.location.href.split("#")[0] + "#ai";
+    const url   = window.location.href.split("#")[0];
     if (navigator.share) {
       navigator.share({ title: `ZenPin — ${topic}`, url });
     } else {
@@ -1195,9 +1230,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // ── Modal Share ───────────────────────────────────────────
   $("modalShareBtn")?.addEventListener("click", () => {
-    const idea = S.modalId ? null : null;
-    const url  = window.location.href.split("#")[0] + (S.modalId ? `#idea-${S.modalId}` : "");
     const title = $("modalTitle")?.textContent || "ZenPin Idea";
+    const url   = window.location.href.split("#")[0];
     if (navigator.share) {
       navigator.share({ title: `ZenPin — ${title}`, url });
     } else {
