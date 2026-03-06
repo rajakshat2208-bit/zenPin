@@ -15,7 +15,12 @@
 import sqlite3
 import os
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "zenpin.db")
+# On Render the project directory is read-only after deploy.
+# /tmp is writable and persists across requests (but not redeploys).
+# For local dev it falls back to the project directory.
+_db_dir  = "/tmp" if os.path.exists("/tmp") and os.access("/tmp", os.W_OK) else os.path.dirname(__file__)
+DB_PATH  = os.path.join(_db_dir, "zenpin.db")
+os.makedirs(_db_dir, exist_ok=True)
 
 
 def get_connection():
@@ -114,6 +119,13 @@ def create_user(username, email, password_hash):
         )
         conn.commit()
         return dict(conn.execute("SELECT * FROM users WHERE id=?", (cur.lastrowid,)).fetchone())
+    except sqlite3.IntegrityError as e:
+        err = str(e).lower()
+        if "username" in err:
+            raise ValueError("username_taken")
+        if "email" in err:
+            raise ValueError("email_taken")
+        raise
     finally:
         conn.close()
 
@@ -121,6 +133,14 @@ def get_user_by_email(email):
     conn = get_connection()
     try:
         row = conn.execute("SELECT * FROM users WHERE email=?", (email,)).fetchone()
+        return dict(row) if row else None
+    finally:
+        conn.close()
+
+def get_user_by_username(username):
+    conn = get_connection()
+    try:
+        row = conn.execute("SELECT * FROM users WHERE username=?", (username,)).fetchone()
         return dict(row) if row else None
     finally:
         conn.close()
