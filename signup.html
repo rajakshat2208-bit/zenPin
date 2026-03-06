@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sign up — ZenPin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    :root{--purple:#7c3aed;--pink:#db2777;--orange:#f97316;--grad-brand:linear-gradient(135deg,#7c3aed 0%,#db2777 52%,#f97316 100%);--bg:#fafaf8;--surface:#ffffff;--surface-2:#f4f3f0;--border-2:rgba(0,0,0,.11);--text:#1a1714;--text-2:#6b6560;--text-3:#a39d97;--f-display:'Playfair Display',Georgia,serif;--f-ui:'Plus Jakarta Sans',system-ui,sans-serif;--r-md:16px;--r-pill:9999px;--ease:cubic-bezier(.4,0,.2,1)}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:var(--f-ui);min-height:100vh;overflow-x:hidden;display:flex;align-items:center;justify-content:center;background:var(--bg);padding:24px 16px;-webkit-font-smoothing:antialiased}
+    .auth-bg{position:fixed;inset:0;z-index:0;background:linear-gradient(135deg,#f5f0ff 0%,#fdf2f8 50%,#fff7ed 100%);overflow:hidden}
+    .auth-blob{position:absolute;border-radius:50%;filter:blur(80px);will-change:transform}
+    .ab1{width:520px;height:520px;top:-160px;right:-130px;background:radial-gradient(circle,rgba(219,39,119,.32) 0%,transparent 70%);animation:ab1 16s ease-in-out infinite}
+    .ab2{width:460px;height:460px;bottom:-140px;left:-110px;background:radial-gradient(circle,rgba(124,58,237,.3) 0%,transparent 70%);animation:ab2 20s ease-in-out infinite}
+    .ab3{width:300px;height:300px;top:30%;right:60%;background:radial-gradient(circle,rgba(249,115,22,.22) 0%,transparent 70%);animation:ab3 13s ease-in-out infinite}
+    @keyframes ab1{0%,100%{transform:scale(1)}50%{transform:scale(1.2) rotate(30deg)}}
+    @keyframes ab2{0%,100%{transform:scale(1)}50%{transform:scale(1.25) rotate(-45deg)}}
+    @keyframes ab3{0%,100%{transform:translate(0,0)}50%{transform:translate(30px,40px)}}
+    .auth-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(124,58,237,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(124,58,237,.04) 1px,transparent 1px);background-size:42px 42px}
+    .auth-wrap{position:relative;z-index:1;width:100%;max-width:460px;animation:cardrise .7s var(--ease) both}
+    @keyframes cardrise{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+    .auth-card{background:rgba(255,255,255,.82);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);border:1px solid rgba(255,255,255,.9);border-radius:28px;padding:44px 40px;box-shadow:0 24px 80px rgba(0,0,0,.12),0 4px 16px rgba(0,0,0,.05),inset 0 1px 0 rgba(255,255,255,.9)}
+    .auth-logo-row{display:flex;align-items:center;gap:10px;margin-bottom:26px}
+    .auth-gem{width:44px;height:44px;background:var(--grad-brand);border-radius:13px;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(124,58,237,.38);flex-shrink:0}
+    .auth-wordmark{font-size:1.3rem;font-weight:700;background:var(--grad-brand);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-.02em}
+    .auth-title{font-family:var(--f-display);font-size:1.9rem;font-weight:900;letter-spacing:-.03em;line-height:1.1;margin-bottom:7px}
+    .auth-title em{font-style:italic;background:var(--grad-brand);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+    .auth-sub{font-size:.88rem;color:var(--text-2);margin-bottom:26px;line-height:1.6}
+    /* Skill */
+    .skill-label{font-size:.72rem;font-weight:800;color:var(--text-3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:7px}
+    .skill-row{display:flex;gap:8px;margin-bottom:18px}
+    .skill-opt{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:11px 6px;border:1.5px solid var(--border-2);border-radius:var(--r-md);cursor:pointer;transition:all .2s;font-size:.7rem;font-weight:700;color:var(--text-3);letter-spacing:.03em;text-transform:uppercase}
+    .skill-opt:hover{border-color:rgba(124,58,237,.35);background:rgba(124,58,237,.03);color:var(--purple)}
+    .skill-opt.selected{border-color:var(--purple);background:rgba(124,58,237,.07);color:var(--purple)}
+    /* Form */
+    .auth-form{display:flex;flex-direction:column;gap:13px}
+    .field-wrap{display:flex;flex-direction:column;gap:5px}
+    .field-label{font-size:.72rem;font-weight:800;color:var(--text-3);letter-spacing:.06em;text-transform:uppercase}
+    .field-inner{position:relative}
+    .field-ico{position:absolute;left:15px;top:50%;transform:translateY(-50%);color:var(--text-3);pointer-events:none;transition:color .2s}
+    .field-inner:focus-within .field-ico{color:var(--purple)}
+    .auth-input{width:100%;height:50px;padding:0 16px 0 44px;background:rgba(255,255,255,.7);border:1.5px solid var(--border-2);border-radius:var(--r-md);font-family:var(--f-ui);font-size:.88rem;color:var(--text);outline:none;transition:all .2s var(--ease)}
+    .auth-input::placeholder{color:var(--text-3)}
+    .auth-input:focus{background:white;border-color:#a78bfa;box-shadow:0 0 0 4px rgba(167,139,250,.2)}
+    .pw-toggle{position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-3);cursor:pointer;display:flex;padding:4px;transition:color .15s}
+    .pw-toggle:hover{color:var(--purple)}
+    .field-error{font-size:.72rem;color:#ef4444;font-weight:600;display:none;align-items:center;gap:4px}
+    .field-error.show{display:flex}
+    /* Strength */
+    .pw-strength{display:flex;gap:4px;margin-top:5px}
+    .pw-bar{flex:1;height:3px;border-radius:2px;background:var(--surface-2);transition:background .3s}
+    .pw-bar.weak{background:#ef4444}.pw-bar.fair{background:#f97316}.pw-bar.good{background:#eab308}.pw-bar.strong{background:#22c55e}
+    .pw-hint{font-size:.68rem;color:var(--text-3);margin-top:3px}
+    /* Terms */
+    .auth-terms{font-size:.75rem;color:var(--text-3);line-height:1.55}
+    .auth-terms a{color:var(--purple);text-decoration:none;font-weight:600}
+    /* Submit */
+    .auth-submit{height:52px;width:100%;margin-top:4px;background:var(--grad-brand);color:white;border:none;border-radius:var(--r-pill);font-family:var(--f-ui);font-size:.95rem;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 6px 22px rgba(124,58,237,.38);transition:all .25s var(--ease)}
+    .auth-submit:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 10px 32px rgba(124,58,237,.5)}
+    .auth-submit:disabled{opacity:.7;cursor:not-allowed;transform:none}
+    .spinner{width:18px;height:18px;border:2.5px solid rgba(255,255,255,.35);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite;display:none}
+    .auth-submit.loading .spinner{display:block}
+    .auth-submit.loading .btn-label{display:none}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    /* Error banner */
+    .auth-error-banner{display:none;align-items:center;gap:10px;padding:12px 16px;background:#fef2f2;border:1px solid #fecaca;border-radius:var(--r-md);font-size:.82rem;color:#b91c1c;font-weight:600;margin-bottom:4px}
+    .auth-error-banner.show{display:flex}
+    .auth-divider{display:flex;align-items:center;gap:12px;margin:12px 0 6px;font-size:.72rem;color:var(--text-3);font-weight:700;letter-spacing:.04em}
+    .auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:var(--border-2)}
+    .auth-footer{text-align:center;font-size:.82rem;color:var(--text-2)}
+    .auth-footer a{color:var(--purple);font-weight:700;text-decoration:none}
+    @media(max-width:480px){.auth-card{padding:32px 22px}.auth-title{font-size:1.65rem}.skill-opt{font-size:.62rem}}
+  </style>
+</head>
+<body>
+<div class="auth-bg">
+  <div class="auth-blob ab1"></div><div class="auth-blob ab2"></div><div class="auth-blob ab3"></div>
+  <div class="auth-grid"></div>
+</div>
+
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-logo-row">
+      <div class="auth-gem">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="white" stroke="white" stroke-width="1.5" stroke-linejoin="round"/></svg>
+      </div>
+      <span class="auth-wordmark">ZenPin</span>
+    </div>
+
+    <h1 class="auth-title">Start creating<br><em>today.</em></h1>
+    <p class="auth-sub">Join thousands of creators discovering and building their best ideas.</p>
+
+    <div class="auth-error-banner" id="errorBanner">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span id="errorText">Something went wrong.</span>
+    </div>
+
+    <!-- Skill level -->
+    <div class="skill-label">Your creative level</div>
+    <div class="skill-row">
+      <div class="skill-opt selected" data-level="beginner">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Beginner
+      </div>
+      <div class="skill-opt" data-level="intermediate">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        Intermediate
+      </div>
+      <div class="skill-opt" data-level="expert">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+        Expert
+      </div>
+    </div>
+
+    <form class="auth-form" id="signupForm" novalidate>
+      <!-- Username -->
+      <div class="field-wrap">
+        <label class="field-label" for="username">Username</label>
+        <div class="field-inner">
+          <svg class="field-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <input class="auth-input" id="username" type="text" placeholder="yourname" autocomplete="username"/>
+        </div>
+        <div class="field-error" id="usernameErr"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/></svg><span>Username must be 2–30 characters</span></div>
+      </div>
+      <!-- Email -->
+      <div class="field-wrap">
+        <label class="field-label" for="email">Email</label>
+        <div class="field-inner">
+          <svg class="field-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <input class="auth-input" id="email" type="email" placeholder="you@example.com" autocomplete="email"/>
+        </div>
+        <div class="field-error" id="emailErr"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/></svg><span>Enter a valid email</span></div>
+      </div>
+      <!-- Password -->
+      <div class="field-wrap">
+        <label class="field-label" for="password">Password</label>
+        <div class="field-inner">
+          <svg class="field-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <input class="auth-input" id="password" type="password" placeholder="At least 8 characters" autocomplete="new-password"/>
+          <button type="button" class="pw-toggle" id="pwToggle">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="eyeIcon"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <div class="pw-strength"><div class="pw-bar" id="b1"></div><div class="pw-bar" id="b2"></div><div class="pw-bar" id="b3"></div><div class="pw-bar" id="b4"></div></div>
+        <div class="pw-hint" id="pwHint"></div>
+        <div class="field-error" id="pwErr"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/></svg><span>At least 8 characters required</span></div>
+      </div>
+
+      <p class="auth-terms">By signing up you agree to our <a href="#">Terms</a> and <a href="#">Privacy Policy</a>.</p>
+
+      <button type="submit" class="auth-submit" id="submitBtn">
+        <span class="btn-label">Create my account</span>
+        <div class="spinner"></div>
+      </button>
+    </form>
+
+    <div class="auth-divider">already a member?</div>
+    <div class="auth-footer"><a href="login.html">Log in to your account →</a></div>
+  </div>
+</div>
+
+<script>
+  if (localStorage.getItem("zenpin_token")) window.location.href = "index.html";
+
+  const API_URL = "https://zenpin-api.onrender.com";
+  let skillLevel = "beginner";
+
+  // Skill selector
+  document.querySelectorAll(".skill-opt").forEach(o => {
+    o.onclick = () => {
+      document.querySelectorAll(".skill-opt").forEach(x => x.classList.remove("selected"));
+      o.classList.add("selected");
+      skillLevel = o.dataset.level;
+    };
+  });
+
+  // Password toggle
+  document.getElementById("pwToggle").onclick = function() {
+    const inp = document.getElementById("password");
+    const sh = inp.type === "text";
+    inp.type = sh ? "password" : "text";
+    document.getElementById("eyeIcon").innerHTML = sh
+      ? `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`
+      : `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>`;
+  };
+
+  // Password strength
+  document.getElementById("password").oninput = function() {
+    const pw = this.value; let s = 0;
+    if (pw.length >= 8) s++;
+    if (/[A-Z]/.test(pw)) s++;
+    if (/[0-9]/.test(pw)) s++;
+    if (/[^A-Za-z0-9]/.test(pw)) s++;
+    const cls = ["","weak","fair","good","strong"];
+    const lbl = ["","Weak","Fair","Good","Strong 💪"];
+    ["b1","b2","b3","b4"].forEach((id,i) => {
+      document.getElementById(id).className = "pw-bar " + (i < s ? cls[s] : "");
+    });
+    document.getElementById("pwHint").textContent = pw.length ? lbl[s] : "";
+  };
+
+  // Helpers
+  const showErr = (id, v) => document.getElementById(id).classList.toggle("show", v);
+  const setBanner = m => { document.getElementById("errorText").textContent = m; document.getElementById("errorBanner").classList.add("show"); };
+  const clearBanner = () => document.getElementById("errorBanner").classList.remove("show");
+  document.getElementById("username").oninput = () => showErr("usernameErr", false);
+  document.getElementById("email").oninput    = () => showErr("emailErr", false);
+
+  // Submit
+  document.getElementById("signupForm").onsubmit = async function(e) {
+    e.preventDefault(); clearBanner();
+    const username = document.getElementById("username").value.trim();
+    const email    = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+    let ok = true;
+    if (username.length < 2 || username.length > 30) { showErr("usernameErr", true); ok = false; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))  { showErr("emailErr", true);    ok = false; }
+    if (password.length < 8)                          { showErr("pwErr", true);       ok = false; }
+    if (!ok) return;
+
+    const btn = document.getElementById("submitBtn");
+    btn.classList.add("loading"); btn.disabled = true;
+    try {
+      const res  = await fetch(`${API_URL}/auth/signup`, {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ username, email, password }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setBanner(typeof data.detail==="string" ? data.detail : "Signup failed."); return; }
+      localStorage.setItem("zenpin_token", data.token);
+      localStorage.setItem("zenpin_user", JSON.stringify(data.user));
+      localStorage.setItem("zenpin_skill", skillLevel);
+      window.location.href = "index.html";
+    } catch { setBanner("Could not reach the server. Check your connection."); }
+    finally { btn.classList.remove("loading"); btn.disabled = false; }
+  };
+</script>
+</body>
+</html>
