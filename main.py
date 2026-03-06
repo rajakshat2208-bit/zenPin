@@ -186,14 +186,29 @@ def signup(body: SignupRequest):
     Create a new account.
     Returns the user object + a JWT token so they're logged in immediately.
     """
+    # Check email uniqueness
     if db.get_user_by_email(body.email):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="An account with this email already exists."
         )
+    # Check username uniqueness
+    if db.get_user_by_username(body.username):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="That username is already taken. Please choose another."
+        )
     hashed = auth_utils.hash_password(body.password)
-    user   = db.create_user(body.username, body.email, hashed)
-    token  = auth_utils.create_token(user["id"], user["username"])
+    try:
+        user = db.create_user(body.username, body.email, hashed)
+    except ValueError as e:
+        msg = str(e)
+        if msg == "username_taken":
+            raise HTTPException(status_code=409, detail="That username is already taken.")
+        if msg == "email_taken":
+            raise HTTPException(status_code=409, detail="An account with this email already exists.")
+        raise HTTPException(status_code=400, detail="Signup failed. Please try again.")
+    token = auth_utils.create_token(user["id"], user["username"])
     return {
         "token": token,
         "user": {
