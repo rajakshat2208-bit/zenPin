@@ -71,15 +71,10 @@ load_dotenv()
 #   Production: BASE_URL=https://zenpin-api.onrender.com
 BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
 
-# FIX 2: CORS origins from env var — one change in .env covers everything.
-# Set in .env:
-#   Production: CORS_ORIGINS=https://rajakshat2208-bit.github.io,https://zenpin.vercel.app
-#   Local dev:  CORS_ORIGINS=*
-_raw_origins = os.getenv(
-    "CORS_ORIGINS",
-    "https://rajakshat2208-bit.github.io,https://zenpin.vercel.app,http://localhost:5500,http://127.0.0.1:5500"
-)
-CORS_ORIGINS = [o.strip() for o in _raw_origins.split(",") if o.strip()]
+# CORS — allow all origins so GitHub Pages, localhost, and any
+# other frontend can always reach the API without CORS errors.
+# Safe for ZenPin because private actions are protected by JWT tokens.
+CORS_ORIGINS = ["*"]
 
 UPLOAD_DIR          = os.getenv("UPLOAD_DIR", "uploads")
 MAX_UPLOAD_MB       = int(os.getenv("MAX_UPLOAD_MB", "10"))
@@ -118,8 +113,8 @@ app = FastAPI(
 # FIX 2: CORS now reads from the configurable list above
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=CORS_ORIGINS,
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,  # must be False when allow_origins=["*"]
     allow_methods=["*"],
     allow_headers=["*"],
 )
