@@ -1,6 +1,13 @@
 # main.py
 # ─────────────────────────────────────────────────────────────
-# ZenPin — FastAPI Backend
+# ZenPin — FastAPI Backend  (Updated v1.1)
+#
+# Changes from v1.0:
+#   FIX 1 — Upload URL uses BASE_URL env var (not hardcoded localhost)
+#   FIX 2 — CORS origins loaded from CORS_ORIGINS env var (not hardcoded)
+#   FIX 3 — Replaced deprecated @app.on_event with lifespan context manager
+#   FIX 4 — Added Field() length/range limits on all Pydantic models
+#   FIX 5 — AI route is now async with AsyncOpenAI client (non-blocking)
 #
 # Run with:  uvicorn main:app --reload
 # Docs at:   http://localhost:8000/docs
@@ -38,8 +45,10 @@
 
 import os
 import uuid
+import json
 import random
 from typing import Optional
+from contextlib import asynccontextmanager          # FIX 3
 
 from fastapi import (
     FastAPI, HTTPException, Depends, UploadFile, File,
@@ -47,8 +56,7 @@ from fastapi import (
 )
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import JSONResponse
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field    # FIX 4 — added Field
 from dotenv import load_dotenv
 
 import database as db
@@ -56,87 +64,116 @@ import auth as auth_utils
 
 load_dotenv()
 
+# ── Environment config ────────────────────────────────────────
+# FIX 1: BASE_URL drives all upload URLs — no more hardcoded localhost.
+# Set in .env:
+#   Local:      BASE_URL=http://localhost:8000
+#   Production: BASE_URL=https://zenpin-api.onrender.com
+BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
+
+# FIX 2: CORS origins from env var — one change in .env covers everything.
+# Set in .env:
+#   Production: CORS_ORIGINS=https://rajakshat2208-bit.github.io,https://zenpin.vercel.app
+#   Local dev:  CORS_ORIGINS=*
+_raw_origins = os.getenv(
+    "CORS_ORIGINS",
+    "https://rajakshat2208-bit.github.io,https://zenpin.vercel.app,http://localhost:5500,http://127.0.0.1:5500"
+)
+CORS_ORIGINS = [o.strip() for o in _raw_origins.split(",") if o.strip()]
+
+UPLOAD_DIR          = os.getenv("UPLOAD_DIR", "uploads")
+MAX_UPLOAD_MB       = int(os.getenv("MAX_UPLOAD_MB", "10"))
+ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+
+
+# ── FIX 3: lifespan replaces deprecated @app.on_event("startup") ─────────────
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Runs once before the server starts accepting requests
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    db.init_db()
+    db.seed_demo_ideas()
+    print("🚀 ZenPin API is live")
+    print(f"   BASE_URL   : {BASE_URL}")
+    print(f"   CORS       : {CORS_ORIGINS}")
+    print(f"   Upload dir : {UPLOAD_DIR}")
+    print("📖 Interactive docs at /docs")
+    yield
+    # Code after yield runs on shutdown (add cleanup here if needed)
+
+
 # ── App setup ─────────────────────────────────────────────────
 app = FastAPI(
     title="ZenPin API",
     description="Backend for ZenPin — the creative idea discovery platform.",
-    version="1.0.0",
+    version="1.1.0",
+    lifespan=lifespan,   # FIX 3
 )
 
-# CORS — allows your frontend (opened as a local file or different port) to talk to the API.
+# FIX 2: CORS now reads from the configurable list above
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://rajakshat2208-bit.github.io",
-        "https://zenpin.vercel.app",
-        "http://localhost:5500",
-        "http://127.0.0.1:5500"
-    ],
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # Serve uploaded images at /uploads/filename.jpg
-UPLOAD_DIR = os.getenv("UPLOAD_DIR", "uploads")
-os.makedirs(UPLOAD_DIR, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
-
-MAX_UPLOAD_MB = int(os.getenv("MAX_UPLOAD_MB", "10"))
-ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
-
-
-# ── Startup ───────────────────────────────────────────────────
-@app.on_event("startup")
-def startup():
-    db.init_db()
-    db.seed_demo_ideas()
-    print("🚀 ZenPin API running at http://localhost:8000")
-    print("📖 API docs at        http://localhost:8000/docs")
 
 
 # ── Health check ──────────────────────────────────────────────
 @app.get("/", tags=["Health"])
 def root():
-    return {"status": "ok", "app": "ZenPin API", "version": "1.0.0"}
+    return {"status": "ok", "app": "ZenPin API", "version": "1.1.0"}
 
 
 # ══════════════════════════════════════════════════════════════
-# PYDANTIC MODELS — these define what shape the request/response JSON has.
-# FastAPI validates input automatically against these models.
+# PYDANTIC MODELS
+# FIX 4: Every field now has explicit length limits and value ranges.
+#        FastAPI automatically returns a 422 error for invalid input.
 # ══════════════════════════════════════════════════════════════
 
 class SignupRequest(BaseModel):
-    username: str
-    email: EmailStr
-    password: str
+    username: str      = Field(..., min_length=2,  max_length=30,
+                               description="2 to 30 characters")
+    email:    EmailStr
+    password: str      = Field(..., min_length=8,  max_length=100,
+                               description="Minimum 8 characters")
+
 
 class LoginRequest(BaseModel):
-    email: EmailStr
-    password: str
+    email:    EmailStr
+    password: str = Field(..., min_length=1, max_length=100)
+
 
 class UpdateProfileRequest(BaseModel):
-    bio: Optional[str] = None
+    bio: Optional[str] = Field(None, max_length=300)
+
 
 class CreateIdeaRequest(BaseModel):
-    title: str
-    description: Optional[str] = ""
-    category: str
-    image_url: str
-    difficulty: Optional[int] = 3
-    creativity: Optional[int] = 3
-    usefulness: Optional[int] = 3
+    title:       str           = Field(..., min_length=1,  max_length=120)
+    description: Optional[str] = Field("",  max_length=1000)
+    category:    str           = Field(..., min_length=1,  max_length=50)
+    image_url:   str           = Field(..., min_length=5,  max_length=500)
+    difficulty:  Optional[int] = Field(3,   ge=1, le=5)
+    creativity:  Optional[int] = Field(3,   ge=1, le=5)
+    usefulness:  Optional[int] = Field(3,   ge=1, le=5)
+
 
 class CreateBoardRequest(BaseModel):
-    name: str
-    description: Optional[str] = ""
-    is_collab: Optional[bool] = False
+    name:        str           = Field(..., min_length=1, max_length=80)
+    description: Optional[str] = Field("",  max_length=300)
+    is_collab:   Optional[bool] = False
+
 
 class AddToBoardRequest(BaseModel):
-    idea_id: int
+    idea_id: int = Field(..., gt=0)
+
 
 class AIGenerateRequest(BaseModel):
-    topic: str
+    topic: str = Field(..., min_length=1, max_length=200)
 
 
 # ══════════════════════════════════════════════════════════════
@@ -149,16 +186,14 @@ def signup(body: SignupRequest):
     Create a new account.
     Returns the user object + a JWT token so they're logged in immediately.
     """
-    # Check if email already used
     if db.get_user_by_email(body.email):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="An account with this email already exists."
         )
-    # Hash the password — NEVER store plain text passwords
     hashed = auth_utils.hash_password(body.password)
-    user = db.create_user(body.username, body.email, hashed)
-    token = auth_utils.create_token(user["id"], user["username"])
+    user   = db.create_user(body.username, body.email, hashed)
+    token  = auth_utils.create_token(user["id"], user["username"])
     return {
         "token": token,
         "user": {
@@ -185,10 +220,10 @@ def login(body: LoginRequest):
     return {
         "token": token,
         "user": {
-            "id":       user["id"],
-            "username": user["username"],
-            "email":    user["email"],
-            "bio":      user["bio"],
+            "id":         user["id"],
+            "username":   user["username"],
+            "email":      user["email"],
+            "bio":        user["bio"],
             "avatar_url": user["avatar_url"],
         }
     }
@@ -208,7 +243,7 @@ def get_me(current_user: dict = Depends(auth_utils.get_current_user)):
 
 @app.patch("/auth/me", tags=["Auth"])
 def update_profile(
-    body: UpdateProfileRequest,
+    body:         UpdateProfileRequest,
     current_user: dict = Depends(auth_utils.get_current_user)
 ):
     """Update your bio."""
@@ -222,11 +257,14 @@ def update_profile(
 
 @app.get("/ideas", tags=["Ideas"])
 def list_ideas(
-    category: Optional[str] = Query(None, description="Filter by category name"),
-    search:   Optional[str] = Query(None, description="Search title or category"),
-    sort:     Optional[str] = Query("newest", description="newest | saves | trending"),
-    limit:    int           = Query(20, ge=1, le=100),
-    offset:   int           = Query(0,  ge=0),
+    category:     Optional[str]  = Query(None, max_length=50,
+                                         description="Filter by category name"),
+    search:       Optional[str]  = Query(None, max_length=100,
+                                         description="Search title or category"),
+    sort:         Optional[str]  = Query("newest",
+                                         description="newest | saves | trending"),
+    limit:        int            = Query(20, ge=1, le=100),
+    offset:       int            = Query(0,  ge=0),
     current_user: Optional[dict] = Depends(auth_utils.get_optional_user),
 ):
     """
@@ -237,11 +275,13 @@ def list_ideas(
       GET /ideas?category=Architecture   → filtered by category
       GET /ideas?search=japandi          → keyword search
       GET /ideas?sort=trending&limit=10  → top 10 trending
-      GET /ideas?limit=20&offset=20      → second page
+      GET /ideas?limit=20&offset=20      → second page (pagination)
     """
-    ideas = db.get_ideas(category=category, search=search, sort=sort, limit=limit, offset=offset)
+    ideas = db.get_ideas(
+        category=category, search=search, sort=sort, limit=limit, offset=offset
+    )
 
-    # If user is logged in, mark which ones they've saved/liked
+    # Mark saved/liked status for logged-in users
     saves = db.get_user_saves_set(current_user["id"]) if current_user else set()
     likes = db.get_user_likes_set(current_user["id"]) if current_user else set()
 
@@ -254,7 +294,7 @@ def list_ideas(
 
 @app.get("/ideas/{idea_id}", tags=["Ideas"])
 def get_idea(
-    idea_id: int,
+    idea_id:      int,
     current_user: Optional[dict] = Depends(auth_utils.get_optional_user),
 ):
     """Get a single idea by ID."""
@@ -271,7 +311,7 @@ def get_idea(
 
 @app.post("/ideas", tags=["Ideas"], status_code=201)
 def create_idea(
-    body: CreateIdeaRequest,
+    body:         CreateIdeaRequest,
     current_user: dict = Depends(auth_utils.get_current_user),
 ):
     """Post a new idea. Requires login."""
@@ -290,10 +330,10 @@ def create_idea(
 
 @app.delete("/ideas/{idea_id}", tags=["Ideas"])
 def delete_idea(
-    idea_id: int,
+    idea_id:      int,
     current_user: dict = Depends(auth_utils.get_current_user),
 ):
-    """Delete one of your ideas. Requires login. Returns 404 if not yours."""
+    """Delete one of your ideas. Returns 404 if not found or not yours."""
     deleted = db.delete_idea(idea_id, current_user["id"])
     if not deleted:
         raise HTTPException(status_code=404, detail="Idea not found or not yours.")
@@ -306,12 +346,12 @@ def delete_idea(
 
 @app.post("/ideas/{idea_id}/save", tags=["Social"])
 def toggle_save(
-    idea_id: int,
+    idea_id:      int,
     current_user: dict = Depends(auth_utils.get_current_user),
 ):
     """
     Toggle save on an idea.
-    First call → saves it (returns saved: true).
+    First call  → saves it   (returns saved: true).
     Second call → unsaves it (returns saved: false).
     """
     idea = db.get_idea_by_id(idea_id)
@@ -324,7 +364,7 @@ def toggle_save(
 
 @app.post("/ideas/{idea_id}/like", tags=["Social"])
 def toggle_like(
-    idea_id: int,
+    idea_id:      int,
     current_user: dict = Depends(auth_utils.get_current_user),
 ):
     """Toggle like on an idea."""
@@ -338,7 +378,7 @@ def toggle_like(
 
 @app.get("/users/{user_id}/saves", tags=["Social"])
 def get_saved_ideas(
-    user_id: int,
+    user_id:      int,
     current_user: dict = Depends(auth_utils.get_current_user),
 ):
     """Get all ideas a user has saved. Must be your own account."""
@@ -359,7 +399,7 @@ def get_my_boards(current_user: dict = Depends(auth_utils.get_current_user)):
 
 @app.post("/boards", tags=["Boards"], status_code=201)
 def create_board(
-    body: CreateBoardRequest,
+    body:         CreateBoardRequest,
     current_user: dict = Depends(auth_utils.get_current_user),
 ):
     """Create a new board."""
@@ -374,8 +414,8 @@ def create_board(
 
 @app.post("/boards/{board_id}/ideas", tags=["Boards"])
 def add_to_board(
-    board_id: int,
-    body: AddToBoardRequest,
+    board_id:     int,
+    body:         AddToBoardRequest,
     current_user: dict = Depends(auth_utils.get_current_user),
 ):
     """Add an idea to one of your boards."""
@@ -391,78 +431,77 @@ def add_to_board(
 
 @app.post("/upload", tags=["Upload"])
 async def upload_image(
-    file: UploadFile = File(...),
-    current_user: dict = Depends(auth_utils.get_current_user),
+    file:         UploadFile = File(...),
+    current_user: dict       = Depends(auth_utils.get_current_user),
 ):
     """
     Upload an image file.
     Returns the URL you can use in create_idea's image_url field.
 
-    Accepted types: JPEG, PNG, WebP, GIF
-    Max size: 10 MB (configurable in .env)
+    Accepted: JPEG, PNG, WebP, GIF
+    Max size: 10 MB (set MAX_UPLOAD_MB in .env to change)
     """
-    # Check file type
+    # Validate content type
     if file.content_type not in ALLOWED_IMAGE_TYPES:
         raise HTTPException(
             status_code=400,
             detail=f"File type '{file.content_type}' not allowed. Use JPEG, PNG, WebP, or GIF."
         )
 
-    # Read file and check size
+    # Read and check size
     contents = await file.read()
-    size_mb = len(contents) / (1024 * 1024)
+    size_mb  = len(contents) / (1024 * 1024)
     if size_mb > MAX_UPLOAD_MB:
         raise HTTPException(
             status_code=400,
             detail=f"File too large ({size_mb:.1f} MB). Max allowed: {MAX_UPLOAD_MB} MB."
         )
 
-    # Save with a unique filename to avoid collisions
-    ext      = file.filename.rsplit(".", 1)[-1].lower()
+    # Save with unique filename to prevent collisions
+    ext      = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else "jpg"
     filename = f"{uuid.uuid4().hex}.{ext}"
     filepath = os.path.join(UPLOAD_DIR, filename)
 
     with open(filepath, "wb") as f:
         f.write(contents)
 
-    image_url = f"http://localhost:8000/uploads/{filename}"
+    # FIX 1: BASE_URL from env — correct URL on both localhost and Render
+    image_url = f"{BASE_URL}/uploads/{filename}"
     return {"url": image_url, "filename": filename}
 
 
 # ══════════════════════════════════════════════════════════════
 # AI GENERATION ROUTE
+# FIX 5: async def + AsyncOpenAI — server stays responsive while
+#        waiting for OpenAI's response (typically 2–3 seconds).
 # ══════════════════════════════════════════════════════════════
 
 @app.post("/ai/generate", tags=["AI"])
-def ai_generate(
-    body: AIGenerateRequest,
+async def ai_generate(                             # FIX 5 — async def
+    body:         AIGenerateRequest,
     current_user: dict = Depends(auth_utils.get_current_user),
 ):
     """
     Generate an inspiration board from a topic.
 
-    If OPENAI_API_KEY is set in .env → uses real GPT-4o to pick ideas + write descriptions.
-    If not set → uses the built-in mock generator (still works great for demo).
+    With OPENAI_API_KEY in .env  → uses real GPT-4o-mini.
+    Without OPENAI_API_KEY       → uses keyword-matching mock (still works great).
     """
-    topic = body.topic.strip()
-    if not topic:
-        raise HTTPException(status_code=400, detail="Topic cannot be empty.")
-
+    topic      = body.topic.strip()
     openai_key = os.getenv("OPENAI_API_KEY", "")
 
     # ── Real OpenAI path ──────────────────────────────────────
     if openai_key:
         try:
-            from openai import OpenAI
-            client = OpenAI(api_key=openai_key)
+            from openai import AsyncOpenAI            # FIX 5 — async client
+            client = AsyncOpenAI(api_key=openai_key)
 
-            # Ask GPT to recommend categories and ideas from our database
             all_ideas = db.get_ideas(limit=100)
             idea_list = "\n".join(
                 f"{i['id']}. {i['title']} ({i['category']})" for i in all_ideas
             )
 
-            response = client.chat.completions.create(
+            response = await client.chat.completions.create(  # FIX 5 — await
                 model="gpt-4o-mini",
                 messages=[
                     {
@@ -484,14 +523,12 @@ def ai_generate(
                 temperature=0.7,
             )
 
-            import json
-            raw = response.choices[0].message.content.strip()
-            # Strip markdown code fences if present
-            raw = raw.replace("```json", "").replace("```", "").strip()
+            raw    = response.choices[0].message.content.strip()
+            raw    = raw.replace("```json", "").replace("```", "").strip()
             result = json.loads(raw)
 
             selected = [db.get_idea_by_id(i) for i in result.get("idea_ids", [])]
-            selected = [i for i in selected if i]  # filter None
+            selected = [i for i in selected if i]   # remove any None results
 
             return {
                 "topic":       topic,
@@ -501,34 +538,33 @@ def ai_generate(
             }
 
         except Exception as e:
-            # If OpenAI fails, fall through to mock
-            print(f"⚠️  OpenAI error, using mock: {e}")
+            # Any OpenAI failure → fall through to mock below
+            print(f"⚠️  OpenAI error, using mock generator: {e}")
 
     # ── Mock path (no API key needed) ─────────────────────────
     all_ideas = db.get_ideas(limit=100)
 
-    # Try keyword matching first
     keywords = topic.lower().split()
     KEYWORD_MAP = {
-        "wabi":        ["Interior Design", "Nature", "Art"],
-        "japandi":     ["Interior Design", "Workspace"],
-        "cyber":       ["Tech", "Architecture", "Art"],
-        "minimal":     ["Workspace", "Interior Design", "Architecture"],
-        "cottage":     ["Nature", "Food", "Travel"],
-        "brutal":      ["Architecture", "Art"],
-        "pastel":      ["Fashion", "Food", "Art"],
-        "nature":      ["Nature", "Travel"],
-        "food":        ["Food"],
-        "fashion":     ["Fashion"],
-        "travel":      ["Travel"],
-        "tech":        ["Tech"],
-        "art":         ["Art"],
-        "interior":    ["Interior Design"],
-        "workspace":   ["Workspace"],
-        "office":      ["Workspace", "Tech"],
-        "kitchen":     ["Food", "Interior Design"],
-        "garden":      ["Nature"],
-        "modern":      ["Architecture", "Interior Design", "Workspace"],
+        "wabi":      ["Interior Design", "Nature", "Art"],
+        "japandi":   ["Interior Design", "Workspace"],
+        "cyber":     ["Tech", "Architecture", "Art"],
+        "minimal":   ["Workspace", "Interior Design", "Architecture"],
+        "cottage":   ["Nature", "Food", "Travel"],
+        "brutal":    ["Architecture", "Art"],
+        "pastel":    ["Fashion", "Food", "Art"],
+        "nature":    ["Nature", "Travel"],
+        "food":      ["Food"],
+        "fashion":   ["Fashion"],
+        "travel":    ["Travel"],
+        "tech":      ["Tech"],
+        "art":       ["Art"],
+        "interior":  ["Interior Design"],
+        "workspace": ["Workspace"],
+        "office":    ["Workspace", "Tech"],
+        "kitchen":   ["Food", "Interior Design"],
+        "garden":    ["Nature"],
+        "modern":    ["Architecture", "Interior Design", "Workspace"],
     }
 
     target_cats = []
@@ -538,10 +574,12 @@ def ai_generate(
                 target_cats.extend(cats)
 
     if target_cats:
-        filtered = [i for i in all_ideas if i["category"] in target_cats]
-        selected = filtered[:6] if len(filtered) >= 6 else filtered + random.sample(
-            [i for i in all_ideas if i not in filtered],
-            min(6 - len(filtered), len(all_ideas) - len(filtered))
+        filtered  = [i for i in all_ideas if i["category"] in target_cats]
+        remainder = [i for i in all_ideas if i not in filtered]
+        needed    = max(0, 6 - len(filtered))
+        selected  = (
+            filtered[:6] if len(filtered) >= 6
+            else filtered + random.sample(remainder, min(needed, len(remainder)))
         )
     else:
         selected = random.sample(all_ideas, min(6, len(all_ideas)))
