@@ -52,6 +52,8 @@ const API = (() => {
 
     const config = {
       method,
+      mode: "cors",
+      credentials: "omit",
       headers,
       body: body
         ? isForm
