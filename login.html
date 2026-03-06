@@ -280,6 +280,8 @@
     try {
       const res = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
+        mode: "cors",
+        credentials: "omit",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
@@ -299,7 +301,7 @@
       window.location.href = next || "index.html";
 
     } catch (err) {
-      setError("Could not reach the server. Check your connection.");
+      setError("Error: " + (err.message || "Could not reach server. Open F12 Console for details.")); console.error("Login error:", err);
     } finally {
       btn.classList.remove("loading"); btn.disabled = false;
     }
