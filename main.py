@@ -11,8 +11,12 @@ import auth as auth_utils
 
 load_dotenv()
 
+# Create uploads dir immediately — must exist before StaticFiles mounts
+_upload_dir = os.getenv("UPLOAD_DIR", "uploads")
+os.makedirs(_upload_dir, exist_ok=True)
+
 BASE_URL   = os.getenv("BASE_URL", "http://localhost:8000")
-UPLOAD_DIR = os.getenv("UPLOAD_DIR", "uploads")
+UPLOAD_DIR = _upload_dir
 MAX_UPLOAD_MB = int(os.getenv("MAX_UPLOAD_MB", "10"))
 ALLOWED_IMAGE_TYPES = {"image/jpeg","image/png","image/webp","image/gif"}
 
@@ -25,7 +29,7 @@ async def lifespan(app: FastAPI):
     print("ZenPin API v1.3 is live")
     yield
 
-app = FastAPI(title="ZenPin API", version="1.3.0", lifespan=lifespan)
+app = FastAPI(title="ZenPin API", version="1.3.1", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -39,7 +43,7 @@ app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 @app.get("/")
 def root():
-    return {"status": "ok", "app": "ZenPin API", "version": "1.3.0", "cors": "open"}
+    return {"status": "ok", "app": "ZenPin API", "version": "1.3.1", "version": "1.3.1", "cors": "open", "ai": "public"}
 
 class SignupRequest(BaseModel):
     username: str      = Field(..., min_length=2, max_length=30)
@@ -195,7 +199,7 @@ async def upload_image(file: UploadFile = File(...), current_user: dict = Depend
     return {"url": f"{BASE_URL}/uploads/{filename}", "filename": filename}
 
 @app.post("/ai/generate")
-async def ai_generate(body: AIGenerateRequest, current_user: dict = Depends(auth_utils.get_current_user)):
+async def ai_generate(body: AIGenerateRequest, current_user: Optional[dict] = Depends(auth_utils.get_optional_user)):
     topic = body.topic.strip()
     openai_key = os.getenv("OPENAI_API_KEY","")
     if openai_key:
