@@ -85,12 +85,17 @@ UPLOAD_DIR          = os.getenv("UPLOAD_DIR", "uploads")
 MAX_UPLOAD_MB       = int(os.getenv("MAX_UPLOAD_MB", "10"))
 ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 
+# ── Create uploads folder immediately at import time ─────────
+# IMPORTANT: This must happen before app = FastAPI() because
+# StaticFiles(directory=UPLOAD_DIR) mounts at startup and will
+# raise RuntimeError if the folder doesn't exist yet.
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
 
 # ── FIX 3: lifespan replaces deprecated @app.on_event("startup") ─────────────
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Runs once before the server starts accepting requests
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
     db.init_db()
     db.seed_demo_ideas()
     print("🚀 ZenPin API is live")
