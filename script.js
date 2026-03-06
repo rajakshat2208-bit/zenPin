@@ -614,8 +614,6 @@ async function initAI() {
 }
 
 async function runAI() {
-  if (!requireLogin("Sign in to use the AI generator")) return;
-
   const topic = $("aiInput")?.value.trim();
   if (!topic) { $("aiInput")?.focus(); return; }
 
