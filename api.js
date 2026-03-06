@@ -1,20 +1,20 @@
 // api.js
 // ─────────────────────────────────────────────────────────────
 // All API calls from ZenPin frontend → FastAPI backend.
-//
-// HOW TO USE IN script.js:
-//   const ideas = await API.getIdeas({ category: "Art" });
-//   const { token } = await API.login("me@email.com", "password");
-//
-// TOKEN STORAGE:
-//   Token is stored in memory (API.token).
-//   On page load we check localStorage as a fallback so users
-//   stay logged in after refresh.
 // ─────────────────────────────────────────────────────────────
 
 const API = (() => {
 
-  const BASE = "http://localhost:8000";
+  // ✅ FIXED: was "http://localhost:8000" — that only works on your own
+  // computer. Everyone else's browser tried to reach localhost on THEIR
+  // machine, which doesn't exist → "Could not reach the server".
+  const BASE = "https://zenpin-api.onrender.com";
+
+  // Wake up Render free tier immediately on page load.
+  // Render free services sleep after 15 min of inactivity.
+  // This silent ping starts the wake-up so the first real API
+  // call doesn't have to wait 30 seconds.
+  fetch(BASE + "/").catch(() => {});
 
   // ── Token management ────────────────────────────────────────
   let _token = localStorage.getItem("zenpin_token") || null;
@@ -34,12 +34,11 @@ const API = (() => {
     localStorage.removeItem("zenpin_user");
   }
 
-  function getUser()  { return _user; }
-  function getToken() { return _token; }
+  function getUser()    { return _user; }
+  function getToken()   { return _token; }
   function isLoggedIn() { return !!_token; }
 
   // ── Core fetch wrapper ───────────────────────────────────────
-  // Adds auth header, parses JSON, throws on error.
   async function request(method, path, body = null, isForm = false) {
     const headers = {};
 
@@ -56,14 +55,13 @@ const API = (() => {
       headers,
       body: body
         ? isForm
-          ? body                          // FormData — don't JSON.stringify
+          ? body
           : JSON.stringify(body)
         : undefined,
     };
 
     const res = await fetch(`${BASE}${path}`, config);
 
-    // Parse JSON even for errors (FastAPI returns error details as JSON)
     const data = await res.json().catch(() => ({}));
 
     if (!res.ok) {
@@ -111,8 +109,8 @@ const API = (() => {
   async function getIdeas({ category, search, sort, limit = 20, offset = 0 } = {}) {
     const params = new URLSearchParams();
     if (category && category !== "all") params.set("category", category);
-    if (search)  params.set("search",   search);
-    if (sort)    params.set("sort",     sort);
+    if (search)  params.set("search",  search);
+    if (sort)    params.set("sort",    sort);
     params.set("limit",  limit);
     params.set("offset", offset);
     return request("GET", `/ideas?${params}`);
@@ -189,38 +187,12 @@ const API = (() => {
   // PUBLIC API
   // ══════════════════════════════════════════════════════════
   return {
-    // Auth state
-    isLoggedIn,
-    getUser,
-    getToken,
-    logout,
-
-    // Auth routes
-    signup,
-    login,
-    getMe,
-    updateProfile,
-
-    // Ideas
-    getIdeas,
-    getIdea,
-    createIdea,
-    deleteIdea,
-
-    // Social
-    toggleSave,
-    toggleLike,
-    getSavedIdeas,
-
-    // Boards
-    getBoards,
-    createBoard,
-    addToBoard,
-
-    // Upload
+    isLoggedIn, getUser, getToken, logout,
+    signup, login, getMe, updateProfile,
+    getIdeas, getIdea, createIdea, deleteIdea,
+    toggleSave, toggleLike, getSavedIdeas,
+    getBoards, createBoard, addToBoard,
     uploadImage,
-
-    // AI
     generateBoard,
   };
 })();
