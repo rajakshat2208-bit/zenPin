@@ -1,6 +1,6 @@
 # main.py
 # ─────────────────────────────────────────────────────────────
-# ZenPin — FastAPI Backend  (Updated v1.1)
+# ZenPin — FastAPI Backend  (Updated v1.2)
 #
 # Changes from v1.0:
 #   FIX 1 — Upload URL uses BASE_URL env var (not hardcoded localhost)
@@ -106,7 +106,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="ZenPin API",
     description="Backend for ZenPin — the creative idea discovery platform.",
-    version="1.1.0",
+    version="1.2.0",
     lifespan=lifespan,   # FIX 3
 )
 
@@ -126,7 +126,7 @@ app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 # ── Health check ──────────────────────────────────────────────
 @app.get("/", tags=["Health"])
 def root():
-    return {"status": "ok", "app": "ZenPin API", "version": "1.1.0"}
+    return {"status": "ok", "app": "ZenPin API", "version": "1.2.0"}
 
 
 # ══════════════════════════════════════════════════════════════
