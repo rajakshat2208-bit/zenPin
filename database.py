@@ -520,56 +520,73 @@ def seed_demo_ideas():
 
         demo = [
             # Interior Design
-            ("Japandi Living Room Refresh",     "Interior Design", "https://images.unsplash.com/photo-1705321963943-de94bb3f0dd3?w=500&q=80", 3,5,4),
-            ("Wabi-Sabi Earthy Bedroom",        "Interior Design", "https://images.unsplash.com/photo-1553361371-9b22f78e8b1d?w=500&q=80",   3,5,4),
-            ("Curved Plaster Arch Alcove",      "Interior Design", "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=500&q=80", 5,5,3),
+            ("Japandi Living Room Refresh",       "Interior Design",     "https://picsum.photos/seed/int1/500/700",  3,5,4),
+            ("Wabi-Sabi Earthy Bedroom",          "Interior Design",     "https://picsum.photos/seed/int2/500/720",  3,5,4),
+            ("Curved Plaster Arch Alcove",        "Interior Design",     "https://picsum.photos/seed/int3/500/680",  5,5,3),
+            ("Boho Living Space",                 "Interior Design",     "https://picsum.photos/seed/int7/500/740",  2,4,4),
             # Workspace
-            ("Minimal Oak Desk Setup",          "Workspace",       "https://images.unsplash.com/photo-1644337540803-2b2fb3cebf12?w=500&q=80", 2,4,5),
-            ("Terracotta Ceramic Desk Accents", "Workspace",       "https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=500&q=80",   2,4,4),
+            ("Minimal Oak Desk Setup",            "Workspace",           "https://picsum.photos/seed/work1/500/700", 2,4,5),
+            ("Terracotta Desk Accents",           "Workspace",           "https://picsum.photos/seed/work2/500/720", 2,4,4),
+            ("Dual Monitor Battlestation",        "Workspace",           "https://picsum.photos/seed/work3/500/680", 3,4,5),
             # Architecture
-            ("Brutalist Concrete Staircase",    "Architecture",    "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=500&q=80",   4,5,2),
-            ("Glass Tower Blue Hour",           "Architecture",    "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=500&q=80", 2,5,2),
+            ("Brutalist Concrete Staircase",      "Architecture",        "https://picsum.photos/seed/arch1/500/700", 4,5,2),
+            ("Glass Tower Blue Hour",             "Architecture",        "https://picsum.photos/seed/arch2/500/750", 2,5,2),
+            ("Spiral Staircase Detail",           "Architecture",        "https://picsum.photos/seed/arch7/500/700", 3,5,2),
             # Art
-            ("Generative Geometry Study #12",   "Art",             "https://images.unsplash.com/photo-1476357471311-43c0db9fb2b4?w=500&q=80", 3,5,2),
-            ("Ink Wash on Rice Paper",          "Art",             "https://images.unsplash.com/photo-1487014679447-9f8336841d58?w=500&q=80", 4,5,2),
+            ("Generative Geometry Study",         "Art",                 "https://picsum.photos/seed/art1/500/700",  3,5,2),
+            ("Ink Wash on Rice Paper",            "Art",                 "https://picsum.photos/seed/art2/500/750",  4,5,2),
+            ("Watercolour Botanical",             "Art",                 "https://picsum.photos/seed/art4/500/720",  3,4,3),
             # Nature
-            ("Ice Crystal Macro Study",         "Nature",          "https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=500&q=80", 3,5,2),
-            ("Desert Dunes Golden Hour",        "Nature",          "https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=500&q=80", 1,4,2),
+            ("Ice Crystal Macro Study",           "Nature",              "https://picsum.photos/seed/nat1/500/700",  3,5,2),
+            ("Desert Dunes Golden Hour",          "Nature",              "https://picsum.photos/seed/nat2/500/720",  1,4,2),
+            ("Wildflower Meadow",                 "Nature",              "https://picsum.photos/seed/nat4/500/700",  1,4,3),
             # Food
-            ("Sourdough Scoring Patterns",      "Food",            "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=500&q=80", 3,4,5),
-            ("Japanese Breakfast Bird's Eye",   "Food",            "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=500&q=80", 2,4,5),
+            ("Sourdough Scoring Patterns",        "Food",                "https://picsum.photos/seed/food1/500/700", 3,4,5),
+            ("Japanese Breakfast Bird's Eye",     "Food",                "https://picsum.photos/seed/food2/500/720", 2,4,5),
+            ("Matcha Latte Art",                  "Food",                "https://picsum.photos/seed/food4/500/700", 1,4,4),
             # Fashion
-            ("Textural Linen Layering",         "Fashion",         "https://images.unsplash.com/photo-1543966888-7c1dc482a810?w=500&q=80",   2,4,3),
-            ("Monochrome Editorial in Fog",     "Fashion",         "https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?w=500&q=80", 3,5,2),
+            ("Textural Linen Layering",           "Fashion",             "https://picsum.photos/seed/fash1/500/700", 2,4,3),
+            ("Monochrome Editorial in Fog",       "Fashion",             "https://picsum.photos/seed/fash2/500/750", 3,5,2),
+            ("Street Style Moment",               "Fashion",             "https://picsum.photos/seed/fash3/500/680", 2,4,3),
             # Travel
-            ("Fjord Ferry Crossing at Dusk",    "Travel",          "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=500&q=80", 1,5,3),
-            ("Narrow Streets of Old Lisbon",    "Travel",          "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=500&q=80",   1,4,3),
-            ("Salt Flats Mirror at Sunset",     "Travel",          "https://images.unsplash.com/photo-1532274402911-5a369e4c4bb5?w=500&q=80", 1,5,2),
+            ("Fjord Ferry Crossing at Dusk",      "Travel",              "https://picsum.photos/seed/trav1/500/700", 1,5,3),
+            ("Narrow Streets of Old Lisbon",      "Travel",              "https://picsum.photos/seed/trav2/500/720", 1,4,3),
+            ("Salt Flats Mirror at Sunset",       "Travel",              "https://picsum.photos/seed/trav3/500/680", 1,5,2),
+            ("Bali Rice Terraces",                "Travel",              "https://picsum.photos/seed/trav5/500/760", 1,4,3),
             # Tech
-            ("Circuit Board Abstraction",       "Tech",            "https://images.unsplash.com/photo-1518770660439-4636190af475?w=500&q=80", 4,4,4),
-            ("LED Neon Sign Workshop",          "Tech",            "https://images.unsplash.com/photo-1461695008884-244cb4543d74?w=500&q=80", 4,5,3),
-            # NEW CATEGORIES
+            ("Circuit Board Abstraction",         "Tech",                "https://picsum.photos/seed/tech1/500/700", 4,4,4),
+            ("LED Neon Sign Workshop",            "Tech",                "https://picsum.photos/seed/tech2/500/720", 4,5,3),
             # Anime
-            ("Cyberpunk Anime Cityscape",       "Anime",           "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=500&q=80", 2,5,3),
-            ("Aesthetic Anime Room Setup",      "Anime",           "https://images.unsplash.com/photo-1560169897-fc0cdbdfa4d5?w=500&q=80",   1,5,3),
+            ("Cyberpunk Anime Cityscape",         "Anime",               "https://picsum.photos/seed/anime1/500/700",2,5,3),
+            ("Aesthetic Anime Room Setup",        "Anime",               "https://picsum.photos/seed/anime8/500/700",1,5,3),
+            ("Neon City Vibes",                   "Anime",               "https://picsum.photos/seed/anime2/500/750",2,5,3),
+            ("Cherry Blossom Avenue",             "Anime",               "https://picsum.photos/seed/anime6/500/700",1,4,3),
             # Cars
-            ("Supercar Street Photography",     "Cars",            "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=500&q=80", 2,5,4),
-            ("Classic Car Garage Aesthetic",    "Cars",            "https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=500&q=80", 2,4,3),
+            ("Supercar Street Photography",       "Cars",                "https://picsum.photos/seed/car1/500/700",  2,5,4),
+            ("Classic Car Garage Aesthetic",      "Cars",                "https://picsum.photos/seed/car2/500/720",  2,4,3),
+            ("Sports Car at Dusk",                "Cars",                "https://picsum.photos/seed/car3/500/680",  1,5,3),
+            ("Midnight Drive Aesthetic",          "Cars",                "https://picsum.photos/seed/car7/500/720",  1,5,3),
             # Bikes
-            ("Sports Bike at Sunset",           "Bikes",           "https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=500&q=80",   2,5,3),
-            ("Cafe Racer Custom Build",         "Bikes",           "https://images.unsplash.com/photo-1609630875171-b1321377ee65?w=500&q=80", 4,5,3),
+            ("Sports Bike at Sunset",             "Bikes",               "https://picsum.photos/seed/bike1/500/700", 2,5,3),
+            ("Cafe Racer Custom Build",           "Bikes",               "https://picsum.photos/seed/bike2/500/750", 4,5,3),
+            ("Adventure Bike Trail",              "Bikes",               "https://picsum.photos/seed/bike3/500/680", 2,4,3),
+            ("Mountain Road Ride",                "Bikes",               "https://picsum.photos/seed/bike6/500/760", 1,5,3),
             # Scenery
-            ("Mountain Lake Reflection",        "Scenery",         "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=500&q=80", 1,5,2),
-            ("Aurora Borealis Night Sky",       "Scenery",         "https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=500&q=80", 1,5,2),
+            ("Mountain Lake Reflection",          "Scenery",             "https://picsum.photos/seed/scene1/500/700",1,5,2),
+            ("Aurora Borealis Night Sky",         "Scenery",             "https://picsum.photos/seed/scene2/500/750",1,5,2),
+            ("Misty Forest Morning",              "Scenery",             "https://picsum.photos/seed/scene3/500/680",1,4,2),
+            ("Tropical Waterfall",                "Scenery",             "https://picsum.photos/seed/scene8/500/740",1,5,2),
             # Gaming
-            ("Minimal Gaming Desk Setup",       "Gaming",          "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=500&q=80",   3,5,4),
-            ("Retro Console Collection",        "Gaming",          "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=500&q=80",   2,4,4),
+            ("Minimal Gaming Desk Setup",         "Gaming",              "https://picsum.photos/seed/game1/500/700", 3,5,4),
+            ("Retro Console Collection",          "Gaming",              "https://picsum.photos/seed/game2/500/720", 2,4,4),
+            ("Neon Battlestation",                "Gaming",              "https://picsum.photos/seed/game6/500/700", 3,5,4),
             # Ladies Accessories
-            ("Colorful Glass Bangles",          "Ladies Accessories","https://images.unsplash.com/photo-1611085583191-a3b181a88401?w=500&q=80",1,5,4),
-            ("Gold Hoop Earrings",              "Ladies Accessories","https://images.unsplash.com/photo-1630019852942-f89202989a59?w=500&q=80",1,5,4),
-            ("Scrunchie Hair Collection",       "Ladies Accessories","https://images.unsplash.com/photo-1594938298603-c8148c4b4f5b?w=500&q=80",1,4,4),
-            ("Layered Gold Necklaces",          "Ladies Accessories","https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=500&q=80",1,5,4),
-            ("Stacked Bracelets Stack",         "Ladies Accessories","https://images.unsplash.com/photo-1573408301185-9519f94c9a17?w=500&q=80",1,5,4),
+            ("Colorful Glass Bangles",            "Ladies Accessories",  "https://picsum.photos/seed/acc1/500/700",  1,5,4),
+            ("Gold Hoop Earrings",                "Ladies Accessories",  "https://picsum.photos/seed/acc2/500/720",  1,5,4),
+            ("Scrunchie Hair Collection",         "Ladies Accessories",  "https://picsum.photos/seed/acc3/500/680",  1,4,4),
+            ("Layered Gold Necklaces",            "Ladies Accessories",  "https://picsum.photos/seed/acc4/500/700",  1,5,4),
+            ("Stacked Bracelets",                 "Ladies Accessories",  "https://picsum.photos/seed/acc5/500/760",  1,5,4),
+            ("Statement Rings Collection",        "Ladies Accessories",  "https://picsum.photos/seed/acc6/500/700",  1,4,4),
         ]
 
         for title, cat, img, d, cr, u in demo:
