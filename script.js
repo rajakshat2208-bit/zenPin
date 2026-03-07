@@ -164,10 +164,17 @@ function cardHTML(idea, idx) {
   const use   = idea.usefulness  || idea.use   || 3;
   const saves = (idea.saves_count || idea.saves || 0) + (saved ? 0 : 0);
 
+    const sourceBadge = idea.source === "creator"
+    ? `<div class="card-source-badge creator">Creator</div>`
+    : idea.source === "discovery"
+    ? `<div class="card-source-badge discovery">Discovery</div>`
+    : "";
+
   return `
 <div class="idea-card" data-id="${idea.id}" style="--i:${idx}">
   <div class="card-img-wrap">
     <img class="card-img" src="${idea.image_url || idea.img}" alt="${idea.title}" loading="lazy"/>
+    ${sourceBadge}
     <div class="card-static-cat">${idea.category}</div>
     <div class="card-overlay">
       <div class="card-top-row">
@@ -234,6 +241,41 @@ function go(page) {
 }
 
 // ─────────────────────────────────────────────────────────────
+// DISCOVERY — load images from external API into the feed
+// ─────────────────────────────────────────────────────────────
+
+// Map discovery images into idea-like objects for the card renderer
+function discoveryToIdeas(images, category) {
+  return images.map((img, i) => ({
+    id:          -(i + 1),          // Negative IDs = discovery (not in DB)
+    title:       img.title || category + " Inspiration",
+    image_url:   img.image_url,
+    category:    category,
+    source:      "discovery",
+    saves_count: 0,
+    likes_count: 0,
+    difficulty:  2,
+    creativity:  4,
+    usefulness:  3,
+    description: img.author ? `Photo by ${img.author}` : "",
+  }));
+}
+
+async function loadDiscoveryImages(category, page = 1) {
+  try {
+    const res = await fetch(
+      `${API_URL}/images/category?name=${encodeURIComponent(category)}&page=${page}&limit=12`,
+      { mode: "cors", credentials: "omit" }
+    );
+    const data = await res.json();
+    return discoveryToIdeas(data.images || [], category);
+  } catch (e) {
+    console.warn("Discovery load failed:", e);
+    return [];
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
 // PAGE: HOME
 // ─────────────────────────────────────────────────────────────
 async function initHome() {
@@ -245,12 +287,35 @@ async function initHome() {
 
   try {
     const params = buildParams();
-    const { ideas } = await apiFetch("GET", `/ideas?${params}`);
-    S.ideas = ideas;
-    S.allIdeas = ideas;
+
+    // Load DB ideas (creator + seeded discovery posts)
+    const { ideas: dbIdeas } = await apiFetch("GET", `/ideas?${params}`);
+
+    // If filtering by a specific category, also fetch discovery images for it
+    let discoveryIdeas = [];
+    const cat = S.filter && S.filter !== "all" ? S.filter : null;
+    if (cat) {
+      discoveryIdeas = await loadDiscoveryImages(cat);
+    }
+
+    // Merge: interleave discovery every 4th card for a mixed feel
+    const merged = [];
+    let di = 0;
+    for (let i = 0; i < dbIdeas.length; i++) {
+      merged.push(dbIdeas[i]);
+      if ((i + 1) % 4 === 0 && di < discoveryIdeas.length) {
+        merged.push(discoveryIdeas[di++]);
+      }
+    }
+    // Append remaining discovery images at the end
+    while (di < discoveryIdeas.length) merged.push(discoveryIdeas[di++]);
+
+    S.ideas = merged;
+    S.allIdeas = merged;
     applySkillFilter();
     renderGrid(grid, S.ideas);
   } catch (e) {
+    console.error("initHome error:", e);
     grid.innerHTML = `<div class="load-error">Could not load ideas. Check your connection.</div>`;
   }
 
@@ -1257,6 +1322,112 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // ── Collab chat ────────────────────────────────────────────
   setupChat();
+
+  // ── Creator Post Modal ────────────────────────────────────
+  function openCreatorPost() {
+    if (!requireLogin("Sign in to share your ideas")) return;
+    $("creatorPostModal")?.classList.add("open");
+  }
+
+  // Wire up "Create" button in navbar to open creator post modal
+  $("createPostBtn")?.addEventListener("click", openCreatorPost);
+
+  // Close handlers
+  $("creatorPostClose")?.addEventListener("click", () => $("creatorPostModal")?.classList.remove("open"));
+  $("cpCancel")?.addEventListener("click",        () => $("creatorPostModal")?.classList.remove("open"));
+  $("creatorPostModal")?.addEventListener("click", e => {
+    if (e.target === $("creatorPostModal")) $("creatorPostModal").classList.remove("open");
+  });
+
+  // Image upload area
+  $("cpUploadArea")?.addEventListener("click", () => $("cpFile")?.click());
+  $("cpFile")?.addEventListener("change", async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // Preview locally
+    const preview = $("cpPreview");
+    preview.src = URL.createObjectURL(file);
+    preview.style.display = "block";
+
+    // Upload to backend
+    const errEl = $("cpError");
+    errEl.textContent = "Uploading image…";
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const data = await apiFetch("POST", "/upload", form, true);
+      $("cpImageUrl").value = data.url;
+      errEl.textContent = "";
+    } catch (e) {
+      errEl.textContent = "Upload failed: " + e.message;
+    }
+  });
+
+  // Preview from URL
+  $("cpImageUrl")?.addEventListener("input", () => {
+    const url = $("cpImageUrl").value.trim();
+    const preview = $("cpPreview");
+    if (url.startsWith("http")) {
+      preview.src = url;
+      preview.style.display = "block";
+    }
+  });
+
+  // Submit creator post
+  $("cpSubmit")?.addEventListener("click", async () => {
+    const errEl  = $("cpError");
+    const title  = $("cpTitle")?.value.trim();
+    const cat    = $("cpCategory")?.value;
+    const imgUrl = $("cpImageUrl")?.value.trim();
+
+    if (!title)  { errEl.textContent = "Please enter a title."; return; }
+    if (!cat)    { errEl.textContent = "Please select a category."; return; }
+    if (!imgUrl) { errEl.textContent = "Please add an image (upload or paste URL)."; return; }
+
+    const btn = $("cpSubmit");
+    btn.disabled = true;
+    btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation:spin 0.8s linear infinite"><path d="M12 2a10 10 0 1 0 10 10"/></svg> Posting…`;
+    errEl.textContent = "";
+
+    const steps = ($("cpSteps")?.value || "")
+      .split("\n").map(s => s.replace(/^\d+\.\s*/, "").trim()).filter(Boolean);
+    const tools = ($("cpTools")?.value || "")
+      .split(",").map(t => t.trim()).filter(Boolean);
+    const links = ($("cpLinks")?.value || "")
+      .split("\n").map(l => l.trim()).filter(l => l.startsWith("http"));
+
+    try {
+      const idea = await apiFetch("POST", "/ideas", {
+        title,
+        category:        cat,
+        image_url:       imgUrl,
+        description:     $("cpDesc")?.value.trim()  || "",
+        difficulty:      parseInt($("cpDifficulty")?.value || "3"),
+        creativity:      3,
+        usefulness:      3,
+        steps,
+        tools,
+        estimated_cost:  $("cpCost")?.value.trim()  || "",
+        reference_links: links,
+      });
+
+      // Close modal & reset
+      $("creatorPostModal").classList.remove("open");
+      ["cpTitle","cpDesc","cpSteps","cpTools","cpCost","cpLinks","cpImageUrl"]
+        .forEach(id => { if ($(id)) $(id).value = ""; });
+      if ($("cpPreview")) { $("cpPreview").src=""; $("cpPreview").style.display="none"; }
+      $("cpCategory").value = "";
+
+      toast("✦ Your idea has been posted!");
+      // Reload current page to show new idea
+      setTimeout(() => initHome(), 600);
+    } catch (e) {
+      errEl.textContent = e.message || "Post failed. Please try again.";
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Post Idea`;
+    }
+  });
 
   // ── START ─────────────────────────────────────────────────
   go("home");
