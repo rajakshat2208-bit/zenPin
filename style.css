@@ -1413,3 +1413,48 @@ input, select { font-family: var(--f-ui); }
 }
 
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Creator Post Modal extras ─────────────────────────── */
+.cp-upload-area {
+  border: 2px dashed rgba(124,58,237,0.35);
+  border-radius: 12px; padding: 28px 20px;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  cursor: pointer; transition: all var(--t-fast); color: var(--text-3);
+  background: rgba(124,58,237,0.04);
+}
+.cp-upload-area:hover { border-color: var(--purple); background: rgba(124,58,237,0.1); color: var(--text); }
+.cp-upload-area p { font-size: 0.88rem; font-weight: 600; margin: 0; }
+.cp-upload-area span { font-size: 0.72rem; }
+.cp-row { display: flex; gap: 12px; }
+
+/* ── Source badge on cards ─────────────────────────────── */
+.card-source-badge {
+  position: absolute; top: 8px; left: 8px;
+  padding: 3px 8px; border-radius: 20px;
+  font-size: 0.65rem; font-weight: 700; letter-spacing: 0.04em;
+  text-transform: uppercase; pointer-events: none;
+}
+.card-source-badge.discovery {
+  background: rgba(6,182,212,0.2); color: #67e8f9;
+  border: 1px solid rgba(6,182,212,0.3);
+}
+.card-source-badge.creator {
+  background: rgba(124,58,237,0.2); color: #c4b5fd;
+  border: 1px solid rgba(124,58,237,0.3);
+}
+
+/* ── Feed source toggle ───────────────────────────────── */
+.feed-source-toggle {
+  display: flex; gap: 6px; align-items: center;
+  margin-left: auto; flex-shrink: 0;
+}
+.source-toggle-btn {
+  padding: 5px 12px; border-radius: 20px;
+  font-size: 0.75rem; font-weight: 600;
+  border: 1px solid var(--border-2); color: var(--text-3);
+  cursor: pointer; transition: all var(--t-fast); background: transparent;
+}
+.source-toggle-btn.active {
+  background: rgba(124,58,237,0.15); color: #c4b5fd;
+  border-color: rgba(124,58,237,0.4);
+}
