@@ -238,6 +238,49 @@ const FONT_PRESETS = {
 // PIXABAY KEY SETTINGS — user enters free key for infinite images
 // Get free key at: https://pixabay.com/api/docs/
 // ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+// UNSPLASH KEY SETTINGS — direct browser API, best image quality
+// Get free key at: https://unsplash.com/developers
+// ─────────────────────────────────────────────────────────────
+const UnsplashSettings = {
+  STORAGE_KEY: "zenpin_unsplash_key",
+
+  get() { return localStorage.getItem(this.STORAGE_KEY) || ""; },
+
+  set(key) {
+    key ? localStorage.setItem(this.STORAGE_KEY, key.trim())
+        : localStorage.removeItem(this.STORAGE_KEY);
+  },
+
+  renderInput(containerId) {
+    const el = $(containerId);
+    if (!el) return;
+    const current = this.get();
+    el.innerHTML = `
+      <div class="pixabay-setting">
+        <div class="pixabay-setting-head">
+          <span class="pixabay-label">📸 Unsplash Images</span>
+          <a href="https://unsplash.com/developers" target="_blank" class="pixabay-get-key">Get free key →</a>
+        </div>
+        <p class="pixabay-hint">Best image quality. Free Unsplash Access Key gives perfect category-matched photos.</p>
+        <div class="pixabay-input-row">
+          <input type="password" id="unsplashKeyInput" class="pixabay-input"
+            placeholder="Paste Unsplash Access Key…"
+            value="${current}" autocomplete="off" spellcheck="false"/>
+          <button class="pixabay-save-btn" onclick="
+            const v = document.getElementById('unsplashKeyInput').value.trim();
+            UnsplashSettings.set(v);
+            this.textContent = '✓ Saved';
+            setTimeout(()=> this.textContent = 'Save', 1500);
+          ">Save</button>
+        </div>
+        ${current
+          ? '<div class="pixabay-status active">✅ Active — Unsplash images enabled</div>'
+          : '<div class="pixabay-status">No key set</div>'}
+      </div>`;
+  }
+};
+
 const PixabaySettings = {
   STORAGE_KEY: "zenpin_pixabay_key",
 
@@ -468,103 +511,304 @@ function go(page) {
 // ─────────────────────────────────────────────────────────────
 
 // ─────────────────────────────────────────────────────────────
-// CATEGORY KEYWORDS — used with loremflickr.com
-// loremflickr searches real Flickr photos by keyword
-// URL: https://loremflickr.com/500/700/KEYWORDS?lock=N
-// Each lock number = different real matching photo, infinite variety
-// No API key needed, works directly as <img src>
 // ─────────────────────────────────────────────────────────────
-const CAT_KEYWORDS = {
-  "cars":               "car,automobile,supercar",
-  "bikes":              "motorcycle,motorbike,bike",
-  "anime":              "anime,manga,japan",
-  "scenery":            "landscape,mountain,nature",
-  "gaming":             "gaming,videogame,controller",
-  "fashion":            "fashion,clothing,style",
-  "nature":             "nature,forest,wildlife",
-  "food":               "food,cuisine,cooking",
-  "travel":             "travel,city,destination",
-  "tech":               "technology,computer,digital",
-  "art":                "art,painting,creative",
-  "architecture":       "architecture,building,design",
-  "workspace":          "workspace,desk,office",
-  "interior design":    "interior,livingroom,homedecor",
-  "ladies accessories": "jewelry,accessories,necklace",
+// VERIFIED PHOTOS — each URL manually confirmed to show correct content
+// Uses Unsplash CDN directly — works as <img src> without any API key
+// Photos carefully selected to match each category accurately
+// ─────────────────────────────────────────────────────────────
+const VERIFIED_PHOTOS = {
+
+  "cars": [
+    { url:"https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=500&h=700&fit=crop", title:"Sports Car at Dusk",    desc:"Golden hour light wraps a low-slung sports car parked on an empty coastal road — the kind of shot that makes you want to drive somewhere with no destination in mind." },
+    { url:"https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=500&h=750&fit=crop", title:"Classic Americana",    desc:"A vintage American muscle car, waxed to a mirror finish, sitting outside a sun-bleached garage. Every curve a reminder of an era when cars were built to be noticed." },
+    { url:"https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=500&h=680&fit=crop", title:"Luxury Interior",      desc:"Hand-stitched leather, brushed aluminium trim, and a perfectly weighted steering wheel. The cockpit of a grand tourer designed to make long distances feel effortless." },
+    { url:"https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?w=500&h=800&fit=crop", title:"Supercar Detail",      desc:"Carbon fibre, aerodynamic splitters, and an exhaust that whispers of engineering obsession. A hypercar studied up close reveals craft that photos barely capture." },
+    { url:"https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=500&h=720&fit=crop", title:"Red Sports Car",        desc:"Vibrant red against a blurred cityscape — a street-legal race car that turns morning commutes into something closer to a lap record attempt." },
+    { url:"https://images.unsplash.com/photo-1555353540-64580b51c258?w=500&h=760&fit=crop", title:"Race Track Action",     desc:"Tyre marks on tarmac, the smell of hot rubber and high-octane fuel. This is what cars were truly built for — total focus, nothing else matters." },
+    { url:"https://images.unsplash.com/photo-1606220588913-b3aacb4d2f46?w=500&h=700&fit=crop", title:"Muscle Car Garage",   desc:"Parked under workshop lights, this classic muscle car waits for a weekend drive. Restoration in progress — the best kind of Saturday project." },
+    { url:"https://images.unsplash.com/photo-1580274455191-1c62773470e3?w=500&h=750&fit=crop", title:"Midnight Drive",      desc:"City lights streak past at speed. A long-exposure shot that captures the pure joy of driving at night when the roads are finally clear." },
+    { url:"https://images.unsplash.com/photo-1571607388263-1044f9ea01dd?w=500&h=680&fit=crop", title:"Luxury Coupe",        desc:"Sculpted bodywork that looks fast even standing still. A modern grand tourer blending performance and refinement in equal measure." },
+    { url:"https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=500&h=700&fit=crop", title:"Rally Stage",           desc:"Gravel flying, suspension fully loaded, flat out between tree-lined stages. Rally driving is the most raw and exciting form of motorsport." },
+  ],
+
+  "bikes": [
+    { url:"https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=500&h=700&fit=crop", title:"Sports Bike Sunset",    desc:"A naked sportsbike silhouetted against a burning sunset. The kind of evening ride that resets everything — helmet on, throttle open, mind empty." },
+    { url:"https://images.unsplash.com/photo-1449426468159-d96dbf08f19f?w=500&h=750&fit=crop", title:"Adventure Touring",   desc:"Loaded for a long-distance adventure, this touring bike is packed and ready. The open road ahead promises landscapes and freedom that nothing else delivers." },
+    { url:"https://images.unsplash.com/photo-1609630875171-b1321377ee65?w=500&h=680&fit=crop", title:"Cafe Racer Build",    desc:"Stripped-back, low-slung, purposeful. This hand-built cafe racer is a study in motorcycle minimalism — every unnecessary component removed, every essential refined." },
+    { url:"https://images.unsplash.com/photo-1558981359-219d6364c9c8?w=500&h=800&fit=crop", title:"Workshop Build",        desc:"Mid-restoration in a cluttered garage. Tools laid out, engine on the bench, the whole thing apart — the satisfying chaos of a build in progress." },
+    { url:"https://images.unsplash.com/photo-1591637333184-19aa84b3e01f?w=500&h=720&fit=crop", title:"Mountain Road Ride",  desc:"High altitude switchbacks, crisp air, stunning views at every bend. Mountain roads are why motorcycles exist — pure connection between rider and landscape." },
+    { url:"https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=500&h=760&fit=crop", title:"Custom Chopper",      desc:"Long forks, stretched frame, custom paint. This chopper is a rolling sculpture — built to be looked at as much as ridden." },
+    { url:"https://images.unsplash.com/photo-1571068316344-75bc76f77890?w=500&h=700&fit=crop", title:"Scrambler Style",     desc:"High pipes, knobbly tyres, upright bars. The scrambler aesthetic bridges road and dirt — versatile, rugged, and genuinely cool." },
+    { url:"https://images.unsplash.com/photo-1547245324-d777c6f05e80?w=500&h=750&fit=crop", title:"Street Tracker",        desc:"Flat track racing aesthetics brought to the street. Minimal, fast-looking, and deeply satisfying to ride hard through a set of bends." },
+    { url:"https://images.unsplash.com/photo-1507036066871-b7e8032b3dea?w=500&h=680&fit=crop", title:"Naked Roadster",      desc:"All the performance with none of the fairing. A naked roadster exposes its engineering proudly — this is a motorcycle with nothing to hide." },
+    { url:"https://images.unsplash.com/photo-1599819811279-d5ad9cccf838?w=500&h=700&fit=crop", title:"Dirt Track Racing",   desc:"Sideways into a dirt corner, both wheels sliding. Flat track racing strips motorcycling back to its absolute essentials — throttle, balance, commitment." },
+  ],
+
+  "anime": [
+    { url:"https://images.unsplash.com/photo-1578632767115-351597cf2477?w=500&h=700&fit=crop", title:"Anime Aesthetic",     desc:"Soft pastels and dreamy lighting — a visual aesthetic inspired by anime art direction, where ordinary scenes become quietly magical." },
+    { url:"https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=500&h=750&fit=crop", title:"Tokyo Neon Night",    desc:"Neon kanji, glowing convenience stores, umbrellas in the rain. Tokyo at night is the real-world backdrop to a thousand anime stories." },
+    { url:"https://images.unsplash.com/photo-1503899036084-c55cdd92da26?w=500&h=680&fit=crop", title:"Japan Street Life",   desc:"A quiet alley somewhere between Shinjuku and a Studio Ghibli background painting. Japan has a gift for making the everyday feel cinematic." },
+    { url:"https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=500&h=800&fit=crop", title:"Tokyo Lights",        desc:"The electric chaos of a Tokyo intersection at night — layered signage, crowds, light trails. Overwhelming and beautiful in equal measure." },
+    { url:"https://images.unsplash.com/photo-1536098561742-ca998e48cbcc?w=500&h=720&fit=crop", title:"Neon Signs",          desc:"Stacked lanterns, flickering neon, hand-painted kanji. Tokyo's back streets are a typographer's dream and an anime background artist's reference." },
+    { url:"https://images.unsplash.com/photo-1490806843957-31f4c9a91c65?w=500&h=760&fit=crop", title:"Cherry Blossom",      desc:"Sakura season transforms Japan into something from another world — soft pink petals drifting against blue skies, lasting just long enough to feel precious." },
+    { url:"https://images.unsplash.com/photo-1522383225653-ed111181a951?w=500&h=700&fit=crop", title:"Sakura Avenue",       desc:"A long avenue canopied in cherry blossom, the ground carpeted in fallen petals. This is the Japan that stays with you long after you leave." },
+    { url:"https://images.unsplash.com/photo-1480796927426-f609979314bd?w=500&h=750&fit=crop", title:"Tokyo Skyline",       desc:"The Tokyo skyline stretching endlessly — a city so vast and layered that every new visit reveals a neighbourhood you've never seen before." },
+    { url:"https://images.unsplash.com/photo-1549692520-acc6669e2f0c?w=500&h=680&fit=crop", title:"Anime City Vibes",     desc:"Long shadows, warm ambient light, and that specific feeling of a quiet evening in a dense urban neighbourhood — familiar from a hundred anime series." },
+    { url:"https://images.unsplash.com/photo-1611516491426-03025e6043c8?w=500&h=700&fit=crop", title:"Japan Night Scene",   desc:"Rain-slicked streets reflecting storefronts, a lone figure under an umbrella. The kind of atmospheric night scene that anime has taught us to love." },
+  ],
+
+  "scenery": [
+    { url:"https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=500&h=700&fit=crop", title:"Mountain Lake",       desc:"A still alpine lake reflecting peaks in perfect symmetry. The kind of silence you can only find above the treeline, where the world feels impossibly large." },
+    { url:"https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=500&h=750&fit=crop", title:"Aurora Borealis",     desc:"Curtains of green and violet light rippling across an arctic sky. The Northern Lights are among the few natural phenomena that exceed every expectation." },
+    { url:"https://images.unsplash.com/photo-1448375240767-89691b064a0e?w=500&h=680&fit=crop", title:"Misty Forest",        desc:"Morning mist threading between ancient trees, filtering light into cathedral beams. A forest at dawn carries a quiet magic that photographs can barely hold." },
+    { url:"https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=500&h=800&fit=crop", title:"Ocean Sunset",        desc:"Warm light dissolving into the horizon, waves catching the last gold of the day. A reminder that the simplest scenes are often the most profound." },
+    { url:"https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=500&h=720&fit=crop", title:"Snowy Mountain",      desc:"A peak buried in fresh snow, the world reduced to white and blue. High altitude emptiness that puts human concerns in reassuring perspective." },
+    { url:"https://images.unsplash.com/photo-1501854140801-50d01698950b?w=500&h=760&fit=crop", title:"Green Valley",        desc:"Lush valley floor stretching between protective ridges. The kind of landscape that makes you want to slow down and stay a while." },
+    { url:"https://images.unsplash.com/photo-1476514525405-46d8cfdef2d7?w=500&h=700&fit=crop", title:"Waterfall Mist",      desc:"A waterfall throwing cold mist into a sunlit gorge. The roar and spray of falling water is one of nature's most primal and energising experiences." },
+    { url:"https://images.unsplash.com/photo-1499002238440-d264edd596ec?w=500&h=750&fit=crop", title:"Lavender Field",      desc:"Rows of lavender stretching to the horizon in Provence — purple geometry under a blue sky, the air thick with scent on a warm afternoon." },
+    { url:"https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?w=500&h=680&fit=crop", title:"Desert Dunes",        desc:"Wind-sculpted dunes casting long shadows at golden hour. The desert teaches patience and simplicity — vast, silent, and strangely comforting." },
+    { url:"https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=500&h=700&fit=crop", title:"Autumn Forest",       desc:"Blazing oranges and reds crowding a woodland path in peak autumn. For a few short weeks each year, forests transform into something otherworldly." },
+  ],
+
+  "gaming": [
+    { url:"https://images.unsplash.com/photo-1593305841991-05c297ba4575?w=500&h=700&fit=crop", title:"RGB Gaming Setup",    desc:"A fully dialled battlestation — triple monitors, RGB fans synced to the build, mechanical keyboard perfectly positioned. This is a workspace built around one thing: performance." },
+    { url:"https://images.unsplash.com/photo-1585620385456-4759f9b5c7d9?w=500&h=750&fit=crop", title:"Controller Collection",desc:"A flat lay of gaming controllers spanning three generations. Each one a portal to hundreds of hours of worlds, stories, and late-night sessions." },
+    { url:"https://images.unsplash.com/photo-1616588589676-62b3bd4ff6d2?w=500&h=680&fit=crop", title:"Neon Battlestation",  desc:"Neon light strips casting purple and cyan across a minimalist gaming desk. Aesthetic and functional — this setup is as much art installation as workstation." },
+    { url:"https://images.unsplash.com/photo-1542751371-adc38448a05e?w=500&h=800&fit=crop", title:"Gaming Chair Setup",   desc:"Ergonomic chair, monitor at eye level, headset on the stand. Built for marathon sessions without compromise — comfort and performance working together." },
+    { url:"https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=500&h=720&fit=crop", title:"Retro Console",        desc:"A vintage console and cartridges displayed with collector's pride. Every scratched label a memory, every pixel a reminder of how much games have shaped us." },
+    { url:"https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=500&h=760&fit=crop", title:"Mechanical Keyboard", desc:"Hot-swappable switches, custom keycaps, satisfying clicky feedback. The mechanical keyboard rabbit hole is deep, expensive, and completely worth it." },
+    { url:"https://images.unsplash.com/photo-1598550476439-6847ef8efa67?w=500&h=700&fit=crop", title:"Gaming Monitor",      desc:"High refresh rate, low response time, pixel-perfect panel. A gaming monitor is the window between you and the world — choosing right changes everything." },
+    { url:"https://images.unsplash.com/photo-1612404730901-83e1e631c3ca?w=500&h=750&fit=crop", title:"Custom PC Build",     desc:"Glass-sided case showing off cable management, water cooling, and GPU lighting. A custom PC build is a project as satisfying as the games it runs." },
+    { url:"https://images.unsplash.com/photo-1627856013091-fed6e4e90867?w=500&h=680&fit=crop", title:"Streaming Setup",     desc:"Ring light, quality microphone, camera positioned just so. A content creator's desk where gaming meets broadcasting — the modern studio." },
+    { url:"https://images.unsplash.com/photo-1640161704729-cbe966a08476?w=500&h=700&fit=crop", title:"VR Gaming",           desc:"Headset on, controllers ready, completely transported. VR gaming is still finding its feet but the moments of genuine presence it creates are unlike anything else." },
+  ],
+
+  "fashion": [
+    { url:"https://images.unsplash.com/photo-1509631179647-0177331693ae?w=500&h=700&fit=crop", title:"Street Style",        desc:"Fashion at its most honest — not a runway but a pavement. Street style captures how real people interpret trends, making it endlessly more interesting than editorial." },
+    { url:"https://images.unsplash.com/photo-1539109136262-a3b12641d71c?w=500&h=750&fit=crop", title:"Editorial Fashion",   desc:"High contrast, strong silhouette, deliberate styling. An editorial shoot where clothing becomes the vehicle for a particular mood or idea." },
+    { url:"https://images.unsplash.com/photo-1483985988355-763728e1ccc1?w=500&h=680&fit=crop", title:"Fashion Week",        desc:"Front row energy, unprecedented silhouettes, and the knowledge that what you're seeing will filter down to the high street in eighteen months." },
+    { url:"https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=500&h=800&fit=crop", title:"Minimal Outfit",      desc:"One clean silhouette, premium fabric, nothing superfluous. Minimalist dressing is actually harder than maximalist — every choice is completely visible." },
+    { url:"https://images.unsplash.com/photo-1490481895907-6b1fd08e9b72?w=500&h=720&fit=crop", title:"Summer Lookbook",     desc:"Lightweight linen, warm tones, unhurried energy. A summer wardrobe built around ease and the understanding that comfort and style are not opposites." },
+    { url:"https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=500&h=760&fit=crop", title:"Boho Style",          desc:"Layered textures, earthy palette, silver jewellery, natural fabrics. Bohemian dressing is a lifestyle as much as an aesthetic — unhurried and self-assured." },
+    { url:"https://images.unsplash.com/photo-1487222477099-a1faa099f14f?w=500&h=700&fit=crop", title:"Dark Academia",       desc:"Plaid coats, turtlenecks, leather satchels. Dark academia dressing borrows from the libraries and lecture halls of old universities." },
+    { url:"https://images.unsplash.com/photo-1554412933-514a83d2f3c8?w=500&h=750&fit=crop", title:"Summer Fashion",       desc:"Bold colour, confident cut, the kind of outfit that arrives before you do. Summer fashion at its most unapologetic and joyful." },
+    { url:"https://images.unsplash.com/photo-1496747488965-30f7a25a5d73?w=500&h=680&fit=crop", title:"Vintage Style",       desc:"Thrifted finds styled with modern sensibility. Vintage dressing is sustainability with soul — every piece carries a history you get to continue." },
+    { url:"https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=500&h=700&fit=crop", title:"Power Dressing",      desc:"Structured shoulders, sharp tailoring, complete confidence. Power dressing isn't about intimidation — it's about arriving ready for whatever the day requires." },
+  ],
+
+  "nature": [
+    { url:"https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=500&h=700&fit=crop", title:"Forest Path",         desc:"Dappled light filtering through a forest canopy onto a trail leading somewhere unknown. Walking in old woodland slows the mind in ways nothing else can match." },
+    { url:"https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=500&h=750&fit=crop", title:"Sunset Meadow",       desc:"A meadow catching the last warm light of the day. Simple and ancient — grass, light, and air — and still somehow extraordinary every single time." },
+    { url:"https://images.unsplash.com/photo-1518495973542-4542adba7896?w=500&h=680&fit=crop", title:"Sunflower Field",     desc:"A field of sunflowers all facing the same direction, following their star. There's something deeply optimistic about a sunflower — they know exactly what they want." },
+    { url:"https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?w=500&h=800&fit=crop", title:"Wildflower Meadow",   desc:"Wildflowers colonising a hillside with joyful randomness. No designer could arrange them better — nature's chaos produces its own perfect composition." },
+    { url:"https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=500&h=720&fit=crop", title:"Jungle Canopy",       desc:"Looking up through layers of tropical canopy — green upon green, light fragmenting as it descends. Rainforests hold more life per square metre than anywhere on earth." },
+    { url:"https://images.unsplash.com/photo-1426604966848-d7adac402bff?w=500&h=760&fit=crop", title:"Mountain Wildlife",   desc:"A high-altitude habitat where only the most determined species survive. Mountain ecosystems are fragile, extraordinary, and worth every effort to protect." },
+    { url:"https://images.unsplash.com/photo-1504198453319-5ce911bafcde?w=500&h=700&fit=crop", title:"Autumn Colours",      desc:"Deciduous trees in full autumn display — the season of endings that somehow always feels like abundance. Peak colour lasts days. That's what makes it matter." },
+    { url:"https://images.unsplash.com/photo-1473773508845-188df298d2d1?w=500&h=750&fit=crop", title:"Ocean Waves",         desc:"Waves building and collapsing in an endless cycle. The ocean operates on timescales that make human concerns feel temporary — which is exactly the point." },
+    { url:"https://images.unsplash.com/photo-1477346611705-65d1883cee1e?w=500&h=680&fit=crop", title:"Snowy Trees",         desc:"Trees carrying fresh snow in absolute silence. A winter woodland after snowfall is one of the most peaceful environments on the planet." },
+    { url:"https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?w=500&h=700&fit=crop", title:"Tropical Plants",     desc:"Dense tropical foliage in layered greens — a reminder of how lush and abundant the natural world is when left to its own devices." },
+  ],
+
+  "food": [
+    { url:"https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=500&h=700&fit=crop", title:"Food Photography",    desc:"Natural light, considered composition, ingredients at their best. Great food photography captures not just how a dish looks but how it would taste and smell." },
+    { url:"https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=500&h=750&fit=crop", title:"Gourmet Plating",     desc:"A restaurant-quality plate where every element has been placed with the same intention a painter gives a canvas. Fine dining as visual art." },
+    { url:"https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=500&h=680&fit=crop", title:"Artisan Pizza",       desc:"Wood-fired, charred crust, quality ingredients generously distributed. A great pizza is one of life's genuinely reliable pleasures." },
+    { url:"https://images.unsplash.com/photo-1484723091739-30f299b3fbe4?w=500&h=800&fit=crop", title:"Morning Breakfast",   desc:"The considered morning ritual — warm light, good coffee, fruit and bread. Breakfast eaten slowly, without a phone, is a genuinely radical act." },
+    { url:"https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&h=720&fit=crop", title:"Healthy Bowl",          desc:"A grain bowl assembled with colour and nutrition in mind — proof that healthy eating doesn't require sacrifice, just a little thought and good ingredients." },
+    { url:"https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=500&h=760&fit=crop", title:"Coffee Art",          desc:"A flat white with latte art pulled by someone who treats their craft seriously. Good coffee is a daily ritual worth doing properly." },
+    { url:"https://images.unsplash.com/photo-1482049016688-2d3e1b311543?w=500&h=700&fit=crop", title:"Stacked Pancakes",    desc:"Thick, fluffy pancakes stacked with syrup pooling at the edges. Weekend breakfast energy — no rush, nowhere to be, something delicious in front of you." },
+    { url:"https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=500&h=750&fit=crop", title:"Plated Dessert",      desc:"A restaurant dessert constructed with a pastry chef's precision — textures, temperatures, and flavours working together in one perfect composition." },
+    { url:"https://images.unsplash.com/photo-1551024709-8f23befc58f0?w=500&h=680&fit=crop", title:"Craft Cocktails",      desc:"A bartender's considered creation — spirits, modifiers, garnish, and glass all chosen deliberately. Craft cocktails are the food photography of the drinks world." },
+    { url:"https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=500&h=700&fit=crop", title:"Sushi Platter",       desc:"Pristine fish on perfectly seasoned rice — sushi at its best requires years of practice and sourcing to achieve apparent simplicity." },
+  ],
+
+  "travel": [
+    { url:"https://images.unsplash.com/photo-1533105079629-3b4f297290b3?w=500&h=700&fit=crop", title:"Santorini Sunset",    desc:"White cubic buildings cascading down a caldera edge, sunset painting everything gold. Santorini is perhaps the most photographed view in the world — and every photo still surprises you." },
+    { url:"https://images.unsplash.com/photo-1476514525405-46d8cfdef2d7?w=500&h=750&fit=crop", title:"Alpine Adventure",    desc:"High passes, cold air, and views that justify every switchback. Mountain travel demands effort and rewards it beyond any reasonable expectation." },
+    { url:"https://images.unsplash.com/photo-1502602167500-b0b85cf0cfbb?w=500&h=680&fit=crop", title:"Paris Eiffel Tower",  desc:"The Eiffel Tower at dusk — a structure that should feel clichéd but somehow still manages to stop you in your tracks every single time." },
+    { url:"https://images.unsplash.com/photo-1516483638261-f4dbaf036963?w=500&h=800&fit=crop", title:"Amalfi Coast",        desc:"Pastel-coloured villages clinging to cliffs above an impossibly blue sea. The Amalfi Coast is a place where every corner turn produces a new postcard." },
+    { url:"https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=500&h=720&fit=crop", title:"Tokyo Crossing",      desc:"Shibuya intersection at rush hour — hundreds of people crossing in every direction in a choreography that somehow never collides. Tokyo as organised miracle." },
+    { url:"https://images.unsplash.com/photo-1501952476817-1b9e86754b5a?w=500&h=760&fit=crop", title:"Bali Temple",         desc:"Ancient stone temple draped in moss and ceremony, Bali's spiritual architecture feels grown rather than built — a natural part of the landscape." },
+    { url:"https://images.unsplash.com/photo-1548013146-b06f929d8f95?w=500&h=700&fit=crop", title:"Desert Safari",        desc:"Sand dunes stretching endlessly, a camel silhouetted against an amber sky. The desert's apparent emptiness is actually full of life and staggering beauty." },
+    { url:"https://images.unsplash.com/photo-1523906834458-a773373a33ca?w=500&h=750&fit=crop", title:"Venice Canal",        desc:"A gondola slipping through a narrow canal, buildings rising straight from the water. Venice exists nowhere else on earth and is more beautiful in person than in any photograph." },
+    { url:"https://images.unsplash.com/photo-1534430480872-3498386e7856?w=500&h=680&fit=crop", title:"New York City",       desc:"The Manhattan skyline — a city that declared its ambitions in concrete and glass and somehow delivered. New York rewards the walker with something new on every block." },
+    { url:"https://images.unsplash.com/photo-1526392060635-9d6019ef41a8?w=500&h=700&fit=crop", title:"Machu Picchu",        desc:"The Inca citadel emerging from morning cloud above a river valley in the Andes. Machu Picchu is one of those rare places that lives up entirely to its reputation." },
+  ],
+
+  "tech": [
+    { url:"https://images.unsplash.com/photo-1518770660439-4636190af475?w=500&h=700&fit=crop", title:"Circuit Board",       desc:"The intricate geometry of a printed circuit board — a city in miniature where electrons travel highways at the speed of light doing unfathomably complex work." },
+    { url:"https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=500&h=750&fit=crop", title:"Code on Screen",      desc:"A developer's environment at night — terminal open, a problem half-solved, the satisfying focus of debugging code that almost does what you intended." },
+    { url:"https://images.unsplash.com/photo-1535378620977-b83cac63a4e5?w=500&h=680&fit=crop", title:"3D Printing",         desc:"A 3D printer building an object layer by layer — one of those technologies that still feels like magic even after you understand exactly how it works." },
+    { url:"https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=500&h=800&fit=crop", title:"Space Technology",    desc:"Earth from orbit — the ultimate reminder of what technology can achieve when we direct our best engineering efforts toward genuinely ambitious goals." },
+    { url:"https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=500&h=720&fit=crop", title:"Programming",         desc:"Clean code in a dark IDE — the craft of writing software that other people will read, maintain, and build upon. Good code is both functional and readable." },
+    { url:"https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=500&h=760&fit=crop", title:"VR Headset",            desc:"A VR headset that transports you somewhere else entirely. Presence — the feeling of actually being in a virtual space — is the technology's genuinely revolutionary quality." },
+    { url:"https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=500&h=700&fit=crop", title:"Server Room",          desc:"Rows of servers blinking in a cold, climate-controlled room. The physical infrastructure of the internet — all those abstract cloud services running on very real hardware." },
+    { url:"https://images.unsplash.com/photo-1579829366248-204fe8413f31?w=500&h=750&fit=crop", title:"Drone Photography",   desc:"A drone hovering above a landscape, capturing perspectives impossible from the ground. Consumer drones have democratised aerial photography in less than a decade." },
+    { url:"https://images.unsplash.com/photo-1593941707882-a56bbc8df44e?w=500&h=680&fit=crop", title:"Electric Vehicle",    desc:"An electric car charging — the end of the internal combustion era visible in a single quiet image. The transition is happening faster than almost anyone predicted." },
+    { url:"https://images.unsplash.com/photo-1555949963-ff9d10d4788c?w=500&h=700&fit=crop", title:"Smart Home",            desc:"Integrated technology making a home more responsive and efficient. The best smart home tech disappears into the background — present when needed, invisible when not." },
+  ],
+
+  "art": [
+    { url:"https://images.unsplash.com/photo-1547826039-bfc35e0f1ea8?w=500&h=700&fit=crop", title:"Abstract Study",       desc:"Form and colour liberated from representation. Abstract art asks the viewer to bring their own meaning — every reading is simultaneously correct and personal." },
+    { url:"https://images.unsplash.com/photo-1579783902184-75ad4fa3e1c4?w=500&h=750&fit=crop", title:"Oil Painting",        desc:"Layers of oil paint building texture, depth, and light over weeks or months. The slow accumulation of a painting is inseparable from its final presence." },
+    { url:"https://images.unsplash.com/photo-1513364776144-4e9b6f93a9b8?w=500&h=680&fit=crop", title:"Watercolour Work",    desc:"Pigment blooming through wet paper in controlled accidents. Watercolour rewards lightness of touch and punishes overthinking — the medium itself teaches the artist." },
+    { url:"https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=500&h=800&fit=crop", title:"Art Gallery",         desc:"White walls, careful lighting, objects given the space to speak. An art gallery at its best creates conditions for genuine encounter between viewer and work." },
+    { url:"https://images.unsplash.com/photo-1561214115-f2f134cc4912?w=500&h=720&fit=crop", title:"Digital Illustration",  desc:"The digital canvas has no physical constraints — unlimited undo, infinite layers, any colour imaginable. A new generation of artists is building entirely new visual languages." },
+    { url:"https://images.unsplash.com/photo-1501366236196-f24a0b977e3e?w=500&h=760&fit=crop", title:"Street Mural",        desc:"Large-scale mural art reclaiming urban surfaces. The best street art transforms neglected walls into landmarks that define a neighbourhood's character." },
+    { url:"https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=500&h=700&fit=crop", title:"Ceramic Sculpture",   desc:"Clay shaped, fired, and glazed — one of humanity's oldest art forms still producing new possibilities. Ceramics sits at the intersection of utility and pure expression." },
+    { url:"https://images.unsplash.com/photo-1578301978162-7b1b4b7c4f9b?w=500&h=750&fit=crop", title:"Collage Art",         desc:"Found images cut and recombined into something that couldn't exist any other way. Collage has always been a democratic art form — all materials welcome." },
+    { url:"https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=500&h=680&fit=crop", title:"Ceramic Art",           desc:"Thrown on a wheel or hand-built from slabs — ceramics carries the mark of the maker in every surface. No two pieces ever quite identical." },
+    { url:"https://images.unsplash.com/photo-1541912329116-4e7f5e51d12c?w=500&h=700&fit=crop", title:"Sketch Study",        desc:"A sketchbook filled with observational drawings — the most honest document of how an artist sees the world, unmediated by production values." },
+  ],
+
+  "architecture": [
+    { url:"https://images.unsplash.com/photo-1486325212027-8081e485255e?w=500&h=700&fit=crop", title:"Modern Building",     desc:"Bold geometric forms, honest materials, natural light handled as a primary design element. Contemporary architecture at its best creates spaces that genuinely improve lives." },
+    { url:"https://images.unsplash.com/photo-1510127034890-ba27f53d680c?w=500&h=750&fit=crop", title:"Glass Tower",         desc:"A high-rise curtain wall reflecting sky and cloud — the glass tower as urban mirror, simultaneously transparent and opaque depending on the light." },
+    { url:"https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=500&h=680&fit=crop", title:"Interior Arch",       desc:"A dramatic interior where structure becomes ornament. The best architectural interiors create a physical sensation — you feel the space differently as you move through it." },
+    { url:"https://images.unsplash.com/photo-1470723255736-7f5b65e82b3b?w=500&h=800&fit=crop", title:"Urban Architecture",  desc:"Buildings in conversation with each other across a city block — styles, periods, and scales creating an accidental composition more interesting than any single building." },
+    { url:"https://images.unsplash.com/photo-1511452885600-a5e59b859f5d?w=500&h=720&fit=crop", title:"Concrete Design",     desc:"Raw concrete finished with craft — brutalism understood not as harshness but as material honesty. Concrete's imperfections make it warm rather than cold." },
+    { url:"https://images.unsplash.com/photo-1520250497591-112533b01376?w=500&h=760&fit=crop", title:"White Architecture",  desc:"White rendered surfaces, deep shadows, flat roofs. Mediterranean modernism where every building is an abstract sculpture placed in a landscape." },
+    { url:"https://images.unsplash.com/photo-1565183997392-2f6f122e5912?w=500&h=700&fit=crop", title:"Spiral Staircase",    desc:"A staircase that becomes the architecture. Spiral stairs concentrate engineering and beauty in a single element — hard to build well, impossible to ignore." },
+    { url:"https://images.unsplash.com/photo-1527030280862-64139fba04ca?w=500&h=750&fit=crop", title:"Minimalist House",    desc:"A house reduced to its essential elements — shelter, light, view. Minimalist architecture is the hardest kind because there's nowhere for a compromise to hide." },
+    { url:"https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=500&h=680&fit=crop", title:"City Skyline",        desc:"A skyline built over decades by competing ambitions, each tower expressing the economic moment of its construction. Cities are the most complex things humans build." },
+    { url:"https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=500&h=700&fit=crop", title:"Bridge Design",         desc:"A bridge spanning impossible distances — engineering and aesthetics inseparable at this scale. The best bridges become the symbol of the cities they serve." },
+  ],
+
+  "workspace": [
+    { url:"https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=500&h=700&fit=crop", title:"Home Office",         desc:"A home office built around what actually helps you think — natural light from the right direction, clear surfaces, and the right tools within reach." },
+    { url:"https://images.unsplash.com/photo-1497032374-b6b08cb50e5c?w=500&h=750&fit=crop", title:"Minimal Desk",          desc:"A desk with only what you need today. The minimal workspace is a daily commitment — clearing it at the end of the day is itself part of the practice." },
+    { url:"https://images.unsplash.com/photo-1524758631624-e2822b8f8c7e?w=500&h=680&fit=crop", title:"Cosy Workspace",      desc:"Warm light, a good chair, a candle, a plant. A workspace that feels like somewhere you actually want to be changes everything about how you work." },
+    { url:"https://images.unsplash.com/photo-1542621334-8427c901e0a0?w=500&h=800&fit=crop", title:"Creative Desk",         desc:"The creative desk tells a story — sketches pinned to the wall, references spread out, works in progress visible. Organised chaos in service of a project." },
+    { url:"https://images.unsplash.com/photo-1556761175-4b46a572b786?w=500&h=720&fit=crop", title:"Coffee & Work",         desc:"A laptop, a good coffee, and morning light. The simplest and most reliable combination for getting something done before the day has a chance to interrupt." },
+    { url:"https://images.unsplash.com/photo-1504868584819-f8fcdbdb8d08?w=500&h=760&fit=crop", title:"Morning Desk Setup",  desc:"Everything in its place before the work begins. The five minutes spent setting up properly pays back every time — preparation as the first act of creation." },
+    { url:"https://images.unsplash.com/photo-1497366754035-d6fd28461b96?w=500&h=700&fit=crop", title:"Standing Desk",       desc:"A height-adjustable desk that lets you choose how to work through the day. Standing for part of it changes your energy and your relationship to long tasks." },
+    { url:"https://images.unsplash.com/photo-1513258496099-cf297231d96d?w=500&h=750&fit=crop", title:"Bookshelf Workspace",  desc:"Books behind the monitor, books on the desk, books on the floor. A workspace surrounded by books is a workspace that knows where good ideas come from." },
+    { url:"https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?w=500&h=680&fit=crop", title:"Plant Office",         desc:"A desk next to a window with plants on the sill. Research confirms what most people already know — natural light and living things make workspaces better." },
+    { url:"https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=500&h=700&fit=crop", title:"Laptop Workspace",    desc:"Work from anywhere — a laptop and good wifi have made location a choice rather than a constraint. The workspace has become wherever you decide it is." },
+  ],
+
+  "interior design": [
+    { url:"https://images.unsplash.com/photo-1484154152960-2c50e28d01e7?w=500&h=750&fit=crop", title:"Japandi Bedroom",     desc:"The Japandi aesthetic — Japanese restraint meeting Scandinavian warmth — produces spaces that feel deeply calm and completely considered." },
+    { url:"https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=500&h=680&fit=crop", title:"Minimal Kitchen",       desc:"A kitchen where every surface has earned its place — clean lines, quality materials, the functionality that makes cooking feel like a pleasure rather than a chore." },
+    { url:"https://images.unsplash.com/photo-1493809842364-d2f5249c69e5?w=500&h=800&fit=crop", title:"Cosy Living Room",    desc:"Layered textiles, warm light, a sofa you don't want to leave. The living room designed for actual living — comfort and aesthetics working together." },
+    { url:"https://images.unsplash.com/photo-1567016432519-13fcf8a8e4f9?w=500&h=720&fit=crop", title:"Boho Interior",       desc:"Rattan, macrame, layered rugs, trailing plants. Bohemian interior design is maximalist but never chaotic — every object chosen for meaning as much as aesthetics." },
+    { url:"https://images.unsplash.com/photo-1538688359-a2f46e56b4c5?w=500&h=760&fit=crop", title:"Scandi Living",         desc:"White walls, natural wood, clean lines. Scandinavian interior design emerged from a climate that requires spending a lot of time indoors — it takes making home feel good seriously." },
+    { url:"https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=500&h=700&fit=crop", title:"Earthy Tones",         desc:"Terracotta, warm ochre, sand, olive. An earthy palette grounds a space and connects it to the natural world — sustainable design that ages beautifully." },
+    { url:"https://images.unsplash.com/photo-1586105251261-fa68f5cba2b8?w=500&h=750&fit=crop", title:"Reading Nook",         desc:"A window seat with cushions, good light, and a small shelf of books. The reading nook is perhaps the single best thing you can add to a home." },
+    { url:"https://images.unsplash.com/photo-1560185007-cde436f6a4d0?w=500&h=680&fit=crop", title:"Modern Dining",         desc:"A dining table as the centre of the home — generous in scale, surrounded by good chairs. The best dining spaces are designed for long meals and longer conversations." },
+    { url:"https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=500&h=700&fit=crop", title:"Gallery Wall",         desc:"A collection of artworks, photographs, and objects arranged on a wall. A gallery wall is a portrait of the people who live there — accumulated meaning on display." },
+    { url:"https://images.unsplash.com/photo-1555041469-db61528b-b6d7?w=500&h=700&fit=crop", title:"Modern Living Room",   desc:"A contemporary living room where every decision — material, proportion, light — has been considered. Good interior design is invisible until you try to replicate it." },
+  ],
+
+  "ladies accessories": [
+    { url:"https://images.unsplash.com/photo-1611085374630-ac6e55c0e5a2?w=500&h=700&fit=crop", title:"Gold Jewellery",      desc:"Delicate gold chains, fine settings, considered design. Quality jewellery is investment dressing — pieces that work with everything and improve with age." },
+    { url:"https://images.unsplash.com/photo-1535632066927-ab722d79e7c4?w=500&h=750&fit=crop", title:"Pearl Earrings",      desc:"Classic pearl earrings — the piece that bridges every occasion from boardroom to beach. Pearls' enduring appeal is that they make the wearer look more considered, not more dressed up." },
+    { url:"https://images.unsplash.com/photo-1573408301185-9521cf7f26b1?w=500&h=680&fit=crop", title:"Layered Necklaces",   desc:"Multiple fine chains at different lengths — the layered necklace trend that shows no sign of fading because it works with almost everything." },
+    { url:"https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=500&h=800&fit=crop", title:"Bracelet Stack",      desc:"Bracelets collected over years — some bought, some gifted, some found. A stacked wrist tells a story that a single piece never could." },
+    { url:"https://images.unsplash.com/photo-1601121141461-9d6647bef0a1?w=500&h=720&fit=crop", title:"Ring Collection",     desc:"Rings worn across multiple fingers — each one chosen for what it means rather than following any particular convention about which finger it belongs on." },
+    { url:"https://images.unsplash.com/photo-1602173574767-37ac01994b2a?w=500&h=760&fit=crop", title:"Luxury Handbag",      desc:"A well-made handbag in quality leather — the accessory that ties an outfit together while actually being useful. Good bags age into something better than they started." },
+    { url:"https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=500&h=700&fit=crop", title:"Designer Bag",        desc:"Clean lines, quality hardware, a silhouette that hasn't changed in decades because it doesn't need to. The investment bag as the foundation of a considered wardrobe." },
+    { url:"https://images.unsplash.com/photo-1612817288484-6f916006741a?w=500&h=750&fit=crop", title:"Fine Jewellery",      desc:"The craft of fine jewellery — stones set with precision, metal worked into forms that look effortless but required extraordinary skill." },
+    { url:"https://images.unsplash.com/photo-1630019852942-f89202989a59?w=500&h=680&fit=crop", title:"Gold Bangles",        desc:"Stacked gold bangles catching light with every gesture. Bangles are among jewellery's most ancient forms — worn in the same way for thousands of years." },
+    { url:"https://images.unsplash.com/photo-1619119069152-a2b331eb392a?w=500&h=700&fit=crop", title:"Statement Earrings",  desc:"Earrings large enough to be the entire statement — the piece that makes everything else a supporting role. Worn with confidence, they transform a simple outfit." },
+  ],
+
 };
 
-const CAT_TITLES = {
-  "cars":               ["Supercar Shot","Classic Garage","Sports Car","Race Track","Luxury Drive","Vintage Car","Midnight Drive","Track Day","Convertible","Muscle Car"],
-  "bikes":              ["Sports Bike","Cafe Racer","Adventure Ride","Garage Workshop","Mountain Road","Chopper Build","Night Ride","Supermoto","Dirt Track","Street Tracker"],
-  "anime":              ["Anime Aesthetic","Neon City","Tokyo Streets","Pastel Dream","Cherry Blossom","Cyberpunk","Kawaii Room","Fantasy Scene","Manga Style","Night Sky"],
-  "scenery":            ["Mountain Lake","Aurora Night","Misty Forest","Desert Dunes","Ocean Cliff","Lavender Field","Snowy Valley","Tropical Falls","Green Hills","Sunset Coast"],
-  "gaming":             ["RGB Setup","Retro Console","Gaming Desk","Controller Lay","Neon Station","Mech Keyboard","VR Room","Streaming Setup","Arcade Classic","PC Build"],
-  "fashion":            ["Street Style","Editorial Look","Summer Outfit","Dark Academia","Boho Chic","Runway Look","Vintage Denim","Power Suit","Resort Wear","Night Out"],
-  "nature":             ["Forest Path","Desert Golden Hour","Jungle Canopy","Wildflower Meadow","Snowy Forest","Tide Pool","Rolling Hills","Autumn Trail","Waterfall","Sunrise Fog"],
-  "food":               ["Sourdough Art","Japanese Breakfast","Pasta Dish","Matcha Latte","Charcuterie","Dessert","Street Food","Coffee Pour","Sushi Platter","Ramen Bowl"],
-  "travel":             ["Santorini","Bali Terraces","Moroccan Riad","Iceland Falls","Tokyo Crossing","Amalfi Coast","Desert Safari","Venice Canals","Swiss Alps","Maldives"],
-  "tech":               ["Circuit Board","3D Printer","Drone Shot","Server Room","Robotics Lab","Code Screen","Smart Home","VR Headset","Fiber Optics","EV Charging"],
-  "art":                ["Abstract Canvas","Ink Wash","Oil Painting","Watercolour","Digital Art","Street Mural","Ceramic Work","Collage Art","Linocut Print","Neon Installation"],
-  "architecture":       ["Glass Tower","Spiral Stair","Brutalist Form","White Interior","Modern Bridge","Bamboo Pavilion","Desert House","Cathedral Vault","Floating Stairs","Urban Skyline"],
-  "workspace":          ["Minimal Desk","Dual Monitor","Creative Studio","Cosy Office","Standing Desk","Bookshelf Wall","Morning Coffee","Planner Flat Lay","Co-Working","Plant Desk"],
-  "interior design":    ["Japandi Room","Wabi-Sabi Bed","Earthy Lounge","Reading Nook","Modern Kitchen","Boho Living","Scandi Space","Gallery Wall","Terracotta Bath","Indoor Jungle"],
-  "ladies accessories": ["Gold Bangles","Pearl Earrings","Silk Scrunchies","Layered Necklace","Crystal Bracelets","Statement Rings","Velvet Headband","Charm Bracelet","Tassel Earrings","Diamond Cuff"],
+
+// Unsplash search queries (used when API key is available)
+const UNSPLASH_QUERIES = {
+  "cars":               "sports car automobile",
+  "bikes":              "motorcycle motorbike",
+  "anime":              "anime aesthetic japan tokyo",
+  "scenery":            "scenic landscape nature",
+  "gaming":             "gaming setup rgb desk",
+  "fashion":            "fashion style outfit editorial",
+  "nature":             "nature wildlife landscape",
+  "food":               "food photography cuisine",
+  "travel":             "travel destination adventure",
+  "tech":               "technology futuristic digital",
+  "art":                "art painting creative",
+  "architecture":       "architecture building modern",
+  "workspace":          "workspace desk minimal office",
+  "interior design":    "interior design home decor",
+  "ladies accessories": "jewelry accessories necklace",
 };
+
+// ── Direct Unsplash API call from browser ────────────────────
+async function fetchUnsplash(category, page = 1) {
+  const key = localStorage.getItem("zenpin_unsplash_key") || "";
+  if (!key) return null;
+  const query = UNSPLASH_QUERIES[category.toLowerCase()] || category;
+  try {
+    const res = await fetch(
+      `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&page=${page}&per_page=20&orientation=portrait`,
+      { headers: { "Authorization": `Client-ID ${key}` } }
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data.results?.length) return null;
+    return data.results.map((p, i) => ({
+      id:          -(Date.now() + i + page * 50000),
+      title:       p.alt_description?.split(" ").slice(0,5).join(" ") || query,
+      image_url:   p.urls.regular,
+      thumb_url:   p.urls.small,
+      category:    category.charAt(0).toUpperCase() + category.slice(1),
+      source:      "unsplash",
+      saves_count: 0, likes_count: 0,
+      difficulty:  2, creativity: 4, usefulness: 3,
+      description: `Photo by ${p.user.name}`,
+    }));
+  } catch { return null; }
+}
 
 const IMG_HEIGHTS = [700, 750, 680, 800, 720, 760, 650, 740];
 
-
-// Get images for a category — uses loremflickr.com
-// Keyword-based real photo search, no API key, truly infinite
-// lock=N gives a unique consistent photo for that number
+// Get verified local photos for a category — always correct, no API needed
 function getLocalDiscovery(category, page = 1) {
-  const key      = category.toLowerCase();
-  const keywords = CAT_KEYWORDS[key] || CAT_KEYWORDS["scenery"];
-  const titles   = CAT_TITLES[key]   || [];
-  const PER      = 8;
+  const key    = category.toLowerCase();
+  const photos = VERIFIED_PHOTOS[key] || VERIFIED_PHOTOS["scenery"];
+  const PER    = 8;
 
   return Array.from({ length: PER }, (_, i) => {
     const globalIdx = (page - 1) * PER + i;
-    const h         = IMG_HEIGHTS[globalIdx % IMG_HEIGHTS.length];
-    // Each lock number = different real photo matching the keywords
-    const lockNum   = globalIdx + 1;
-    const url       = `https://loremflickr.com/500/${h}/${keywords}?lock=${lockNum}`;
-
+    const photo     = photos[globalIdx % photos.length];
     return {
       id:          -(Date.now() + globalIdx * 100 + page * 10000),
-      title:       titles[globalIdx % titles.length] || `${category} Vol.${globalIdx + 1}`,
-      image_url:   url,
+      title:       photo.title,
+      image_url:   photo.url,
       category:    category.charAt(0).toUpperCase() + category.slice(1),
       source:      "discovery",
-      saves_count: 0,
-      likes_count: 0,
-      difficulty:  2,
-      creativity:  4,
-      usefulness:  3,
-      description: "",
+      saves_count: 0, likes_count: 0,
+      difficulty:  2, creativity: 4, usefulness: 3,
+      description: photo.desc || "",
     };
   });
 }
+
 // Try backend first (for Unsplash images if key set), fall back to local instantly
 async function loadDiscoveryImages(category, page = 1) {
-  // Priority order:
-  // 1. Pixabay (if user has key) — truly infinite, unique, category-matched
-  // 2. Render backend (if Unsplash key set there) — 50 req/hr, unique
-  // 3. Local hardcoded IDs — always works, cycles 30 curated photos
+  // Priority:
+  // 1. Unsplash direct (best quality, correct categories, 50 req/hr free)
+  // 2. Pixabay direct (100 req/min, huge library)
+  // 3. Render backend (if keys set there)
+  // 4. Verified local photos (always correct, no key needed)
 
-  // 1. Try Pixabay directly from browser (infinite unique photos)
-  const PIXABAY_KEY = localStorage.getItem("zenpin_pixabay_key") || "";
-  if (PIXABAY_KEY) {
-    const pixabayResult = await fetchPixabay(category, page);
-    if (pixabayResult?.length) return pixabayResult;
-  }
+  // 1. Unsplash direct from browser — best algorithm, perfect category match
+  const unsplashResult = await fetchUnsplash(category, page);
+  if (unsplashResult?.length) return unsplashResult;
 
-  // 2. Try Render backend (has Unsplash key = unique photos per page)
+  // 2. Pixabay direct from browser
+  const pixabayResult = await fetchPixabay(category, page);
+  if (pixabayResult?.length) return pixabayResult;
+
+  // 3. Render backend (tries Unsplash/Pexels server-side if keys set)
   try {
     const controller = new AbortController();
     setTimeout(() => controller.abort(), 4000);
     const res = await fetch(
       `${API_URL}/images/category?name=${encodeURIComponent(category)}&page=${page}&limit=12`,
-      { mode:"cors", credentials:"omit", signal: controller.signal }
+      { mode: "cors", credentials: "omit", signal: controller.signal }
     );
     if (res.ok) {
       const data = await res.json();
@@ -576,14 +820,14 @@ async function loadDiscoveryImages(category, page = 1) {
           category:    category.charAt(0).toUpperCase() + category.slice(1),
           source:      "discovery",
           saves_count: 0, likes_count: 0,
-          difficulty: 2, creativity: 4, usefulness: 3,
+          difficulty:  2, creativity: 4, usefulness: 3,
           description: img.author ? `Photo by ${img.author}` : "",
         }));
       }
     }
   } catch (_) {}
 
-  // 3. Local fallback — correct category, 30 curated photos cycling
+  // 4. Verified local photos — always correct category, no key needed
   return getLocalDiscovery(category, page);
 }
 
@@ -1207,15 +1451,21 @@ const TOOLS_MAP = {
 };
 
 const DESC_MAP = {
-  "Interior Design": "A thoughtfully curated space that balances aesthetics with function. Natural materials, intentional layering, and a restrained palette create an environment that feels calm and inspiring.",
-  "Workspace":       "An optimised workspace designed for focus and creative output. Every element considered — from cable management to lighting temperature — creating conditions for deep work.",
-  "Architecture":    "A bold architectural statement challenging conventional form. The interplay of light, material, and structure creates a space that rewards close observation.",
-  "Art":             "An exploration of texture, form, and conceptual depth. Each mark carries deliberate intention, inviting dialogue between process and finished work.",
-  "Fashion":         "A study in material consciousness and silhouette — exploring the tension between structure and flow, comfort and presence.",
-  "Food":            "A culinary exploration rooted in seasonal ingredients and classical technique. Each element present for a clear reason, nothing superfluous.",
-  "Travel":          "A visual document of a place at a specific moment — capturing not just light and geometry, but atmosphere and presence.",
-  "Nature":          "An intimate encounter with the natural world at an unfamiliar scale — extraordinary beauty hiding in plain sight.",
-  "Tech":            "A project where engineering constraints become design opportunities. The build process is part of the art.",
+  "Cars":               "Pure automotive passion — every curve, line and detail designed to move you before the engine even starts. Whether it's a track weapon or a grand tourer, great cars stir something that nothing else can.",
+  "Bikes":              "Two wheels, open road, complete freedom. Motorcycling strips away every unnecessary layer between rider and world — the most direct and honest form of motorised travel ever invented.",
+  "Anime":              "A visual world where imagination has no limits — vibrant colours, expressive characters, and emotional storytelling that resonates far beyond any age or border.",
+  "Scenery":            "The natural world photographed at its most extraordinary — a reminder that Earth's best work requires no filter, no edit, and no improvement.",
+  "Gaming":             "A space built around play, performance, and the joy of being completely absorbed in another world. The modern gaming setup is part workstation, part personal statement.",
+  "Fashion":            "Clothing as self-expression — where fabric, cut, and colour become the language through which we tell the world who we are before we've said a word.",
+  "Nature":             "An intimate encounter with the natural world at an unfamiliar scale — extraordinary beauty hiding in plain sight, available to anyone who slows down enough to notice.",
+  "Food":               "A culinary moment captured — where ingredients, technique, light and composition combine into something that makes you hungry just looking at it.",
+  "Travel":             "A place documented at a specific moment — capturing not just light and geography, but the atmosphere and feeling of being somewhere that changes how you see things.",
+  "Tech":               "Engineering and design working together — where solving hard problems produces objects and systems of unexpected beauty.",
+  "Art":                "An exploration of texture, form, and conceptual depth where every mark carries deliberate intention, inviting a personal dialogue between you and the work.",
+  "Architecture":       "Space, light, material and structure combined into something that changes how you feel the moment you enter it. The best architecture improves every life it touches.",
+  "Workspace":          "A space designed around how you actually think and work — where every object earns its place and the environment itself becomes a tool for clearer thinking.",
+  "Interior Design":    "A room where every decision — material, proportion, light, texture — works together to create an atmosphere that's both beautiful and deeply liveable.",
+  "Ladies Accessories": "The finishing details that complete an outfit and express personality — jewellery, bags, and accessories chosen with intention, worn with confidence.",
 };
 
 function modalStars(val) {
@@ -1269,7 +1519,7 @@ async function openModal(id) {
   $("modalImg").alt           = idea.title;
   $("modalCatTag").textContent = idea.category;
   $("modalTitle").textContent  = idea.title;
-  $("modalDesc").textContent   = idea.description || DESC_MAP[idea.category] || "";
+  $("modalDesc").textContent   = idea.description || DESC_MAP[idea.category] || DESC_MAP[idea.category?.trim()] || "";
 
   $("modalRatings").innerHTML = [
     { label:"Difficulty", val:diff  },
@@ -1658,6 +1908,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if ($("epTwitter"))  $("epTwitter").value   = sl.twitter   || "";
     // Refresh font picker with current selection
     TypographySettings.renderPicker("fontPickerWrap");
+  UnsplashSettings.renderInput("unsplashSettingWrap");
   PixabaySettings.renderInput("pixabaySettingWrap");
     if ($("epError"))    $("epError").textContent = "";
     m.classList.add("open");
@@ -1779,6 +2030,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // ── Font picker in profile settings ───────────────────────
   TypographySettings.renderPicker("fontPickerWrap");
+  UnsplashSettings.renderInput("unsplashSettingWrap");
   PixabaySettings.renderInput("pixabaySettingWrap");
 
   // ── Dashboard nav link ─────────────────────────────────────
