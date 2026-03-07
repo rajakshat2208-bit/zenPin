@@ -44,7 +44,7 @@
 
     <!-- Actions -->
     <div class="nav-actions">
-      <button class="nav-btn-create" data-page="ai">
+      <button class="nav-btn-create" id="createPostBtn" data-page="ai">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         Create
       </button>
@@ -133,16 +133,22 @@
   <!-- Feed controls -->
   <div class="controls-bar">
     <div class="filter-chips" id="homeFilters">
-      <button class="chip active" data-filter="all">All Ideas</button>
-      <button class="chip" data-filter="Interior Design">Interior</button>
-      <button class="chip" data-filter="Workspace">Workspace</button>
-      <button class="chip" data-filter="Architecture">Architecture</button>
-      <button class="chip" data-filter="Art">Art &amp; Design</button>
-      <button class="chip" data-filter="Nature">Nature</button>
-      <button class="chip" data-filter="Food">Food</button>
-      <button class="chip" data-filter="Fashion">Fashion</button>
-      <button class="chip" data-filter="Travel">Travel</button>
-      <button class="chip" data-filter="Tech">Tech</button>
+      <button class="chip active" data-filter="all">✦ All</button>
+      <button class="chip" data-filter="Anime">🎌 Anime</button>
+      <button class="chip" data-filter="Cars">🚗 Cars</button>
+      <button class="chip" data-filter="Bikes">🏍 Bikes</button>
+      <button class="chip" data-filter="Scenery">🌄 Scenery</button>
+      <button class="chip" data-filter="Gaming">🎮 Gaming</button>
+      <button class="chip" data-filter="Ladies Accessories">💎 Accessories</button>
+      <button class="chip" data-filter="Interior Design">🏠 Interior</button>
+      <button class="chip" data-filter="Workspace">💻 Workspace</button>
+      <button class="chip" data-filter="Architecture">🏛 Architecture</button>
+      <button class="chip" data-filter="Art">🎨 Art</button>
+      <button class="chip" data-filter="Nature">🌿 Nature</button>
+      <button class="chip" data-filter="Food">🍜 Food</button>
+      <button class="chip" data-filter="Fashion">👗 Fashion</button>
+      <button class="chip" data-filter="Travel">✈️ Travel</button>
+      <button class="chip" data-filter="Tech">⚡ Tech</button>
     </div>
     <select class="sort-sel" id="homeSort">
       <option value="trending">Trending</option>
@@ -177,15 +183,22 @@
   </div>
   <div class="controls-bar">
     <div class="filter-chips" id="exploreFilters">
-      <button class="chip active" data-filter="all">All</button>
-      <button class="chip" data-filter="Interior Design">Interior</button>
-      <button class="chip" data-filter="Architecture">Architecture</button>
-      <button class="chip" data-filter="Art">Art</button>
-      <button class="chip" data-filter="Nature">Nature</button>
-      <button class="chip" data-filter="Food">Food</button>
-      <button class="chip" data-filter="Fashion">Fashion</button>
-      <button class="chip" data-filter="Travel">Travel</button>
-      <button class="chip" data-filter="Tech">Tech</button>
+      <button class="chip active" data-filter="all">✦ All</button>
+      <button class="chip" data-filter="Anime">🎌 Anime</button>
+      <button class="chip" data-filter="Cars">🚗 Cars</button>
+      <button class="chip" data-filter="Bikes">🏍 Bikes</button>
+      <button class="chip" data-filter="Scenery">🌄 Scenery</button>
+      <button class="chip" data-filter="Gaming">🎮 Gaming</button>
+      <button class="chip" data-filter="Ladies Accessories">💎 Accessories</button>
+      <button class="chip" data-filter="Interior Design">🏠 Interior</button>
+      <button class="chip" data-filter="Workspace">💻 Workspace</button>
+      <button class="chip" data-filter="Architecture">🏛 Architecture</button>
+      <button class="chip" data-filter="Art">🎨 Art</button>
+      <button class="chip" data-filter="Nature">🌿 Nature</button>
+      <button class="chip" data-filter="Food">🍜 Food</button>
+      <button class="chip" data-filter="Fashion">👗 Fashion</button>
+      <button class="chip" data-filter="Travel">✈️ Travel</button>
+      <button class="chip" data-filter="Tech">⚡ Tech</button>
     </div>
   </div>
   <div class="feed-wrap">
@@ -577,6 +590,88 @@
 <div class="toast-bar" id="toastBar">
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
   <span id="toastText">Saved!</span>
+</div>
+
+<!-- ── Creator Post Modal ──────────────────────────────── -->
+<div class="zp-modal-backdrop" id="creatorPostModal">
+  <div class="zp-modal" style="max-width:520px">
+    <div class="zp-modal-header">
+      <h3>Share Your Idea</h3>
+      <button class="zp-modal-close" id="creatorPostClose">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="zp-modal-body" style="max-height:70vh;overflow-y:auto">
+      <div class="ep-field">
+        <label class="ep-label">Title *</label>
+        <input class="ep-input" id="cpTitle" type="text" maxlength="120" placeholder="Give your idea a title…"/>
+      </div>
+      <div class="ep-field">
+        <label class="ep-label">Category *</label>
+        <select class="ep-input" id="cpCategory">
+          <option value="">Choose a category…</option>
+          <option>Anime</option><option>Cars</option><option>Bikes</option>
+          <option>Scenery</option><option>Gaming</option>
+          <option>Ladies Accessories</option><option>Interior Design</option>
+          <option>Workspace</option><option>Architecture</option><option>Art</option>
+          <option>Nature</option><option>Food</option>
+          <option>Fashion</option><option>Travel</option><option>Tech</option>
+        </select>
+      </div>
+      <div class="ep-field">
+        <label class="ep-label">Image</label>
+        <div class="cp-upload-area" id="cpUploadArea">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          <p>Click to upload an image</p>
+          <span>JPG, PNG, WebP up to 10MB</span>
+        </div>
+        <input type="file" id="cpFile" accept="image/*" style="display:none"/>
+        <img id="cpPreview" style="display:none;width:100%;border-radius:10px;margin-top:8px;max-height:200px;object-fit:cover"/>
+        <div style="margin-top:8px;font-size:0.75rem;color:var(--text-3)">— or paste an image URL —</div>
+        <input class="ep-input" id="cpImageUrl" type="url" placeholder="https://…" style="margin-top:6px"/>
+      </div>
+      <div class="ep-field">
+        <label class="ep-label">Description</label>
+        <textarea class="ep-input ep-textarea" id="cpDesc" maxlength="2000" placeholder="Describe your idea…"></textarea>
+      </div>
+      <div class="ep-field">
+        <label class="ep-label">Steps (one per line)</label>
+        <textarea class="ep-input ep-textarea" id="cpSteps" rows="3" placeholder="1. Choose color palette&#10;2. Mix materials&#10;3. Assemble"></textarea>
+      </div>
+      <div class="ep-field">
+        <label class="ep-label">Tools / Materials (comma separated)</label>
+        <input class="ep-input" id="cpTools" type="text" placeholder="brush, canvas, acrylic paint"/>
+      </div>
+      <div class="cp-row">
+        <div class="ep-field" style="flex:1">
+          <label class="ep-label">Difficulty</label>
+          <select class="ep-input" id="cpDifficulty">
+            <option value="1">⭐ Beginner</option>
+            <option value="2">⭐⭐ Easy</option>
+            <option value="3" selected>⭐⭐⭐ Medium</option>
+            <option value="4">⭐⭐⭐⭐ Hard</option>
+            <option value="5">⭐⭐⭐⭐⭐ Expert</option>
+          </select>
+        </div>
+        <div class="ep-field" style="flex:1">
+          <label class="ep-label">Estimated Cost</label>
+          <input class="ep-input" id="cpCost" type="text" placeholder="e.g. $20 – $50"/>
+        </div>
+      </div>
+      <div class="ep-field">
+        <label class="ep-label">Reference Links (one per line)</label>
+        <textarea class="ep-input ep-textarea" id="cpLinks" rows="2" placeholder="https://inspiration.com"></textarea>
+      </div>
+    </div>
+    <div class="zp-modal-footer">
+      <span class="ep-error-msg" id="cpError"></span>
+      <button class="zp-btn-cancel" id="cpCancel">Cancel</button>
+      <button class="zp-btn-save" id="cpSubmit">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Post Idea
+      </button>
+    </div>
+  </div>
 </div>
 
 <script src="script.js"></script>
