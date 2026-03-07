@@ -146,7 +146,7 @@ async def lifespan(app: FastAPI):
     print("🚀 ZenPin API v2.0 is live")
     yield
 
-app = FastAPI(title="ZenPin API", version="2.0.0", lifespan=lifespan)
+app = FastAPI(title="ZenPin API", version="2.1.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -163,7 +163,7 @@ app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 @app.get("/")
 def root():
     return {
-        "status": "ok", "app": "ZenPin API", "version": "2.0.0",
+        "status": "ok", "app": "ZenPin API", "version": "2.1.0",
         "cors": "open", "ai": "public",
         "categories": list(CATEGORY_QUERIES.keys()),
     }
@@ -180,7 +180,10 @@ class LoginRequest(BaseModel):
     password: str = Field(..., min_length=1, max_length=100)
 
 class UpdateProfileRequest(BaseModel):
-    bio: Optional[str] = Field(None, max_length=300)
+    bio:          Optional[str]  = Field(None, max_length=300)
+    username:     Optional[str]  = Field(None, min_length=2, max_length=30)
+    location:     Optional[str]  = Field(None, max_length=100)
+    social_links: Optional[dict] = Field(None)   # {"instagram":"...", "twitter":"..."}
 
 class CreateIdeaRequest(BaseModel):
     title:           str            = Field(..., min_length=1, max_length=120)
@@ -241,7 +244,17 @@ def get_me(current_user: dict = Depends(auth_utils.get_current_user)):
 
 @app.patch("/auth/me")
 def update_profile(body: UpdateProfileRequest, current_user: dict = Depends(auth_utils.get_current_user)):
-    return db.update_user_profile(current_user["id"], bio=body.bio)
+    # Check username uniqueness if changing it
+    if body.username and body.username != current_user.get("username"):
+        if db.get_user_by_username(body.username):
+            raise HTTPException(409, "That username is already taken.")
+    return db.update_user_profile(
+        current_user["id"],
+        bio=body.bio,
+        username=body.username,
+        location=body.location,
+        social_links=body.social_links,
+    )
 
 
 # ── DISCOVERY IMAGE SYSTEM ──────────────────────────────────────
@@ -408,6 +421,14 @@ def get_saved_ideas(user_id: int, current_user: dict = Depends(auth_utils.get_cu
     if current_user["id"] != user_id:
         raise HTTPException(403, "You can only view your own saves.")
     return {"ideas": db.get_saved_ideas(user_id)}
+
+
+# ── DASHBOARD ───────────────────────────────────────────────────
+@app.get("/dashboard")
+def get_dashboard(current_user: dict = Depends(auth_utils.get_current_user)):
+    """User stats + activity for the dashboard page."""
+    stats = db.get_user_stats(current_user["id"])
+    return {"user": current_user, **stats}
 
 
 # ── BOARDS ──────────────────────────────────────────────────────
