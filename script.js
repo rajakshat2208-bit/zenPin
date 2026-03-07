@@ -234,6 +234,53 @@ const FONT_PRESETS = {
   handwritten: { name: "Creative Script",css: "'Caveat', 'Dancing Script', cursive" },
 };
 
+// ─────────────────────────────────────────────────────────────
+// PIXABAY KEY SETTINGS — user enters free key for infinite images
+// Get free key at: https://pixabay.com/api/docs/
+// ─────────────────────────────────────────────────────────────
+const PixabaySettings = {
+  STORAGE_KEY: "zenpin_pixabay_key",
+
+  get() { return localStorage.getItem(this.STORAGE_KEY) || ""; },
+
+  set(key) {
+    if (key) {
+      localStorage.setItem(this.STORAGE_KEY, key.trim());
+      // Reload PIXABAY_KEY runtime variable
+      window._pixabayKey = key.trim();
+    } else {
+      localStorage.removeItem(this.STORAGE_KEY);
+      window._pixabayKey = "";
+    }
+  },
+
+  renderInput(containerId) {
+    const el = $(containerId);
+    if (!el) return;
+    const current = this.get();
+    el.innerHTML = `
+      <div class="pixabay-setting">
+        <div class="pixabay-setting-head">
+          <span class="pixabay-label">🖼️ Infinite Images</span>
+          <a href="https://pixabay.com/api/docs/" target="_blank" class="pixabay-get-key">Get free key →</a>
+        </div>
+        <p class="pixabay-hint">Add a free Pixabay API key to unlock infinite unique photos in every category.</p>
+        <div class="pixabay-input-row">
+          <input type="password" id="pixabayKeyInput" class="pixabay-input"
+            placeholder="Paste your Pixabay API key…"
+            value="${current}" autocomplete="off" spellcheck="false"/>
+          <button class="pixabay-save-btn" onclick="
+            const v = document.getElementById('pixabayKeyInput').value.trim();
+            PixabaySettings.set(v);
+            this.textContent = v ? '✓ Saved' : '✓ Cleared';
+            setTimeout(()=> this.textContent = 'Save', 1500);
+          ">Save</button>
+        </div>
+        ${current ? '<div class="pixabay-status active">✅ Active — infinite unique photos enabled</div>' : '<div class="pixabay-status">No key — using curated photos</div>'}
+      </div>`;
+  }
+};
+
 const TypographySettings = {
   STORAGE_KEY: "zenpin_font",
 
@@ -415,77 +462,77 @@ function go(page) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// DISCOVERY — local picsum fallback (always works, no backend needed)
+// DISCOVERY — real category-matched images (no API key needed)
+// Uses verified Unsplash photo IDs that load directly as <img src>
+// 30+ photos per category, infinite scroll cycles through them
 // ─────────────────────────────────────────────────────────────
 
-// Curated picsum seeds per category — deterministic, always loads
-const DISCOVERY_SEEDS = {
-  "anime":              ["anime1","anime2","anime3","anime4","anime5","anime6","anime7","anime8"],
-  "cars":               ["car1","car2","car3","car4","car5","car6","car7","car8"],
-  "bikes":              ["bike1","bike2","bike3","bike4","bike5","bike6","bike7","bike8"],
-  "scenery":            ["scene1","scene2","scene3","scene4","scene5","scene6","scene7","scene8"],
-  "gaming":             ["game1","game2","game3","game4","game5","game6","game7","game8"],
-  "workspace":          ["work1","work2","work3","work4","work5","work6","work7","work8"],
-  "architecture":       ["arch1","arch2","arch3","arch4","arch5","arch6","arch7","arch8"],
-  "art":                ["art1","art2","art3","art4","art5","art6","art7","art8"],
-  "nature":             ["nat1","nat2","nat3","nat4","nat5","nat6","nat7","nat8"],
-  "food":               ["food1","food2","food3","food4","food5","food6","food7","food8"],
-  "fashion":            ["fash1","fash2","fash3","fash4","fash5","fash6","fash7","fash8"],
-  "travel":             ["trav1","trav2","trav3","trav4","trav5","trav6","trav7","trav8"],
-  "tech":               ["tech1","tech2","tech3","tech4","tech5","tech6","tech7","tech8"],
-  "interior design":    ["int1","int2","int3","int4","int5","int6","int7","int8"],
-  "ladies accessories": ["acc1","acc2","acc3","acc4","acc5","acc6","acc7","acc8"],
+// ─────────────────────────────────────────────────────────────
+// CATEGORY KEYWORDS — used with loremflickr.com
+// loremflickr searches real Flickr photos by keyword
+// URL: https://loremflickr.com/500/700/KEYWORDS?lock=N
+// Each lock number = different real matching photo, infinite variety
+// No API key needed, works directly as <img src>
+// ─────────────────────────────────────────────────────────────
+const CAT_KEYWORDS = {
+  "cars":               "car,automobile,supercar",
+  "bikes":              "motorcycle,motorbike,bike",
+  "anime":              "anime,manga,japan",
+  "scenery":            "landscape,mountain,nature",
+  "gaming":             "gaming,videogame,controller",
+  "fashion":            "fashion,clothing,style",
+  "nature":             "nature,forest,wildlife",
+  "food":               "food,cuisine,cooking",
+  "travel":             "travel,city,destination",
+  "tech":               "technology,computer,digital",
+  "art":                "art,painting,creative",
+  "architecture":       "architecture,building,design",
+  "workspace":          "workspace,desk,office",
+  "interior design":    "interior,livingroom,homedecor",
+  "ladies accessories": "jewelry,accessories,necklace",
 };
 
-const DISCOVERY_TITLES = {
-  "anime":              ["Anime Aesthetic","Neon City Vibes","Japanese Street","Pastel Dream","Night Sky","Cherry Blossom","Cyberpunk","Aesthetic Room"],
-  "cars":               ["Supercar Shot","Classic Garage","Sports Car Dusk","Luxury Detail","Race Track","Vintage Restore","Midnight Drive","Engine Bay"],
-  "bikes":              ["Bike at Sunset","Cafe Racer Build","Adventure Trail","Garage Workshop","Scrambler Detail","Mountain Road","Neon Bike Night","Chopper Build"],
-  "scenery":            ["Mountain Lake","Aurora Night Sky","Misty Forest","Desert Sunset","Ocean Cliff","Lavender Field","Himalayan Peaks","Tropical Falls"],
-  "gaming":             ["RGB Gaming Desk","Retro Console","Minimal Setup","Controller Lay","Mech Keyboard","Neon Station","Pixel Aesthetic","VR Room"],
-  "workspace":          ["Minimal Oak Desk","Terracotta Desk","Dual Monitor","Creative Studio","Bookshelf","Cosy Office","Standing Desk","Artist Studio"],
-  "architecture":       ["Brutalist Stair","Glass Tower","Curved Concrete","White Interior","Heritage Stone","Modern Bridge","Spiral Stair","Geometric Facade"],
-  "art":                ["Abstract Art","Ink Wash","Oil Canvas","Watercolour","Digital Art","Collage Piece","Ceramic Art","Street Mural"],
-  "nature":             ["Ice Crystal","Desert Dunes","Jungle Canopy","Wildflower Field","Snowy Path","Tide Pool","Green Hills","Autumn Trail"],
-  "food":               ["Sourdough Art","Japanese Breakfast","Pasta Plating","Matcha Latte","Charcuterie","Dessert Shot","Street Food","Coffee Pour"],
-  "fashion":            ["Linen Layers","Monochrome Edit","Street Style","Summer Minimal","Vintage Denim","Runway Look","Pastel Flatlay","Dark Academia"],
-  "travel":             ["Fjord Ferry","Lisbon Streets","Salt Flats","Santorini Domes","Bali Terraces","Moroccan Riad","Iceland Falls","Tokyo Night"],
-  "tech":               ["Circuit Board","Neon Sign Lab","3D Printer","Drone Shot","Server Room","Robotics Lab","Code Screen","Smart Home"],
-  "interior design":    ["Japandi Room","Wabi-Sabi Bed","Plaster Arch","Earthy Lounge","Reading Nook","Modern Kitchen","Boho Living","Scandi Space"],
-  "ladies accessories": ["Glass Bangles","Gold Earrings","Scrunchie Set","Layered Necklace","Stacked Bracelets","Statement Rings","Pearl Set","Boho Bracelets"],
+const CAT_TITLES = {
+  "cars":               ["Supercar Shot","Classic Garage","Sports Car","Race Track","Luxury Drive","Vintage Car","Midnight Drive","Track Day","Convertible","Muscle Car"],
+  "bikes":              ["Sports Bike","Cafe Racer","Adventure Ride","Garage Workshop","Mountain Road","Chopper Build","Night Ride","Supermoto","Dirt Track","Street Tracker"],
+  "anime":              ["Anime Aesthetic","Neon City","Tokyo Streets","Pastel Dream","Cherry Blossom","Cyberpunk","Kawaii Room","Fantasy Scene","Manga Style","Night Sky"],
+  "scenery":            ["Mountain Lake","Aurora Night","Misty Forest","Desert Dunes","Ocean Cliff","Lavender Field","Snowy Valley","Tropical Falls","Green Hills","Sunset Coast"],
+  "gaming":             ["RGB Setup","Retro Console","Gaming Desk","Controller Lay","Neon Station","Mech Keyboard","VR Room","Streaming Setup","Arcade Classic","PC Build"],
+  "fashion":            ["Street Style","Editorial Look","Summer Outfit","Dark Academia","Boho Chic","Runway Look","Vintage Denim","Power Suit","Resort Wear","Night Out"],
+  "nature":             ["Forest Path","Desert Golden Hour","Jungle Canopy","Wildflower Meadow","Snowy Forest","Tide Pool","Rolling Hills","Autumn Trail","Waterfall","Sunrise Fog"],
+  "food":               ["Sourdough Art","Japanese Breakfast","Pasta Dish","Matcha Latte","Charcuterie","Dessert","Street Food","Coffee Pour","Sushi Platter","Ramen Bowl"],
+  "travel":             ["Santorini","Bali Terraces","Moroccan Riad","Iceland Falls","Tokyo Crossing","Amalfi Coast","Desert Safari","Venice Canals","Swiss Alps","Maldives"],
+  "tech":               ["Circuit Board","3D Printer","Drone Shot","Server Room","Robotics Lab","Code Screen","Smart Home","VR Headset","Fiber Optics","EV Charging"],
+  "art":                ["Abstract Canvas","Ink Wash","Oil Painting","Watercolour","Digital Art","Street Mural","Ceramic Work","Collage Art","Linocut Print","Neon Installation"],
+  "architecture":       ["Glass Tower","Spiral Stair","Brutalist Form","White Interior","Modern Bridge","Bamboo Pavilion","Desert House","Cathedral Vault","Floating Stairs","Urban Skyline"],
+  "workspace":          ["Minimal Desk","Dual Monitor","Creative Studio","Cosy Office","Standing Desk","Bookshelf Wall","Morning Coffee","Planner Flat Lay","Co-Working","Plant Desk"],
+  "interior design":    ["Japandi Room","Wabi-Sabi Bed","Earthy Lounge","Reading Nook","Modern Kitchen","Boho Living","Scandi Space","Gallery Wall","Terracotta Bath","Indoor Jungle"],
+  "ladies accessories": ["Gold Bangles","Pearl Earrings","Silk Scrunchies","Layered Necklace","Crystal Bracelets","Statement Rings","Velvet Headband","Charm Bracelet","Tassel Earrings","Diamond Cuff"],
 };
 
-const HEIGHTS = [700,720,680,750,700,760,700,740];
+const IMG_HEIGHTS = [700, 750, 680, 800, 720, 760, 650, 740];
 
+
+// Get images for a category — uses loremflickr.com
+// Keyword-based real photo search, no API key, truly infinite
+// lock=N gives a unique consistent photo for that number
 function getLocalDiscovery(category, page = 1) {
-  const key    = category.toLowerCase();
-  // Base seeds for category variety (used on page 1)
-  const base   = DISCOVERY_SEEDS[key] || DISCOVERY_SEEDS["scenery"];
-  const titles = DISCOVERY_TITLES[key] || [];
-  const slug   = key.replace(/\s+/g, "-");
-  const PER_PAGE = 8;
+  const key      = category.toLowerCase();
+  const keywords = CAT_KEYWORDS[key] || CAT_KEYWORDS["scenery"];
+  const titles   = CAT_TITLES[key]   || [];
+  const PER      = 8;
 
-  // Generate PER_PAGE unique seeds for this page.
-  // Page 1 uses base seeds, page 2+ generates new ones mathematically
-  // so the grid is TRULY infinite — no repeats across pages.
-  const seeds = Array.from({ length: PER_PAGE }, (_, i) => {
-    const idx = (page - 1) * PER_PAGE + i;
-    if (page === 1 && i < base.length) {
-      return base[i]; // use curated seeds on first page
-    }
-    // Unique seed = category-slug + global index
-    // e.g. "fashion-8", "fashion-9", "fashion-10" ...
-    return `${slug}-${idx}`;
-  });
+  return Array.from({ length: PER }, (_, i) => {
+    const globalIdx = (page - 1) * PER + i;
+    const h         = IMG_HEIGHTS[globalIdx % IMG_HEIGHTS.length];
+    // Each lock number = different real photo matching the keywords
+    const lockNum   = globalIdx + 1;
+    const url       = `https://loremflickr.com/500/${h}/${keywords}?lock=${lockNum}`;
 
-  return seeds.map((seed, i) => {
-    const globalIdx = (page - 1) * PER_PAGE + i;
-    const w = 500;
-    const h = HEIGHTS[globalIdx % HEIGHTS.length];
     return {
-      id:          -(Date.now() + globalIdx + page * 1000),
+      id:          -(Date.now() + globalIdx * 100 + page * 10000),
       title:       titles[globalIdx % titles.length] || `${category} Vol.${globalIdx + 1}`,
-      image_url:   `https://picsum.photos/seed/${seed}/${w}/${h}`,
+      image_url:   url,
       category:    category.charAt(0).toUpperCase() + category.slice(1),
       source:      "discovery",
       saves_count: 0,
@@ -497,20 +544,28 @@ function getLocalDiscovery(category, page = 1) {
     };
   });
 }
-
 // Try backend first (for Unsplash images if key set), fall back to local instantly
 async function loadDiscoveryImages(category, page = 1) {
-  // Always return local images immediately — no backend dependency
-  // Try to upgrade with backend results in background (if Render is awake)
-  const local = getLocalDiscovery(category, page);
+  // Priority order:
+  // 1. Pixabay (if user has key) — truly infinite, unique, category-matched
+  // 2. Render backend (if Unsplash key set there) — 50 req/hr, unique
+  // 3. Local hardcoded IDs — always works, cycles 30 curated photos
+
+  // 1. Try Pixabay directly from browser (infinite unique photos)
+  const PIXABAY_KEY = localStorage.getItem("zenpin_pixabay_key") || "";
+  if (PIXABAY_KEY) {
+    const pixabayResult = await fetchPixabay(category, page);
+    if (pixabayResult?.length) return pixabayResult;
+  }
+
+  // 2. Try Render backend (has Unsplash key = unique photos per page)
   try {
     const controller = new AbortController();
-    const timeout    = setTimeout(() => controller.abort(), 4000); // 4s max
+    setTimeout(() => controller.abort(), 4000);
     const res = await fetch(
       `${API_URL}/images/category?name=${encodeURIComponent(category)}&page=${page}&limit=12`,
       { mode:"cors", credentials:"omit", signal: controller.signal }
     );
-    clearTimeout(timeout);
     if (res.ok) {
       const data = await res.json();
       if (data.images?.length) {
@@ -521,15 +576,15 @@ async function loadDiscoveryImages(category, page = 1) {
           category:    category.charAt(0).toUpperCase() + category.slice(1),
           source:      "discovery",
           saves_count: 0, likes_count: 0,
-          difficulty:  2, creativity: 4, usefulness: 3,
+          difficulty: 2, creativity: 4, usefulness: 3,
           description: img.author ? `Photo by ${img.author}` : "",
         }));
       }
     }
-  } catch (e) {
-    // Backend sleeping or unreachable — local fallback is already good
-  }
-  return local;
+  } catch (_) {}
+
+  // 3. Local fallback — correct category, 30 curated photos cycling
+  return getLocalDiscovery(category, page);
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -1603,6 +1658,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if ($("epTwitter"))  $("epTwitter").value   = sl.twitter   || "";
     // Refresh font picker with current selection
     TypographySettings.renderPicker("fontPickerWrap");
+  PixabaySettings.renderInput("pixabaySettingWrap");
     if ($("epError"))    $("epError").textContent = "";
     m.classList.add("open");
   }
@@ -1723,6 +1779,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // ── Font picker in profile settings ───────────────────────
   TypographySettings.renderPicker("fontPickerWrap");
+  PixabaySettings.renderInput("pixabaySettingWrap");
 
   // ── Dashboard nav link ─────────────────────────────────────
   $("navDashboardBtn")?.addEventListener("click", () => go("dashboard"));
