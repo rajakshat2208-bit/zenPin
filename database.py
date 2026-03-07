@@ -1,25 +1,19 @@
-# database.py
+# database.py — ZenPin v2.0
 # ─────────────────────────────────────────────────────────────
-# All database logic for ZenPin.
-# Uses SQLite — stored in a single file called  zenpin.db
-#
 # Tables:
-#   users       — accounts
-#   ideas       — all idea posts
-#   saves       — which user saved which idea
-#   likes       — which user liked which idea
-#   boards      — user-created collections
-#   board_ideas — which ideas belong to which board
+#   users          — accounts
+#   ideas          — posts (source: discovery | creator)
+#   saves          — saves junction
+#   likes          — likes junction
+#   boards         — user collections
+#   board_ideas    — board ↔ idea junction
+#   discovery_cache— cached API image results (avoid repeat API calls)
 # ─────────────────────────────────────────────────────────────
 
-import sqlite3
-import os
+import sqlite3, os, json
 
-# On Render the project directory is read-only after deploy.
-# /tmp is writable and persists across requests (but not redeploys).
-# For local dev it falls back to the project directory.
-_db_dir  = "/tmp" if os.path.exists("/tmp") and os.access("/tmp", os.W_OK) else os.path.dirname(__file__)
-DB_PATH  = os.path.join(_db_dir, "zenpin.db")
+_db_dir = "/tmp" if os.path.exists("/tmp") and os.access("/tmp", os.W_OK) else os.path.dirname(__file__)
+DB_PATH = os.path.join(_db_dir, "zenpin.db")
 os.makedirs(_db_dir, exist_ok=True)
 
 
@@ -32,7 +26,6 @@ def get_connection():
 
 
 def init_db():
-    """Create all tables. Safe to call multiple times."""
     conn = get_connection()
     c = conn.cursor()
 
@@ -48,22 +41,41 @@ def init_db():
         )
     """)
 
+    # ── ideas: upgraded with source, steps, tools, cost, reference_links ──
     c.execute("""
         CREATE TABLE IF NOT EXISTS ideas (
-            id          INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id     INTEGER NOT NULL REFERENCES users(id),
-            title       TEXT    NOT NULL,
-            description TEXT    DEFAULT '',
-            category    TEXT    NOT NULL,
-            image_url   TEXT    NOT NULL,
-            difficulty  INTEGER DEFAULT 3,
-            creativity  INTEGER DEFAULT 3,
-            usefulness  INTEGER DEFAULT 3,
-            saves_count INTEGER DEFAULT 0,
-            likes_count INTEGER DEFAULT 0,
-            created_at  TEXT    DEFAULT (datetime('now'))
+            id               INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id          INTEGER NOT NULL REFERENCES users(id),
+            title            TEXT    NOT NULL,
+            description      TEXT    DEFAULT '',
+            category         TEXT    NOT NULL,
+            image_url        TEXT    NOT NULL,
+            difficulty       INTEGER DEFAULT 3,
+            creativity       INTEGER DEFAULT 3,
+            usefulness       INTEGER DEFAULT 3,
+            saves_count      INTEGER DEFAULT 0,
+            likes_count      INTEGER DEFAULT 0,
+            source           TEXT    DEFAULT 'creator',
+            steps            TEXT    DEFAULT '[]',
+            tools            TEXT    DEFAULT '[]',
+            estimated_cost   TEXT    DEFAULT '',
+            reference_links  TEXT    DEFAULT '[]',
+            created_at       TEXT    DEFAULT (datetime('now'))
         )
     """)
+
+    # Migrate existing tables that may not have new columns
+    for col, definition in [
+        ("source",          "TEXT DEFAULT 'creator'"),
+        ("steps",           "TEXT DEFAULT '[]'"),
+        ("tools",           "TEXT DEFAULT '[]'"),
+        ("estimated_cost",  "TEXT DEFAULT ''"),
+        ("reference_links", "TEXT DEFAULT '[]'"),
+    ]:
+        try:
+            c.execute(f"ALTER TABLE ideas ADD COLUMN {col} {definition}")
+        except Exception:
+            pass  # Column already exists
 
     c.execute("""
         CREATE TABLE IF NOT EXISTS saves (
@@ -103,9 +115,21 @@ def init_db():
         )
     """)
 
+    # ── Discovery cache — stores external API results to reduce calls ──
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS discovery_cache (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            category   TEXT    NOT NULL,
+            page       INTEGER DEFAULT 1,
+            data       TEXT    NOT NULL,
+            fetched_at TEXT    DEFAULT (datetime('now'))
+        )
+    """)
+    c.execute("CREATE INDEX IF NOT EXISTS idx_cache_cat ON discovery_cache(category, page)")
+
     conn.commit()
     conn.close()
-    print("✅ Database ready — zenpin.db")
+    print("✅ Database ready — zenpin.db v2.0")
 
 
 # ── USERS ──────────────────────────────────────────────────────
@@ -121,10 +145,8 @@ def create_user(username, email, password_hash):
         return dict(conn.execute("SELECT * FROM users WHERE id=?", (cur.lastrowid,)).fetchone())
     except sqlite3.IntegrityError as e:
         err = str(e).lower()
-        if "username" in err:
-            raise ValueError("username_taken")
-        if "email" in err:
-            raise ValueError("email_taken")
+        if "username" in err: raise ValueError("username_taken")
+        if "email"    in err: raise ValueError("email_taken")
         raise
     finally:
         conn.close()
@@ -159,10 +181,8 @@ def get_user_by_id(user_id):
 def update_user_profile(user_id, bio=None, avatar_url=None):
     conn = get_connection()
     try:
-        if bio is not None:
-            conn.execute("UPDATE users SET bio=? WHERE id=?", (bio, user_id))
-        if avatar_url is not None:
-            conn.execute("UPDATE users SET avatar_url=? WHERE id=?", (avatar_url, user_id))
+        if bio        is not None: conn.execute("UPDATE users SET bio=? WHERE id=?",        (bio, user_id))
+        if avatar_url is not None: conn.execute("UPDATE users SET avatar_url=? WHERE id=?", (avatar_url, user_id))
         conn.commit()
         return get_user_by_id(user_id)
     finally:
@@ -171,14 +191,32 @@ def update_user_profile(user_id, bio=None, avatar_url=None):
 
 # ── IDEAS ───────────────────────────────────────────────────────
 
-def create_idea(user_id, title, description, category, image_url, difficulty, creativity, usefulness):
+def _parse_idea(row):
+    """Convert a Row to dict, deserialising JSON fields."""
+    d = dict(row)
+    for field in ("steps", "tools", "reference_links"):
+        if isinstance(d.get(field), str):
+            try:    d[field] = json.loads(d[field])
+            except: d[field] = []
+    return d
+
+def create_idea(user_id, title, description, category, image_url,
+                difficulty=3, creativity=3, usefulness=3,
+                source="creator", steps=None, tools=None,
+                estimated_cost="", reference_links=None):
     conn = get_connection()
     try:
         cur = conn.execute(
             """INSERT INTO ideas
-               (user_id,title,description,category,image_url,difficulty,creativity,usefulness)
-               VALUES (?,?,?,?,?,?,?,?)""",
-            (user_id, title, description, category, image_url, difficulty, creativity, usefulness)
+               (user_id,title,description,category,image_url,
+                difficulty,creativity,usefulness,source,steps,tools,estimated_cost,reference_links)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (user_id, title, description, category, image_url,
+             difficulty, creativity, usefulness, source,
+             json.dumps(steps or []),
+             json.dumps(tools or []),
+             estimated_cost,
+             json.dumps(reference_links or []))
         )
         conn.commit()
         return get_idea_by_id(cur.lastrowid)
@@ -193,19 +231,22 @@ def get_idea_by_id(idea_id):
                FROM ideas i JOIN users u ON i.user_id=u.id WHERE i.id=?""",
             (idea_id,)
         ).fetchone()
-        return dict(row) if row else None
+        return _parse_idea(row) if row else None
     finally:
         conn.close()
 
-def get_ideas(category=None, search=None, sort="newest", limit=20, offset=0):
+def get_ideas(category=None, search=None, sort="newest",
+              limit=20, offset=0, source=None):
     conn = get_connection()
     try:
         where, params = [], []
         if category and category != "all":
             where.append("i.category=?"); params.append(category)
         if search:
-            where.append("(i.title LIKE ? OR i.category LIKE ?)")
-            params.extend([f"%{search}%", f"%{search}%"])
+            where.append("(i.title LIKE ? OR i.category LIKE ? OR i.description LIKE ?)")
+            params.extend([f"%{search}%", f"%{search}%", f"%{search}%"])
+        if source:
+            where.append("i.source=?"); params.append(source)
         where_sql = ("WHERE " + " AND ".join(where)) if where else ""
         order_sql = {
             "newest":   "i.created_at DESC",
@@ -218,7 +259,7 @@ def get_ideas(category=None, search=None, sort="newest", limit=20, offset=0):
                 {where_sql} ORDER BY {order_sql} LIMIT ? OFFSET ?""",
             params + [limit, offset]
         ).fetchall()
-        return [dict(r) for r in rows]
+        return [_parse_idea(r) for r in rows]
     finally:
         conn.close()
 
@@ -228,7 +269,7 @@ def get_ideas_by_user(user_id):
         rows = conn.execute(
             "SELECT * FROM ideas WHERE user_id=? ORDER BY created_at DESC", (user_id,)
         ).fetchall()
-        return [dict(r) for r in rows]
+        return [_parse_idea(r) for r in rows]
     finally:
         conn.close()
 
@@ -253,12 +294,10 @@ def save_idea(user_id, idea_id):
         if exists:
             conn.execute("DELETE FROM saves WHERE user_id=? AND idea_id=?", (user_id, idea_id))
             conn.execute("UPDATE ideas SET saves_count=MAX(0,saves_count-1) WHERE id=?", (idea_id,))
-            conn.commit()
-            return False
+            conn.commit(); return False
         conn.execute("INSERT INTO saves (user_id,idea_id) VALUES (?,?)", (user_id, idea_id))
         conn.execute("UPDATE ideas SET saves_count=saves_count+1 WHERE id=?", (idea_id,))
-        conn.commit()
-        return True
+        conn.commit(); return True
     finally:
         conn.close()
 
@@ -271,7 +310,7 @@ def get_saved_ideas(user_id):
                WHERE s.user_id=? ORDER BY s.saved_at DESC""",
             (user_id,)
         ).fetchall()
-        return [dict(r) for r in rows]
+        return [_parse_idea(r) for r in rows]
     finally:
         conn.close()
 
@@ -295,12 +334,10 @@ def like_idea(user_id, idea_id):
         if exists:
             conn.execute("DELETE FROM likes WHERE user_id=? AND idea_id=?", (user_id, idea_id))
             conn.execute("UPDATE ideas SET likes_count=MAX(0,likes_count-1) WHERE id=?", (idea_id,))
-            conn.commit()
-            return False
+            conn.commit(); return False
         conn.execute("INSERT INTO likes (user_id,idea_id) VALUES (?,?)", (user_id, idea_id))
         conn.execute("UPDATE ideas SET likes_count=likes_count+1 WHERE id=?", (idea_id,))
-        conn.commit()
-        return True
+        conn.commit(); return True
     finally:
         conn.close()
 
@@ -362,8 +399,40 @@ def add_idea_to_board(board_id, idea_id, user_id):
             "INSERT OR IGNORE INTO board_ideas (board_id,idea_id) VALUES (?,?)",
             (board_id, idea_id)
         )
+        conn.commit(); return True
+    finally:
+        conn.close()
+
+
+# ── DISCOVERY CACHE ─────────────────────────────────────────────
+
+def get_cached_discovery(category, page=1, max_age_minutes=60):
+    """Return cached discovery images if fresh enough."""
+    conn = get_connection()
+    try:
+        row = conn.execute(
+            """SELECT data FROM discovery_cache
+               WHERE category=? AND page=?
+               AND (julianday('now') - julianday(fetched_at)) * 1440 < ?""",
+            (category.lower(), page, max_age_minutes)
+        ).fetchone()
+        return json.loads(row["data"]) if row else None
+    finally:
+        conn.close()
+
+def set_cached_discovery(category, page, images):
+    """Save discovery results to cache."""
+    conn = get_connection()
+    try:
+        conn.execute(
+            "DELETE FROM discovery_cache WHERE category=? AND page=?",
+            (category.lower(), page)
+        )
+        conn.execute(
+            "INSERT INTO discovery_cache (category,page,data) VALUES (?,?,?)",
+            (category.lower(), page, json.dumps(images))
+        )
         conn.commit()
-        return True
     finally:
         conn.close()
 
@@ -371,7 +440,7 @@ def add_idea_to_board(board_id, idea_id, user_id):
 # ── SEED ────────────────────────────────────────────────────────
 
 def seed_demo_ideas():
-    """Insert 20 starter ideas on first run. Skips if already seeded."""
+    """Seed starter ideas across all new categories. Skips if already seeded."""
     conn = get_connection()
     try:
         if conn.execute("SELECT COUNT(*) as cnt FROM ideas").fetchone()["cnt"] > 0:
@@ -385,34 +454,69 @@ def seed_demo_ideas():
         admin_id = conn.execute(
             "SELECT id FROM users WHERE email='admin@zenpin.app'"
         ).fetchone()["id"]
+
         demo = [
-            ("Japandi Living Room Refresh",     "Interior Design","https://images.unsplash.com/photo-1705321963943-de94bb3f0dd3?w=500&q=80",3,5,4),
-            ("Minimal Oak Desk Setup",          "Workspace",      "https://images.unsplash.com/photo-1644337540803-2b2fb3cebf12?w=500&q=80",2,4,5),
-            ("Brutalist Concrete Staircase",    "Architecture",   "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=500&q=80",4,5,2),
-            ("Curved Plaster Arch Alcove",      "Interior Design","https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=500&q=80",5,5,3),
-            ("Generative Geometry Study #12",   "Art",            "https://images.unsplash.com/photo-1476357471311-43c0db9fb2b4?w=500&q=80",3,5,2),
-            ("Textural Linen Layering",         "Fashion",        "https://images.unsplash.com/photo-1543966888-7c1dc482a810?w=500&q=80",2,4,3),
-            ("Sourdough Scoring Patterns",      "Food",           "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=500&q=80",3,4,5),
-            ("Fjord Ferry Crossing at Dusk",    "Travel",         "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=500&q=80",1,5,3),
-            ("Ice Crystal Macro Study",         "Nature",         "https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=500&q=80",3,5,2),
-            ("Circuit Board Abstraction",       "Tech",           "https://images.unsplash.com/photo-1518770660439-4636190af475?w=500&q=80",4,4,4),
-            ("Glass Tower Blue Hour",           "Architecture",   "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=500&q=80",2,5,2),
-            ("Wabi-Sabi Earthy Bedroom",        "Interior Design","https://images.unsplash.com/photo-1553361371-9b22f78e8b1d?w=500&q=80",3,5,4),
-            ("Desert Dunes Golden Hour",        "Nature",         "https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=500&q=80",1,4,2),
-            ("Ink Wash on Rice Paper",          "Art",            "https://images.unsplash.com/photo-1487014679447-9f8336841d58?w=500&q=80",4,5,2),
-            ("Terracotta Ceramic Desk Accents", "Workspace",      "https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=500&q=80",2,4,4),
-            ("Monochrome Editorial in Fog",     "Fashion",        "https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?w=500&q=80",3,5,2),
-            ("Japanese Breakfast Bird's Eye",   "Food",           "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=500&q=80",2,4,5),
-            ("Narrow Streets of Old Lisbon",    "Travel",         "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=500&q=80",1,4,3),
-            ("LED Neon Sign Workshop",          "Tech",           "https://images.unsplash.com/photo-1461695008884-244cb4543d74?w=500&q=80",4,5,3),
-            ("Salt Flats Mirror at Sunset",     "Travel",         "https://images.unsplash.com/photo-1532274402911-5a369e4c4bb5?w=500&q=80",1,5,2),
+            # Interior Design
+            ("Japandi Living Room Refresh",     "Interior Design", "https://images.unsplash.com/photo-1705321963943-de94bb3f0dd3?w=500&q=80", 3,5,4),
+            ("Wabi-Sabi Earthy Bedroom",        "Interior Design", "https://images.unsplash.com/photo-1553361371-9b22f78e8b1d?w=500&q=80",   3,5,4),
+            ("Curved Plaster Arch Alcove",      "Interior Design", "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=500&q=80", 5,5,3),
+            # Workspace
+            ("Minimal Oak Desk Setup",          "Workspace",       "https://images.unsplash.com/photo-1644337540803-2b2fb3cebf12?w=500&q=80", 2,4,5),
+            ("Terracotta Ceramic Desk Accents", "Workspace",       "https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=500&q=80",   2,4,4),
+            # Architecture
+            ("Brutalist Concrete Staircase",    "Architecture",    "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=500&q=80",   4,5,2),
+            ("Glass Tower Blue Hour",           "Architecture",    "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=500&q=80", 2,5,2),
+            # Art
+            ("Generative Geometry Study #12",   "Art",             "https://images.unsplash.com/photo-1476357471311-43c0db9fb2b4?w=500&q=80", 3,5,2),
+            ("Ink Wash on Rice Paper",          "Art",             "https://images.unsplash.com/photo-1487014679447-9f8336841d58?w=500&q=80", 4,5,2),
+            # Nature
+            ("Ice Crystal Macro Study",         "Nature",          "https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=500&q=80", 3,5,2),
+            ("Desert Dunes Golden Hour",        "Nature",          "https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=500&q=80", 1,4,2),
+            # Food
+            ("Sourdough Scoring Patterns",      "Food",            "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=500&q=80", 3,4,5),
+            ("Japanese Breakfast Bird's Eye",   "Food",            "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=500&q=80", 2,4,5),
+            # Fashion
+            ("Textural Linen Layering",         "Fashion",         "https://images.unsplash.com/photo-1543966888-7c1dc482a810?w=500&q=80",   2,4,3),
+            ("Monochrome Editorial in Fog",     "Fashion",         "https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?w=500&q=80", 3,5,2),
+            # Travel
+            ("Fjord Ferry Crossing at Dusk",    "Travel",          "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=500&q=80", 1,5,3),
+            ("Narrow Streets of Old Lisbon",    "Travel",          "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=500&q=80",   1,4,3),
+            ("Salt Flats Mirror at Sunset",     "Travel",          "https://images.unsplash.com/photo-1532274402911-5a369e4c4bb5?w=500&q=80", 1,5,2),
+            # Tech
+            ("Circuit Board Abstraction",       "Tech",            "https://images.unsplash.com/photo-1518770660439-4636190af475?w=500&q=80", 4,4,4),
+            ("LED Neon Sign Workshop",          "Tech",            "https://images.unsplash.com/photo-1461695008884-244cb4543d74?w=500&q=80", 4,5,3),
+            # NEW CATEGORIES
+            # Anime
+            ("Cyberpunk Anime Cityscape",       "Anime",           "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=500&q=80", 2,5,3),
+            ("Aesthetic Anime Room Setup",      "Anime",           "https://images.unsplash.com/photo-1560169897-fc0cdbdfa4d5?w=500&q=80",   1,5,3),
+            # Cars
+            ("Supercar Street Photography",     "Cars",            "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=500&q=80", 2,5,4),
+            ("Classic Car Garage Aesthetic",    "Cars",            "https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=500&q=80", 2,4,3),
+            # Bikes
+            ("Sports Bike at Sunset",           "Bikes",           "https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=500&q=80",   2,5,3),
+            ("Cafe Racer Custom Build",         "Bikes",           "https://images.unsplash.com/photo-1609630875171-b1321377ee65?w=500&q=80", 4,5,3),
+            # Scenery
+            ("Mountain Lake Reflection",        "Scenery",         "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=500&q=80", 1,5,2),
+            ("Aurora Borealis Night Sky",       "Scenery",         "https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=500&q=80", 1,5,2),
+            # Gaming
+            ("Minimal Gaming Desk Setup",       "Gaming",          "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=500&q=80",   3,5,4),
+            ("Retro Console Collection",        "Gaming",          "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=500&q=80",   2,4,4),
+            # Ladies Accessories
+            ("Colorful Glass Bangles",          "Ladies Accessories","https://images.unsplash.com/photo-1611085583191-a3b181a88401?w=500&q=80",1,5,4),
+            ("Gold Hoop Earrings",              "Ladies Accessories","https://images.unsplash.com/photo-1630019852942-f89202989a59?w=500&q=80",1,5,4),
+            ("Scrunchie Hair Collection",       "Ladies Accessories","https://images.unsplash.com/photo-1594938298603-c8148c4b4f5b?w=500&q=80",1,4,4),
+            ("Layered Gold Necklaces",          "Ladies Accessories","https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=500&q=80",1,5,4),
+            ("Stacked Bracelets Stack",         "Ladies Accessories","https://images.unsplash.com/photo-1573408301185-9519f94c9a17?w=500&q=80",1,5,4),
         ]
-        for title,cat,img,d,cr,u in demo:
+
+        for title, cat, img, d, cr, u in demo:
             conn.execute(
-                "INSERT INTO ideas (user_id,title,category,image_url,difficulty,creativity,usefulness) VALUES (?,?,?,?,?,?,?)",
-                (admin_id,title,cat,img,d,cr,u)
+                """INSERT INTO ideas
+                   (user_id,title,category,image_url,difficulty,creativity,usefulness,source)
+                   VALUES (?,?,?,?,?,?,?,'discovery')""",
+                (admin_id, title, cat, img, d, cr, u)
             )
         conn.commit()
-        print(f"✅ Seeded {len(demo)} demo ideas")
+        print(f"✅ Seeded {len(demo)} demo ideas across {len(set(x[1] for x in demo))} categories")
     finally:
         conn.close()
