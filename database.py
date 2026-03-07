@@ -503,9 +503,15 @@ def set_cached_discovery(category, page, images):
 # ── SEED ────────────────────────────────────────────────────────
 
 def seed_demo_ideas():
-    """Seed starter ideas across all new categories. Skips if already seeded."""
+    """Seed starter ideas. Force-updates any ideas still using old unsplash URLs."""
     conn = get_connection()
     try:
+        # Force-fix any ideas with old broken image URLs
+        conn.execute(
+            "DELETE FROM ideas WHERE image_url LIKE '%images.unsplash.com%' OR image_url LIKE '%unsplash.com/photo%'"
+        )
+        conn.commit()
+
         if conn.execute("SELECT COUNT(*) as cnt FROM ideas").fetchone()["cnt"] > 0:
             return
         from auth import hash_password
