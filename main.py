@@ -383,11 +383,13 @@ async def get_discovery_images(
     # 1. Check cache
     cached = db.get_cached_discovery(cat, page, max_age_minutes=60)
     if cached:
+        print(f"📦 Cache hit: {cat} p{page} ({len(cached)} images)")
         return {"category": cat, "page": page, "source": "cache", "images": cached[:limit]}
 
     images = []
+    print(f"🔍 Fetching: {cat} p{page} | unsplash={'yes' if UNSPLASH_KEY else 'no'} | pexels={'yes' if PEXELS_KEY else 'no'}")
 
-    # 2. Try Unsplash (free: 50 req/hour with key)
+    # 2. Try Unsplash (backend API call — works fine from server)
     if UNSPLASH_KEY:
         query = CATEGORY_QUERIES.get(cat, cat + " photography")
         try:
@@ -402,15 +404,18 @@ async def get_discovery_images(
                 data = r.json()
                 images = [
                     {
-                        "title":     p.get("alt_description") or p["slug"].replace("-", " ").title(),
-                        "image_url": p["urls"]["regular"],
-                        "thumb_url": p["urls"]["thumb"],
+                        "title":     p.get("alt_description") or p.get("slug","").replace("-", " ").title() or f"{cat} photo",
+                        # Use small size for fast loading, regular for modal
+                        "image_url": p["urls"].get("regular", p["urls"].get("small", "")),
+                        "thumb_url": p["urls"].get("small",   p["urls"].get("thumb",  "")),
                         "source":    "unsplash",
                         "author":    p["user"]["name"],
                         "author_url":p["user"]["links"]["html"],
                     }
                     for p in data.get("results", [])
+                    if p.get("urls", {}).get("regular")
                 ]
+                print(f"✅ Unsplash: got {len(images)} images for '{cat}'")
         except Exception as e:
             print(f"Unsplash error: {e}")
 
@@ -440,8 +445,9 @@ async def get_discovery_images(
         except Exception as e:
             print(f"Pexels error: {e}")
 
-    # 4. Fallback — curated static images (always works, no key needed)
+    # 4. Fallback — picsum.photos (always works, zero key needed)
     if not images:
+        print(f"⚡ Using picsum fallback for '{cat}'")
         fallback = FALLBACK_IMAGES.get(cat, FALLBACK_IMAGES.get("scenery", []))
         # Also pull from sub-categories of ladies accessories
         if not fallback and cat in ("ladies accessories", "accessories"):
