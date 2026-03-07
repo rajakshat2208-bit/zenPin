@@ -32,6 +32,7 @@ UPLOAD_DIR        = _upload_dir
 MAX_UPLOAD_MB     = int(os.getenv("MAX_UPLOAD_MB", "10"))
 UNSPLASH_KEY      = os.getenv("UNSPLASH_ACCESS_KEY", "")
 PEXELS_KEY        = os.getenv("PEXELS_API_KEY", "")
+PIXABAY_KEY       = os.getenv("PIXABAY_API_KEY", "")
 ALLOWED_IMG_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 
 # ── Category → search query mapping for external APIs ──────────
@@ -419,7 +420,44 @@ async def get_discovery_images(
         except Exception as e:
             print(f"Unsplash error: {e}")
 
-    # 3. Try Pexels if Unsplash failed
+    # 3. Try Pixabay if Unsplash failed (free: 100 req/min, 20 results each)
+    if not images and PIXABAY_KEY:
+        query = CATEGORY_QUERIES.get(cat, cat + " photography")
+        try:
+            async with httpx.AsyncClient(timeout=8) as client:
+                r = await client.get(
+                    "https://pixabay.com/api/",
+                    params={
+                        "key":          PIXABAY_KEY,
+                        "q":            query,
+                        "image_type":   "photo",
+                        "orientation":  "vertical",
+                        "safesearch":   "true",
+                        "per_page":     limit,
+                        "page":         page,
+                        "min_width":    400,
+                        "editors_choice": "false",
+                    }
+                )
+            if r.status_code == 200:
+                data = r.json()
+                images = [
+                    {
+                        "title":     h.get("tags", "").split(",")[0].strip().title() or f"{cat.title()} photo",
+                        "image_url": h["webformatURL"],
+                        "thumb_url": h["previewURL"],
+                        "source":    "pixabay",
+                        "author":    h.get("user", ""),
+                        "author_url": f"https://pixabay.com/users/{h.get('user', '')}-{h.get('user_id', '')}/"
+                    }
+                    for h in data.get("hits", [])
+                    if h.get("webformatURL")
+                ]
+                print(f"✅ Pixabay: got {len(images)} images for '{cat}'")
+        except Exception as e:
+            print(f"Pixabay error: {e}")
+
+    # 4. Try Pexels if Pixabay also failed
     if not images and PEXELS_KEY:
         query = CATEGORY_QUERIES.get(cat, cat)
         try:
@@ -445,7 +483,7 @@ async def get_discovery_images(
         except Exception as e:
             print(f"Pexels error: {e}")
 
-    # 4. Fallback — picsum.photos (always works, zero key needed)
+    # 5. Fallback — hardcoded curated images (always works, zero key needed)
     if not images:
         print(f"⚡ Using picsum fallback for '{cat}'")
         fallback = FALLBACK_IMAGES.get(cat, FALLBACK_IMAGES.get("scenery", []))
