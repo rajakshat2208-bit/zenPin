@@ -223,8 +223,124 @@ function appendGrid(container, ideas, startIdx) {
 }
 
 // ─────────────────────────────────────────────────────────────
+// TYPOGRAPHY SETTINGS
+// Fonts stored in localStorage, applied on page load + change
+// ─────────────────────────────────────────────────────────────
+const FONT_PRESETS = {
+  default:     { name: "ZenPin Default", css: "'Inter', 'DM Sans', sans-serif" },
+  serif:       { name: "Elegant Serif",  css: "'Playfair Display', 'Georgia', serif" },
+  minimal:     { name: "Minimal Modern", css: "'DM Mono', 'Fira Code', monospace" },
+  handwritten: { name: "Creative Script",css: "'Caveat', 'Dancing Script', cursive" },
+};
+
+const TypographySettings = {
+  STORAGE_KEY: "zenpin_font",
+
+  getCurrent() {
+    return localStorage.getItem(this.STORAGE_KEY) || "default";
+  },
+
+  apply(key) {
+    const preset = FONT_PRESETS[key] || FONT_PRESETS.default;
+    document.documentElement.style.setProperty("--font-body", preset.css);
+    // Update active state in any open font picker
+    document.querySelectorAll(".font-opt-btn").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.font === key);
+    });
+  },
+
+  set(key) {
+    localStorage.setItem(this.STORAGE_KEY, key);
+    this.apply(key);
+    toast(`Font: ${FONT_PRESETS[key]?.name || key}`);
+  },
+
+  init() {
+    this.apply(this.getCurrent());
+  },
+
+  renderPicker(containerId) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    const current = this.getCurrent();
+    el.innerHTML = Object.entries(FONT_PRESETS).map(([key, p]) => `
+      <button class="font-opt-btn ${current === key ? "active" : ""}" data-font="${key}"
+              style="font-family:${p.css}">
+        ${p.name}
+        <span class="font-preview" style="font-family:${p.css}">Aa Bb Cc</span>
+      </button>`).join("");
+    el.addEventListener("click", e => {
+      const btn = e.target.closest(".font-opt-btn");
+      if (btn) TypographySettings.set(btn.dataset.font);
+    });
+  },
+};
+
+// ─────────────────────────────────────────────────────────────
 // ROUTER
 // ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+// PAGE: DASHBOARD
+// ─────────────────────────────────────────────────────────────
+async function initDashboard() {
+  const user = getUser();
+  if (!user) { go("home"); return; }
+
+  // Show skeleton states
+  ["dashPosts","dashSaves","dashLikes","dashBoards"].forEach(id => {
+    if ($(id)) $(id).textContent = "…";
+  });
+
+  try {
+    const data = await apiFetch("GET", "/dashboard");
+
+    // Stats
+    if ($("dashPosts"))  $("dashPosts").textContent  = fmt(data.posts);
+    if ($("dashSaves"))  $("dashSaves").textContent  = fmt(data.saves);
+    if ($("dashLikes"))  $("dashLikes").textContent  = fmt(data.likes);
+    if ($("dashBoards")) $("dashBoards").textContent = fmt(data.boards);
+
+    // Recent uploads
+    const uploadGrid = $("dashUploadsGrid");
+    if (uploadGrid) {
+      if (data.recent_uploads?.length) {
+        renderGrid(uploadGrid, data.recent_uploads);
+      } else {
+        uploadGrid.innerHTML = `<div class="empty-state-sm">No posts yet. <button class="link-btn" id="dashCreateBtn">Share your first idea →</button></div>`;
+        $("dashCreateBtn")?.addEventListener("click", () => openCreatorPost());
+      }
+    }
+
+    // Recent saves
+    const savesGrid = $("dashSavesGrid");
+    if (savesGrid) {
+      if (data.recent_saves?.length) {
+        renderGrid(savesGrid, data.recent_saves);
+      } else {
+        savesGrid.innerHTML = `<div class="empty-state-sm">Nothing saved yet. <button class="link-btn" data-page="explore">Explore ideas →</button></div>`;
+      }
+    }
+
+    // Trending categories
+    const catWrap = $("dashCategoryList");
+    if (catWrap) {
+      if (data.top_categories?.length) {
+        catWrap.innerHTML = data.top_categories.map((c, i) => `
+          <div class="dash-cat-row">
+            <span class="dash-cat-rank">#${i+1}</span>
+            <span class="dash-cat-name">${c.category}</span>
+            <span class="dash-cat-count">${c.count} saves</span>
+            <button class="dash-cat-btn chip" data-filter="${c.category}" data-page="explore">Explore</button>
+          </div>`).join("");
+      } else {
+        catWrap.innerHTML = `<div class="empty-state-sm">Start saving ideas to see your trends.</div>`;
+      }
+    }
+  } catch (e) {
+    toast("Could not load dashboard. " + (e.message || ""), true);
+  }
+}
+
 function go(page) {
   document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
   const el = document.getElementById("page-" + page);
@@ -236,7 +352,8 @@ function go(page) {
   S.page = page;
   window.scrollTo({ top:0, behavior:"smooth" });
   const inits = { home:initHome, explore:initExplore, boards:initBoards,
-                  collab:initCollab, ai:initAI, profile:initProfile, trends:initTrends };
+                  collab:initCollab, ai:initAI, profile:initProfile, trends:initTrends,
+                  dashboard:initDashboard };
   (inits[page] || (() => {}))();
 }
 
@@ -901,6 +1018,31 @@ function modalStars(val) {
   ).join("");
 }
 
+// ─────────────────────────────────────────────────────────────
+// IMAGE DOWNLOAD — works for discovery + creator images
+// ─────────────────────────────────────────────────────────────
+function downloadImage(url, title = "zenpin-image") {
+  // Sanitise filename
+  const filename = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 60) + ".jpg";
+  // Try fetch-blob approach (bypasses cross-origin download block)
+  fetch(url, { mode: "cors" })
+    .then(r => r.blob())
+    .then(blob => {
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
+    })
+    .catch(() => {
+      // Fallback: open in new tab (user can save manually)
+      window.open(url, "_blank");
+      toast("Image opened — right-click to save");
+    });
+}
+
 async function openModal(id) {
   let idea;
   try {
@@ -960,6 +1102,12 @@ async function openModal(id) {
   }
 
   syncSaveBtn();
+
+  // ── Download button ──────────────────────────────────────
+  const dlBtn = $("modalDownloadBtn");
+  if (dlBtn) {
+    dlBtn.onclick = () => downloadImage(idea.image_url, idea.title);
+  }
 
   // Related ideas
   try {
@@ -1151,26 +1299,67 @@ document.addEventListener("DOMContentLoaded", async () => {
     { passive: true }
   );
 
-  // ── Load more ──────────────────────────────────────────────
-  $("loadMoreBtn")?.addEventListener("click", async () => {
+  // ── Load more (manual + infinite scroll) ──────────────────
+  async function loadMoreIdeas() {
     const btn = $("loadMoreBtn");
-    btn.classList.add("busy");
-    btn.querySelector("span").textContent = "Loading…";
+    if (btn) { btn.classList.add("busy"); btn.querySelector("span").textContent = "Loading…"; }
     try {
       const p = buildParams({ offset: S.loaded });
-      const { ideas } = await apiFetch("GET", `/ideas?${p}`);
-      if (!ideas.length) { btn.style.display = "none"; return; }
-      appendGrid($("homeGrid"), ideas, S.loaded);
-      S.allIdeas = [...S.allIdeas, ...ideas];
-      S.loaded  += ideas.length;
-      if (ideas.length < 20) btn.style.display = "none";
+      const { ideas: newIdeas } = await apiFetch("GET", `/ideas?${p}`);
+      // Also fetch next page of discovery images for current category
+      let discoveryNew = [];
+      const cat = S.filter && S.filter !== "all" ? S.filter : null;
+      if (cat) {
+        const nextPage = Math.floor(S.loaded / 12) + 2;
+        discoveryNew = await loadDiscoveryImages(cat, nextPage);
+      }
+      const merged = [];
+      let di = 0;
+      for (let i = 0; i < newIdeas.length; i++) {
+        merged.push(newIdeas[i]);
+        if ((i + 1) % 4 === 0 && di < discoveryNew.length) merged.push(discoveryNew[di++]);
+      }
+      while (di < discoveryNew.length) merged.push(discoveryNew[di++]);
+
+      if (!merged.length) { if (btn) btn.style.display = "none"; return; }
+      appendGrid($("homeGrid"), merged, S.loaded);
+      S.allIdeas = [...S.allIdeas, ...merged];
+      S.loaded  += merged.length;
+      if (newIdeas.length < 20 && !discoveryNew.length) { if (btn) btn.style.display = "none"; }
     } catch (e) {
       toast(e.message, true);
     } finally {
-      btn.classList.remove("busy");
-      btn.querySelector("span").textContent = "Load more ideas";
+      if (btn) { btn.classList.remove("busy"); btn.querySelector("span").textContent = "Load more ideas"; }
     }
-  });
+  }
+
+  $("loadMoreBtn")?.addEventListener("click", loadMoreIdeas);
+
+  // ── Infinite scroll ─────────────────────────────────────
+  const _infiniteObserver = new IntersectionObserver(
+    entries => { if (entries[0].isIntersecting) loadMoreIdeas(); },
+    { rootMargin: "400px" }
+  );
+  const _sentinel = $("loadMoreBtn");
+  if (_sentinel) _infiniteObserver.observe(_sentinel);
+
+  // ── Lazy-load images via IntersectionObserver ───────────
+  function setupLazyImages() {
+    const lazyObserver = new IntersectionObserver(
+      entries => entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const img = entry.target;
+          if (img.dataset.src) { img.src = img.dataset.src; delete img.dataset.src; }
+          lazyObserver.unobserve(img);
+        }
+      }),
+      { rootMargin: "300px" }
+    );
+    document.querySelectorAll("img[data-src]").forEach(img => lazyObserver.observe(img));
+  }
+  setupLazyImages();
+  // Re-run after grid updates
+  window.addEventListener("zenpin:gridupdate", setupLazyImages);
 
   // ── AI generator ──────────────────────────────────────────
   $("aiGenBtn")?.addEventListener("click", runAI);
@@ -1219,10 +1408,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     const m = $("editProfileModal");
     if (!m) return;
     // Pre-fill
-    if ($("epUsername")) $("epUsername").value = user.username || "";
-    if ($("epBio"))      $("epBio").value      = user.bio || "";
+    if ($("epUsername")) $("epUsername").value  = user.username || "";
+    if ($("epBio"))      $("epBio").value       = user.bio      || "";
     if ($("epBioCount")) $("epBioCount").textContent = (user.bio || "").length;
     if ($("epAvatarPreview")) $("epAvatarPreview").textContent = (user.username || "?")[0].toUpperCase();
+    if ($("epLocation")) $("epLocation").value  = user.location || "";
+    const sl = user.social_links || {};
+    if ($("epInstagram")) $("epInstagram").value = sl.instagram || "";
+    if ($("epTwitter"))  $("epTwitter").value   = sl.twitter   || "";
+    // Refresh font picker with current selection
+    TypographySettings.renderPicker("fontPickerWrap");
     if ($("epError"))    $("epError").textContent = "";
     m.classList.add("open");
   }
@@ -1242,20 +1437,38 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   $("epSave")?.addEventListener("click", async () => {
-    const bio = ($("epBio")?.value || "").trim();
-    const btn = $("epSave");
+    const bio      = ($("epBio")?.value || "").trim();
+    const username = ($("epUsername")?.value || "").trim();
+    const location = ($("epLocation")?.value || "").trim();
+    const instagram= ($("epInstagram")?.value || "").trim();
+    const twitter  = ($("epTwitter")?.value || "").trim();
+    const btn   = $("epSave");
     const errEl = $("epError");
     if (errEl) errEl.textContent = "";
+    if (username.length > 0 && username.length < 2) {
+      if (errEl) errEl.textContent = "Username must be at least 2 characters.";
+      return;
+    }
     btn.disabled = true;
     btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation:spin 0.8s linear infinite"><path d="M12 2a10 10 0 1 0 10 10"/></svg> Saving…`;
     try {
-      await apiFetch("PATCH", "/auth/me", { bio });
-      // Persist locally
+      const payload = { bio };
+      if (username) payload.username = username;
+      if (location) payload.location = location;
+      const social = {};
+      if (instagram) social.instagram = instagram;
+      if (twitter)   social.twitter   = twitter;
+      if (Object.keys(social).length) payload.social_links = social;
+
+      const updated = await apiFetch("PATCH", "/auth/me", payload);
+      // Persist locally with all new fields
       const stored = JSON.parse(localStorage.getItem("zenpin_user") || "{}");
-      stored.bio = bio;
+      Object.assign(stored, updated);
       localStorage.setItem("zenpin_user", JSON.stringify(stored));
-      // Update UI
+      // Update navbar + profile header
       fillProfileHeader(stored);
+      const navUsernameEl = $("navUsername");
+      if (navUsernameEl && stored.username) navUsernameEl.textContent = stored.username;
       $("editProfileModal").classList.remove("open");
       toast("✓ Profile updated!");
     } catch(e) {
@@ -1319,6 +1532,16 @@ document.addEventListener("DOMContentLoaded", async () => {
       renderGrid($("homeGrid") || $("exploreGrid"), S.ideas);
     }
   });
+
+  // ── Typography — apply saved font on load ────────────────
+  TypographySettings.init();
+
+  // ── Font picker in profile settings ───────────────────────
+  TypographySettings.renderPicker("fontPickerWrap");
+
+  // ── Dashboard nav link ─────────────────────────────────────
+  $("navDashboardBtn")?.addEventListener("click", () => go("dashboard"));
+  $("dashNewPostBtn")?.addEventListener("click", () => openCreatorPost?.());
 
   // ── Collab chat ────────────────────────────────────────────
   setupChat();
