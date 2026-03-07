@@ -39,6 +39,7 @@
       <li><button class="nav-link active" data-page="home">Home</button></li>
       <li><button class="nav-link" data-page="explore">Explore</button></li>
       <li><button class="nav-link" data-page="boards">Boards</button></li>
+      <li><button class="nav-link" data-page="dashboard" id="navDashboardBtn">Dashboard</button></li>
       <li><button class="nav-link" data-page="collab">Collab</button></li>
     </ul>
 
@@ -210,6 +211,62 @@
 <!-- ============================================================
      PAGE: BOARDS
 ============================================================ -->
+<!-- ── DASHBOARD PAGE ─────────────────────────────────── -->
+<div id="page-dashboard" class="page">
+  <div class="page-inner">
+    <div class="page-head">
+      <h2 class="page-title">Your Dashboard</h2>
+      <p class="page-subtitle">Track your creative activity</p>
+    </div>
+
+    <!-- Stats row -->
+    <div class="dash-stats-row">
+      <div class="dash-stat-card">
+        <div class="dash-stat-num" id="dashPosts">—</div>
+        <div class="dash-stat-label">Posts</div>
+      </div>
+      <div class="dash-stat-card">
+        <div class="dash-stat-num" id="dashSaves">—</div>
+        <div class="dash-stat-label">Saves</div>
+      </div>
+      <div class="dash-stat-card">
+        <div class="dash-stat-num" id="dashLikes">—</div>
+        <div class="dash-stat-label">Likes</div>
+      </div>
+      <div class="dash-stat-card">
+        <div class="dash-stat-num" id="dashBoards">—</div>
+        <div class="dash-stat-label">Boards</div>
+      </div>
+    </div>
+
+    <!-- Recent Uploads -->
+    <div class="dash-section">
+      <div class="dash-section-head">
+        <h3>Recent Uploads</h3>
+        <button class="dash-section-action nav-btn-create" id="dashNewPostBtn">+ New Post</button>
+      </div>
+      <div class="ideas-grid" id="dashUploadsGrid"></div>
+    </div>
+
+    <!-- Recent Saves -->
+    <div class="dash-section">
+      <div class="dash-section-head">
+        <h3>Recently Saved</h3>
+        <button class="dash-section-action chip" data-page="explore">Explore More →</button>
+      </div>
+      <div class="ideas-grid" id="dashSavesGrid"></div>
+    </div>
+
+    <!-- Top Categories -->
+    <div class="dash-section">
+      <div class="dash-section-head">
+        <h3>Your Trending Categories</h3>
+      </div>
+      <div class="dash-category-list" id="dashCategoryList"></div>
+    </div>
+  </div>
+</div>
+
 <div id="page-boards" class="page">
   <div class="inner-page-header">
     <div>
@@ -523,6 +580,22 @@
         <textarea class="ep-input ep-textarea" id="epBio" maxlength="300" placeholder="Tell the world about your creative style…"></textarea>
         <span class="ep-char-count"><span id="epBioCount">0</span>/300</span>
       </div>
+      <div class="ep-field">
+        <label class="ep-label">Location</label>
+        <input class="ep-input" id="epLocation" type="text" maxlength="100" placeholder="City, Country"/>
+      </div>
+      <div class="ep-field">
+        <label class="ep-label">Instagram</label>
+        <input class="ep-input" id="epInstagram" type="text" maxlength="60" placeholder="@yourhandle"/>
+      </div>
+      <div class="ep-field">
+        <label class="ep-label">Twitter / X</label>
+        <input class="ep-input" id="epTwitter" type="text" maxlength="60" placeholder="@yourhandle"/>
+      </div>
+      <div class="ep-field">
+        <label class="ep-label">Typography Style</label>
+        <div id="fontPickerWrap" class="font-picker-wrap"></div>
+      </div>
     </div>
     <div class="zp-modal-footer">
       <span class="ep-error-msg" id="epError"></span>
@@ -574,6 +647,10 @@
         <button class="btn-ghost modal-share-btn" id="modalShareBtn">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
           Share
+        </button>
+        <button class="btn-ghost" id="modalDownloadBtn" title="Download image">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download
         </button>
       </div>
 
