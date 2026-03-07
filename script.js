@@ -9,18 +9,19 @@ const API_URL = "https://zenpin-api.onrender.com";
 // STATE
 // ─────────────────────────────────────────────────────────────
 const S = {
-  page:       "home",
-  filter:     "all",
-  search:     "",
-  sort:       "newest",
-  loaded:     20,
-  savedIds:   new Set(),
-  likedIds:   new Set(),
-  modalId:    null,
-  profileTab: "saved",
-  aiHistory:  [],
-  ideas:      [],      // live from backend
-  allIdeas:   [],      // full cache for offline fallback
+  page:          "home",
+  filter:        "all",
+  search:        "",
+  sort:          "newest",
+  loaded:        20,
+  savedIds:      new Set(),
+  likedIds:      new Set(),
+  modalId:       null,
+  profileTab:    "saved",
+  aiHistory:     [],
+  ideas:         [],      // live from backend
+  allIdeas:      [],      // full cache for offline fallback
+  discoveryPage: {},      // tracks current discovery page per category e.g. {anime: 3}
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -414,38 +415,121 @@ function go(page) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// DISCOVERY — load images from external API into the feed
+// DISCOVERY — local picsum fallback (always works, no backend needed)
 // ─────────────────────────────────────────────────────────────
 
-// Map discovery images into idea-like objects for the card renderer
-function discoveryToIdeas(images, category) {
-  return images.map((img, i) => ({
-    id:          -(i + 1),          // Negative IDs = discovery (not in DB)
-    title:       img.title || category + " Inspiration",
-    image_url:   img.image_url,
-    category:    category,
-    source:      "discovery",
-    saves_count: 0,
-    likes_count: 0,
-    difficulty:  2,
-    creativity:  4,
-    usefulness:  3,
-    description: img.author ? `Photo by ${img.author}` : "",
-  }));
+// Curated picsum seeds per category — deterministic, always loads
+const DISCOVERY_SEEDS = {
+  "anime":              ["anime1","anime2","anime3","anime4","anime5","anime6","anime7","anime8"],
+  "cars":               ["car1","car2","car3","car4","car5","car6","car7","car8"],
+  "bikes":              ["bike1","bike2","bike3","bike4","bike5","bike6","bike7","bike8"],
+  "scenery":            ["scene1","scene2","scene3","scene4","scene5","scene6","scene7","scene8"],
+  "gaming":             ["game1","game2","game3","game4","game5","game6","game7","game8"],
+  "workspace":          ["work1","work2","work3","work4","work5","work6","work7","work8"],
+  "architecture":       ["arch1","arch2","arch3","arch4","arch5","arch6","arch7","arch8"],
+  "art":                ["art1","art2","art3","art4","art5","art6","art7","art8"],
+  "nature":             ["nat1","nat2","nat3","nat4","nat5","nat6","nat7","nat8"],
+  "food":               ["food1","food2","food3","food4","food5","food6","food7","food8"],
+  "fashion":            ["fash1","fash2","fash3","fash4","fash5","fash6","fash7","fash8"],
+  "travel":             ["trav1","trav2","trav3","trav4","trav5","trav6","trav7","trav8"],
+  "tech":               ["tech1","tech2","tech3","tech4","tech5","tech6","tech7","tech8"],
+  "interior design":    ["int1","int2","int3","int4","int5","int6","int7","int8"],
+  "ladies accessories": ["acc1","acc2","acc3","acc4","acc5","acc6","acc7","acc8"],
+};
+
+const DISCOVERY_TITLES = {
+  "anime":              ["Anime Aesthetic","Neon City Vibes","Japanese Street","Pastel Dream","Night Sky","Cherry Blossom","Cyberpunk","Aesthetic Room"],
+  "cars":               ["Supercar Shot","Classic Garage","Sports Car Dusk","Luxury Detail","Race Track","Vintage Restore","Midnight Drive","Engine Bay"],
+  "bikes":              ["Bike at Sunset","Cafe Racer Build","Adventure Trail","Garage Workshop","Scrambler Detail","Mountain Road","Neon Bike Night","Chopper Build"],
+  "scenery":            ["Mountain Lake","Aurora Night Sky","Misty Forest","Desert Sunset","Ocean Cliff","Lavender Field","Himalayan Peaks","Tropical Falls"],
+  "gaming":             ["RGB Gaming Desk","Retro Console","Minimal Setup","Controller Lay","Mech Keyboard","Neon Station","Pixel Aesthetic","VR Room"],
+  "workspace":          ["Minimal Oak Desk","Terracotta Desk","Dual Monitor","Creative Studio","Bookshelf","Cosy Office","Standing Desk","Artist Studio"],
+  "architecture":       ["Brutalist Stair","Glass Tower","Curved Concrete","White Interior","Heritage Stone","Modern Bridge","Spiral Stair","Geometric Facade"],
+  "art":                ["Abstract Art","Ink Wash","Oil Canvas","Watercolour","Digital Art","Collage Piece","Ceramic Art","Street Mural"],
+  "nature":             ["Ice Crystal","Desert Dunes","Jungle Canopy","Wildflower Field","Snowy Path","Tide Pool","Green Hills","Autumn Trail"],
+  "food":               ["Sourdough Art","Japanese Breakfast","Pasta Plating","Matcha Latte","Charcuterie","Dessert Shot","Street Food","Coffee Pour"],
+  "fashion":            ["Linen Layers","Monochrome Edit","Street Style","Summer Minimal","Vintage Denim","Runway Look","Pastel Flatlay","Dark Academia"],
+  "travel":             ["Fjord Ferry","Lisbon Streets","Salt Flats","Santorini Domes","Bali Terraces","Moroccan Riad","Iceland Falls","Tokyo Night"],
+  "tech":               ["Circuit Board","Neon Sign Lab","3D Printer","Drone Shot","Server Room","Robotics Lab","Code Screen","Smart Home"],
+  "interior design":    ["Japandi Room","Wabi-Sabi Bed","Plaster Arch","Earthy Lounge","Reading Nook","Modern Kitchen","Boho Living","Scandi Space"],
+  "ladies accessories": ["Glass Bangles","Gold Earrings","Scrunchie Set","Layered Necklace","Stacked Bracelets","Statement Rings","Pearl Set","Boho Bracelets"],
+};
+
+const HEIGHTS = [700,720,680,750,700,760,700,740];
+
+function getLocalDiscovery(category, page = 1) {
+  const key    = category.toLowerCase();
+  // Base seeds for category variety (used on page 1)
+  const base   = DISCOVERY_SEEDS[key] || DISCOVERY_SEEDS["scenery"];
+  const titles = DISCOVERY_TITLES[key] || [];
+  const slug   = key.replace(/\s+/g, "-");
+  const PER_PAGE = 8;
+
+  // Generate PER_PAGE unique seeds for this page.
+  // Page 1 uses base seeds, page 2+ generates new ones mathematically
+  // so the grid is TRULY infinite — no repeats across pages.
+  const seeds = Array.from({ length: PER_PAGE }, (_, i) => {
+    const idx = (page - 1) * PER_PAGE + i;
+    if (page === 1 && i < base.length) {
+      return base[i]; // use curated seeds on first page
+    }
+    // Unique seed = category-slug + global index
+    // e.g. "fashion-8", "fashion-9", "fashion-10" ...
+    return `${slug}-${idx}`;
+  });
+
+  return seeds.map((seed, i) => {
+    const globalIdx = (page - 1) * PER_PAGE + i;
+    const w = 500;
+    const h = HEIGHTS[globalIdx % HEIGHTS.length];
+    return {
+      id:          -(Date.now() + globalIdx + page * 1000),
+      title:       titles[globalIdx % titles.length] || `${category} Vol.${globalIdx + 1}`,
+      image_url:   `https://picsum.photos/seed/${seed}/${w}/${h}`,
+      category:    category.charAt(0).toUpperCase() + category.slice(1),
+      source:      "discovery",
+      saves_count: 0,
+      likes_count: 0,
+      difficulty:  2,
+      creativity:  4,
+      usefulness:  3,
+      description: "",
+    };
+  });
 }
 
+// Try backend first (for Unsplash images if key set), fall back to local instantly
 async function loadDiscoveryImages(category, page = 1) {
+  // Always return local images immediately — no backend dependency
+  // Try to upgrade with backend results in background (if Render is awake)
+  const local = getLocalDiscovery(category, page);
   try {
+    const controller = new AbortController();
+    const timeout    = setTimeout(() => controller.abort(), 4000); // 4s max
     const res = await fetch(
       `${API_URL}/images/category?name=${encodeURIComponent(category)}&page=${page}&limit=12`,
-      { mode: "cors", credentials: "omit" }
+      { mode:"cors", credentials:"omit", signal: controller.signal }
     );
-    const data = await res.json();
-    return discoveryToIdeas(data.images || [], category);
+    clearTimeout(timeout);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.images?.length) {
+        return data.images.map((img, i) => ({
+          id:          -(Date.now() + i + 1000),
+          title:       img.title || category + " Inspiration",
+          image_url:   img.image_url,
+          category:    category.charAt(0).toUpperCase() + category.slice(1),
+          source:      "discovery",
+          saves_count: 0, likes_count: 0,
+          difficulty:  2, creativity: 4, usefulness: 3,
+          description: img.author ? `Photo by ${img.author}` : "",
+        }));
+      }
+    }
   } catch (e) {
-    console.warn("Discovery load failed:", e);
-    return [];
+    // Backend sleeping or unreachable — local fallback is already good
   }
+  return local;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -458,52 +542,49 @@ async function initHome() {
   // Show skeleton while loading
   grid.innerHTML = skeletonHTML(10);
 
+  const ALL_CATEGORIES = [
+    "anime","cars","bikes","scenery","gaming","ladies accessories",
+    "interior design","workspace","architecture","art",
+    "nature","food","fashion","travel","tech"
+  ];
+  const cat = S.filter && S.filter !== "all" ? S.filter.toLowerCase() : null;
+
+  // ── Step 1: Show local discovery images IMMEDIATELY (no backend needed) ──
+  let discoveryIdeas = [];
+  if (cat) {
+    discoveryIdeas = getLocalDiscovery(cat);
+  } else {
+    const shuffled = [...ALL_CATEGORIES].sort(() => Math.random() - 0.5).slice(0, 4);
+    discoveryIdeas = shuffled.flatMap(c => getLocalDiscovery(c)).sort(() => Math.random() - 0.5);
+  }
+  // Show discovery images right away so grid is never empty
+  S.ideas = discoveryIdeas;
+  S.allIdeas = discoveryIdeas;
+  renderGrid(grid, S.ideas);
+
+  // ── Step 2: Load DB ideas from backend (async, enhances the grid) ──
   try {
     const params = buildParams();
-
-    // Load DB ideas (creator + seeded discovery posts)
     const { ideas: dbIdeas } = await apiFetch("GET", `/ideas?${params}`);
-
-    // Always load discovery images — use selected category or rotate through all
-    const ALL_CATEGORIES = [
-      "anime","cars","bikes","scenery","gaming","ladies accessories",
-      "interior design","workspace","architecture","art",
-      "nature","food","fashion","travel","tech"
-    ];
-    const cat = S.filter && S.filter !== "all" ? S.filter.toLowerCase() : null;
-
-    // For "all" feed: pick 3 random categories to get variety
-    let discoveryIdeas = [];
-    if (cat) {
-      discoveryIdeas = await loadDiscoveryImages(cat);
-    } else {
-      // Shuffle and pick 3 categories, load in parallel
-      const shuffled = [...ALL_CATEGORIES].sort(() => Math.random() - 0.5).slice(0, 3);
-      const results  = await Promise.all(shuffled.map(c => loadDiscoveryImages(c)));
-      discoveryIdeas = results.flat();
-      // Shuffle the combined list so they mix well
-      discoveryIdeas.sort(() => Math.random() - 0.5);
-    }
-
-    // Merge: interleave discovery every 4th card for a mixed feel
-    const merged = [];
-    let di = 0;
-    for (let i = 0; i < dbIdeas.length; i++) {
-      merged.push(dbIdeas[i]);
-      if ((i + 1) % 4 === 0 && di < discoveryIdeas.length) {
-        merged.push(discoveryIdeas[di++]);
+    if (dbIdeas?.length) {
+      // Merge DB ideas with discovery — interleave every 4th
+      const merged = [];
+      let di = 0;
+      for (let i = 0; i < dbIdeas.length; i++) {
+        merged.push(dbIdeas[i]);
+        if ((i + 1) % 4 === 0 && di < discoveryIdeas.length) {
+          merged.push(discoveryIdeas[di++]);
+        }
       }
+      while (di < discoveryIdeas.length) merged.push(discoveryIdeas[di++]);
+      S.ideas    = merged;
+      S.allIdeas = merged;
+      applySkillFilter();
+      renderGrid(grid, S.ideas);
     }
-    // Append remaining discovery images at the end
-    while (di < discoveryIdeas.length) merged.push(discoveryIdeas[di++]);
-
-    S.ideas = merged;
-    S.allIdeas = merged;
-    applySkillFilter();
-    renderGrid(grid, S.ideas);
   } catch (e) {
-    console.error("initHome error:", e);
-    grid.innerHTML = `<div class="load-error">Could not load ideas. Check your connection.</div>`;
+    // Backend sleeping — that's fine, discovery images already showing
+    console.warn("Backend not ready yet, showing discovery images:", e.message);
   }
 
   // Trending strip
@@ -1269,6 +1350,7 @@ function handleFilter(e, page) {
   btn.closest(".filter-chips").querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
   btn.classList.add("active");
   S.filter = btn.dataset.filter;
+  S.discoveryPage = {}; // reset page counter on filter change
   if (page === "home")    initHome();
   if (page === "explore") initExplore();
 }
@@ -1369,49 +1451,82 @@ document.addEventListener("DOMContentLoaded", async () => {
     { passive: true }
   );
 
-  // ── Load more (manual + infinite scroll) ──────────────────
-  async function loadMoreIdeas() {
-    const btn = $("loadMoreBtn");
-    if (btn) { btn.classList.add("busy"); btn.querySelector("span").textContent = "Loading…"; }
-    try {
-      const p = buildParams({ offset: S.loaded });
-      const { ideas: newIdeas } = await apiFetch("GET", `/ideas?${p}`);
-      // Also fetch next page of discovery images for current category
-      let discoveryNew = [];
-      const cat = S.filter && S.filter !== "all" ? S.filter : null;
-      if (cat) {
-        const nextPage = Math.floor(S.loaded / 12) + 2;
-        discoveryNew = await loadDiscoveryImages(cat, nextPage);
-      }
-      const merged = [];
-      let di = 0;
-      for (let i = 0; i < newIdeas.length; i++) {
-        merged.push(newIdeas[i]);
-        if ((i + 1) % 4 === 0 && di < discoveryNew.length) merged.push(discoveryNew[di++]);
-      }
-      while (di < discoveryNew.length) merged.push(discoveryNew[di++]);
+  // ── Load more — infinite discovery pages ──────────────────
+  // ── INFINITE SCROLL — loads more images forever as you scroll ──
+  let _loadingMore = false;
 
-      if (!merged.length) { if (btn) btn.style.display = "none"; return; }
-      appendGrid($("homeGrid"), merged, S.loaded);
-      S.allIdeas = [...S.allIdeas, ...merged];
-      S.loaded  += merged.length;
-      if (newIdeas.length < 20 && !discoveryNew.length) { if (btn) btn.style.display = "none"; }
+  async function loadMoreIdeas() {
+    if (_loadingMore) return;
+    _loadingMore = true;
+
+    const spinner = $("loadingSpinner");
+    if (spinner) spinner.style.display = "block";
+
+    try {
+      const ALL_CATS = [
+        "anime","cars","bikes","scenery","gaming","ladies accessories",
+        "interior design","workspace","architecture","art",
+        "nature","food","fashion","travel","tech"
+      ];
+
+      const cat    = S.filter && S.filter !== "all" ? S.filter.toLowerCase() : null;
+      const catKey = cat || "all";
+
+      // Advance the discovery page for this category
+      const discPage = (S.discoveryPage[catKey] || 1) + 1;
+      S.discoveryPage[catKey] = discPage;
+
+      // Get next batch of images — always works, no backend needed
+      let newImages = [];
+      if (cat) {
+        // Single category — load next page of that category
+        newImages = getLocalDiscovery(cat, discPage);
+      } else {
+        // All feed — round-robin through categories so every scroll = different category
+        const catIndex = (discPage - 2) % ALL_CATS.length;
+        const thisCat  = ALL_CATS[catIndex];
+        const thisPage = Math.floor((discPage - 2) / ALL_CATS.length) + 2;
+        newImages = getLocalDiscovery(thisCat, thisPage);
+      }
+
+      // Append straight to grid — no merging needed, images load instantly
+      const grid = $("homeGrid");
+      if (grid && newImages.length) {
+        appendGrid(grid, newImages, S.allIdeas.length);
+        S.allIdeas = [...S.allIdeas, ...newImages];
+      }
+
+      // Silently try backend DB ideas too (bonus content if Render is awake)
+      try {
+        const p = buildParams({ offset: S.loaded });
+        const { ideas: dbNew } = await apiFetch("GET", `/ideas?${p}`);
+        if (dbNew?.length) {
+          appendGrid(grid, dbNew, S.allIdeas.length);
+          S.allIdeas = [...S.allIdeas, ...dbNew];
+          S.loaded  += dbNew.length;
+        }
+      } catch (_) { /* backend asleep — fine, discovery images already appended */ }
+
     } catch (e) {
-      toast(e.message, true);
+      console.warn("loadMore error:", e);
     } finally {
-      if (btn) { btn.classList.remove("busy"); btn.querySelector("span").textContent = "Load more ideas"; }
+      _loadingMore = false;
+      const spinner = $("loadingSpinner");
+      if (spinner) spinner.style.display = "none";
     }
   }
 
-  $("loadMoreBtn")?.addEventListener("click", loadMoreIdeas);
-
-  // ── Infinite scroll ─────────────────────────────────────
-  const _infiniteObserver = new IntersectionObserver(
-    entries => { if (entries[0].isIntersecting) loadMoreIdeas(); },
-    { rootMargin: "400px" }
-  );
-  const _sentinel = $("loadMoreBtn");
-  if (_sentinel) _infiniteObserver.observe(_sentinel);
+  // ── Sentinel observer — fires when bottom of grid is reached ──
+  const _sentinel = $("scrollSentinel");
+  if (_sentinel) {
+    const _infiniteObserver = new IntersectionObserver(
+      entries => {
+        if (entries[0].isIntersecting && !_loadingMore) loadMoreIdeas();
+      },
+      { rootMargin: "600px" } // start loading 600px before reaching the bottom
+    );
+    _infiniteObserver.observe(_sentinel);
+  }
 
   // ── Lazy-load images via IntersectionObserver ───────────
   function setupLazyImages() {
