@@ -33,6 +33,8 @@ const AIModule = (() => {
   // ── Render history list ───────────────────────────────────────
   function renderHistory(container) {
     if (!container) return;
+    if (typeof container === "string") container = document.getElementById(container);
+    if (!container) return;
     if (!_history.length) {
       container.innerHTML = `<p class="empty-note">Your generated boards will appear here.</p>`;
       return;
@@ -66,6 +68,8 @@ const AIModule = (() => {
 
   // ── Render palette swatches ───────────────────────────────────
   function renderPalette(colors, container) {
+    if (!container) return;
+    if (typeof container === "string") container = document.getElementById(container);
     if (!container) return;
     container.innerHTML = colors.map(c => `
       <div class="palette-swatch" style="background:${c}" title="${c}" data-color="${c}">
