@@ -37,9 +37,16 @@ def init_db():
             password_hash TEXT    NOT NULL,
             avatar_url    TEXT    DEFAULT NULL,
             bio           TEXT    DEFAULT '',
+            location      TEXT    DEFAULT '',
+            social_links  TEXT    DEFAULT '{}',
             created_at    TEXT    DEFAULT (datetime('now'))
         )
     """)
+
+    # Migrate existing installs
+    for col, defn in [("location","TEXT DEFAULT ''"), ("social_links","TEXT DEFAULT '{}' ")]:
+        try: c.execute(f"ALTER TABLE users ADD COLUMN {col} {defn}")
+        except: pass
 
     # ── ideas: upgraded with source, steps, tools, cost, reference_links ──
     c.execute("""
@@ -171,20 +178,76 @@ def get_user_by_id(user_id):
     conn = get_connection()
     try:
         row = conn.execute(
-            "SELECT id,username,email,avatar_url,bio,created_at FROM users WHERE id=?",
+            """SELECT id,username,email,avatar_url,bio,location,social_links,created_at
+               FROM users WHERE id=?""",
             (user_id,)
         ).fetchone()
-        return dict(row) if row else None
+        if not row: return None
+        d = dict(row)
+        # Deserialise social_links JSON
+        if isinstance(d.get("social_links"), str):
+            try:    d["social_links"] = json.loads(d["social_links"])
+            except: d["social_links"] = {}
+        return d
     finally:
         conn.close()
 
-def update_user_profile(user_id, bio=None, avatar_url=None):
+def update_user_profile(user_id, bio=None, avatar_url=None, username=None,
+                         location=None, social_links=None):
     conn = get_connection()
     try:
-        if bio        is not None: conn.execute("UPDATE users SET bio=? WHERE id=?",        (bio, user_id))
-        if avatar_url is not None: conn.execute("UPDATE users SET avatar_url=? WHERE id=?", (avatar_url, user_id))
+        updates = {}
+        if bio          is not None: updates["bio"]          = bio
+        if avatar_url   is not None: updates["avatar_url"]   = avatar_url
+        if username     is not None: updates["username"]     = username
+        if location     is not None: updates["location"]     = location
+        if social_links is not None: updates["social_links"] = json.dumps(social_links)
+        for col, val in updates.items():
+            conn.execute(f"UPDATE users SET {col}=? WHERE id=?", (val, user_id))
         conn.commit()
         return get_user_by_id(user_id)
+    finally:
+        conn.close()
+
+
+# ── USER STATS ─────────────────────────────────────────────────
+
+def get_user_stats(user_id):
+    """Return dashboard stats for a user."""
+    conn = get_connection()
+    try:
+        posts  = conn.execute("SELECT COUNT(*) FROM ideas WHERE user_id=? AND source='creator'", (user_id,)).fetchone()[0]
+        saves  = conn.execute("SELECT COUNT(*) FROM saves WHERE user_id=?", (user_id,)).fetchone()[0]
+        likes  = conn.execute("SELECT COUNT(*) FROM likes WHERE user_id=?", (user_id,)).fetchone()[0]
+        boards = conn.execute("SELECT COUNT(*) FROM boards WHERE user_id=?", (user_id,)).fetchone()[0]
+        # Recent saves
+        recent_saves = conn.execute(
+            """SELECT i.*, u.username FROM ideas i
+               JOIN saves s ON i.id=s.idea_id JOIN users u ON i.user_id=u.id
+               WHERE s.user_id=? ORDER BY s.saved_at DESC LIMIT 6""",
+            (user_id,)
+        ).fetchall()
+        # Recent uploads
+        recent_uploads = conn.execute(
+            "SELECT * FROM ideas WHERE user_id=? AND source='creator' ORDER BY created_at DESC LIMIT 6",
+            (user_id,)
+        ).fetchall()
+        # Top categories saved
+        cat_rows = conn.execute(
+            """SELECT i.category, COUNT(*) as cnt FROM saves s
+               JOIN ideas i ON s.idea_id=i.id WHERE s.user_id=?
+               GROUP BY i.category ORDER BY cnt DESC LIMIT 5""",
+            (user_id,)
+        ).fetchall()
+        return {
+            "posts":           posts,
+            "saves":           saves,
+            "likes":           likes,
+            "boards":          boards,
+            "recent_saves":    [_parse_idea(r) for r in recent_saves],
+            "recent_uploads":  [_parse_idea(r) for r in recent_uploads],
+            "top_categories":  [{"category": r["category"], "count": r["cnt"]} for r in cat_rows],
+        }
     finally:
         conn.close()
 
