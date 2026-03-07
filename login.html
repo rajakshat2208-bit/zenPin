@@ -236,6 +236,9 @@
 
   const API_URL = "https://zenpin-api.onrender.com";
 
+  // Wake up Render on page load
+  fetch(API_URL + "/", { mode: "cors", credentials: "omit" }).catch(() => {});
+
   // ── Password toggle ───────────────────────────────────────────
   document.getElementById("pwToggle").onclick = function() {
     const inp = document.getElementById("password");
@@ -277,34 +280,43 @@
     const btn = document.getElementById("submitBtn");
     btn.classList.add("loading"); btn.disabled = true;
 
-    try {
-      const res = await fetch(`${API_URL}/auth/login`, {
-        method: "POST",
-        mode: "cors",
-        credentials: "omit",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        setError(data.detail || "Login failed. Check your email and password.");
+    // Retry logic — handles Render cold starts
+    let lastErr = null;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 30000);
+        const res = await fetch(`${API_URL}/auth/login`, {
+          method: "POST",
+          mode: "cors",
+          credentials: "omit",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+          signal: controller.signal,
+        });
+        clearTimeout(timeout);
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          setError(data.detail || "Login failed. Check your email and password.");
+          btn.classList.remove("loading"); btn.disabled = false;
+          return;
+        }
+        localStorage.setItem("zenpin_token", data.token);
+        localStorage.setItem("zenpin_user", JSON.stringify(data.user));
+        const next = new URLSearchParams(window.location.search).get("next");
+        window.location.href = next || "index.html";
         return;
+      } catch (err) {
+        lastErr = err;
+        if (attempt < 3) {
+          setError(`Server is waking up... retrying (${attempt}/3)`);
+          await new Promise(r => setTimeout(r, 3000));
+        }
       }
-
-      // Store session
-      localStorage.setItem("zenpin_token", data.token);
-      localStorage.setItem("zenpin_user", JSON.stringify(data.user));
-
-      // Redirect
-      const next = new URLSearchParams(window.location.search).get("next");
-      window.location.href = next || "index.html";
-
-    } catch (err) {
-      setError("Error: " + (err.message || "Could not reach server. Open F12 Console for details.")); console.error("Login error:", err);
-    } finally {
-      btn.classList.remove("loading"); btn.disabled = false;
     }
+    setError("Could not reach server after 3 attempts. Please try again in 30 seconds.");
+    console.error("Login failed:", lastErr);
+    btn.classList.remove("loading"); btn.disabled = false;
   };
 
   // Live field clearing
