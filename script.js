@@ -30,6 +30,9 @@ const S = {
 const $ = id => document.getElementById(id);
 const fmt = n => n >= 1000 ? (n/1000).toFixed(1).replace(".0","")+"k" : String(n||0);
 
+function escHtml(s) { return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function escAttr(s) { return String(s||"").replace(/'/g,"\'").replace(/"/g,"\&quot;"); }
+
 function token()     { return localStorage.getItem("zenpin_token"); }
 function isLoggedIn(){ return !!token(); }
 
@@ -534,6 +537,21 @@ const CAT_CONFIG = {
   "workspace":         { q:"workspace+desk+office+minimal",   titles:["Home Office","Minimal Desk","Cosy Workspace","Creative Desk","Coffee & Work","Morning Setup","Standing Desk","Bookshelf Workspace","Plant Office","Laptop Setup"],descs:["A home office built around what helps you think — natural light, clear surfaces, the right tools within reach.","A desk with only what you need today. The minimal workspace is a daily commitment worth maintaining.","Warm light, a good chair, a candle, a plant. A workspace you want to be in changes everything about how you work.","The creative desk tells a story — sketches pinned up, references spread out, works in progress visible.","A laptop, good coffee, morning light. The simplest and most reliable combination for getting something done.","Everything in its place before the work begins. Five minutes of preparation pays back every single time.","A height-adjustable desk letting you choose how to work. Standing for part of the day changes your energy.","Books behind the monitor, books on the desk. A workspace surrounded by books knows where ideas come from.","A desk next to a window with plants on the sill. Natural light and living things make workspaces genuinely better.","Work from anywhere — a laptop made location a choice rather than a constraint. The workspace is wherever you decide."] },
   "interior design":   { q:"interior+design+home+living+room",titles:["Japandi Bedroom","Minimal Kitchen","Cosy Living Room","Boho Interior","Scandi Living","Earthy Tones","Reading Nook","Modern Dining","Gallery Wall","Modern Living Room"],descs:["Japanese restraint meeting Scandinavian warmth — Japandi spaces feel deeply calm and completely considered.","A kitchen where every surface has earned its place — clean lines, quality materials, cooking as pleasure.","Layered textiles, warm light, a sofa you don't want to leave. The living room designed for actual living.","Rattan, macrame, layered rugs, trailing plants. Every object chosen for meaning as much as aesthetics.","White walls, natural wood, clean lines. Scandinavian design takes making home feel good very seriously.","Terracotta, warm ochre, sand, olive. An earthy palette grounds a space and connects it to the natural world.","A window seat with cushions, good light, a shelf of books. Perhaps the single best addition to any home.","A dining table at the centre of home — generous in scale, designed for long meals and longer conversations.","A collection of artworks and objects on a wall. A gallery wall is a portrait of the people who live there.","A contemporary living room where every decision has been considered. Good design is invisible until you try to replicate it."] },
   "ladies accessories":{ q:"jewelry+accessories+necklace+bracelet",titles:["Gold Jewellery","Pearl Earrings","Layered Necklaces","Bracelet Stack","Ring Collection","Luxury Handbag","Designer Bag","Fine Jewellery","Gold Bangles","Statement Earrings"],descs:["Delicate gold chains, fine settings, considered design. Quality jewellery is investment dressing that improves with age.","Classic pearl earrings bridging every occasion. Pearls make the wearer look more considered, not more dressed up.","Multiple fine chains at different lengths — layered necklaces work with almost everything and tell a personal story.","Bracelets collected over years — bought, gifted, found. A stacked wrist tells stories a single piece never could.","Rings chosen for meaning rather than convention — which finger they belong on is entirely up to you.","A well-made handbag in quality leather — the accessory that ties an outfit together while being genuinely useful.","Clean lines, quality hardware, a silhouette unchanged for decades. The investment bag as wardrobe foundation.","Stones set with precision, metal worked into forms that look effortless but required extraordinary skill.","Stacked gold bangles catching light with every gesture. Among jewellery's most ancient forms — worn the same way for millennia.","Earrings large enough to be the entire statement — worn with confidence, they transform a simple outfit completely."] },
+  // ── 5 New Categories ────────────────────────────────────────
+  "tattoos":           { q:"tattoo+ink+body+art",           titles:["Minimalist Line","Blackwork Sleeve","Floral Tattoo","Geometric Ink","Japanese Style","Fine Line Detail","Neo-Traditional","Watercolour Tattoo","Abstract Ink","Script Tattoo"],descs:["A single-needle fine line tattoo reduced to its absolute essentials — proof that restraint is its own kind of mastery.","Bold blackwork covering the sleeve with patterns that reference folk art and sacred geometry equally.","Botanical illustration transferred to skin — flowers and leaves rendered with the delicacy of a watercolour painting.","Sacred geometry and precise linework creating patterns that read differently at every viewing distance.","Traditional Japanese tattooing where every element carries symbolic weight — dragons, koi, cherry blossom, waves.","Fine line detail work that rewards close inspection — the kind of tattoo that reveals more the longer you look.","Neo-traditional tattooing updating classic flash imagery with contemporary illustration techniques and richer colour.","Watercolour effects on skin — pigment appearing to bleed and bloom as if on wet paper.","Abstract shapes and brush strokes that prioritise feeling over representation — each one completely unique.","Elegant script in a carefully chosen typeface, words made permanent because they deserve to be."] },
+  "plants":            { q:"indoor+plants+houseplants+botanical",titles:["Monstera Delight","Trailing Pothos","Succulent Garden","Fiddle Leaf Fig","Snake Plant","Propagation Station","Terrarium World","Hanging Planters","Cactus Collection","Botanical Shelfie"],descs:["A monstera deliciosa with leaves splitting into their signature fenestrations — the plant that defined a decade of interior design.","Trailing pothos spilling from a high shelf, vines reaching toward the light with determined grace.","A curated succulent arrangement — rosettes of different sizes, textures, and subtle colour variations.","The fiddle leaf fig: dramatic, architectural, temperamental, and somehow still worth every dropped leaf.","The snake plant standing upright in a terracotta pot, requiring almost nothing and giving geometric beauty back.","A propagation station of glass vessels holding cuttings at various stages — life visible through clear glass.","A self-contained world under glass — moss, stones, tiny plants creating a miniature ecosystem.","Macrame hangers suspending plants at different heights, turning a corner into a living installation.","A cactus collection on a sunny windowsill — each one a different silhouette, some ancient-looking, some comic.","A shelf styled with plants, books, and ceramics — the shelfie as a form of domestic self-expression."] },
+  "fitness":           { q:"gym+fitness+workout+training",    titles:["Morning Workout","Weight Training","Yoga Practice","HIIT Session","Running Route","Home Gym Setup","Calisthenics","Cycling Training","Boxing Gym","Recovery Day"],descs:["The 5am workout before the world wakes up — discipline made visible in the empty gym and the chalk on the bar.","Progressive overload applied consistently over years. Strength training is the slowest and most reliable form of self-improvement.","A yoga practice that started for flexibility and became a daily meditation. The mat as a consistent place to return to.","High-intensity intervals that compress maximum effort into minimum time. HIIT respects your schedule and rewards commitment.","A running route that has become a ritual — the same streets different every morning depending on light and mood.","A home gym built piece by piece: a rack, a bar, some plates, enough space. No excuses, no commute.","Bodyweight training that needs nothing but a bar and the ground. Calisthenics builds strength you can see and feel.","Early morning cycling before traffic — the city quiet, legs spinning, the day beginning on your own terms.","The boxing gym: bags hanging in rows, the smell of leather and effort, technique built through repetition.","Active recovery, stretching, stillness. The rest day is as important as the training day — the body needs both."] },
+  "music":             { q:"music+studio+guitar+vinyl",       titles:["Vinyl Collection","Guitar Setup","Studio Session","Concert Energy","Headphone Escape","Synthesizer Lab","Record Store","Live Performance","Pedalboard Art","Producer Desk"],descs:["A vinyl record collection organised by mood rather than alphabet — pulling a sleeve out and committing to a side is a different relationship with music.","A guitar setup in the corner of a room — the instrument always within reach, always inviting a few minutes of play.","Red light on in the studio: headphones up, take thirty-seven, the song finally revealing its best self.","A concert crowd with hands raised, the moment when recorded music becomes a shared physical experience.","Headphones on, the world cancelled. Music heard properly for the first time — every detail audible in the mix.","A synthesizer and patch cables — analogue equipment creating sounds that exist nowhere else, shaped by hands and intuition.","A record store where discovery is physical: thumbing through sleeves, reading liner notes, buying something unknown.","A live performance where the gap between artist and audience collapses into something nobody can quite describe.","A pedalboard as an instrument in itself — signal chain mapped and optimised, each pedal chosen for a specific sound.","The producer's desk at 2am: headphones, a laptop, hardware, a project finally coming together after months."] },
+  "pets":              { q:"pets+dogs+cats+animals",          titles:["Golden Morning","Cat Window Watch","Puppy Chaos","Senior Dog Portrait","Cat Nap","Dog at Beach","Kitten Play","Dog Training","Cat Curiosity","Dog Walk Ritual"],descs:["A golden retriever in morning light — no photograph better communicates uncomplicated joy than a happy dog.","A cat positioned in a window, monitoring the outside world with the focused attention of a naturalist.","Puppy energy: everything interesting, nothing dangerous, the world a continuous source of wonder and things to chew.","The senior dog's portrait — grey muzzle, wise eyes, the accumulated trust of a decade of companionship.","A cat in the deepest phase of a nap, completely surrendered to sleep in a patch of afternoon sun.","A dog at the beach with wet fur and salt-crusted ears, running back with a stick as if it's the most important thing.","Kittens playing — rapid movement, sudden stops, the exaggerated seriousness of creatures that haven't yet learned what's dangerous.","Dog training session: focus, reward, the building of communication between two species through patience and consistency.","A cat inspecting something invisible at floor level with complete scientific seriousness and slightly narrowed eyes.","The morning dog walk ritual — the same route every day, always somehow new to the dog, which makes it new to you too."] },
+  "superheroes":       { q:"superhero+comic+book+hero",
+    titles:["Iron Man Armour","Batman Cowl","Spider-Man City","Wonder Woman","Captain America","Thor Lightning","Black Panther","Superman Cape","The Flash","Wolverine Claws"],
+    descs:["Tony Stark's armour as engineering fantasy — the suit as the ultimate expression of applied intelligence.","Batman on a Gotham rooftop: discipline and will as the superpower, no origin required.","Spider-Man swinging between towers — the most kinetic superhero, the city itself his gymnasium.","Wonder Woman in battle — representing justice and the price of peace with equal conviction.","Captain America: the super soldier whose actual power is stubborn moral clarity.","Thor summoning lightning — Norse myth colliding with cosmic Marvel universe.","Black Panther in Wakanda: a superhero inseparable from the civilization he protects.","Superman in flight — the original, the one every other superhero is measured against.","The Flash as pure speed — a hero whose power collapses the gap between decision and action.","Wolverine's claws extended — the berserker with regeneration as burden, not gift."] },
+  "drinks":            { q:"cocktail+whisky+bar+drinks+alcohol",
+    titles:["Whisky Neat","Craft Cocktail","Espresso Pull","Cold Brew","Red Wine Pour","Negroni Classic","Old Fashioned","Champagne Toast","Craft Beer","Gin & Tonic"],
+    descs:["A whisky glass, neat, on a wooden bar — the reward economy at its most elemental and honest.","A craft cocktail built with precision — spirits, modifiers, garnish, ice all chosen deliberately.","An espresso pulled through a professional machine — 25 seconds of aligned pressure and temperature.","Cold brew steeped overnight — patience rewarded with smooth, concentrated, un-bitter coffee.","A red wine decanted and poured into good crystal — the ritual of opening as anticipation itself.","A Negroni in a rocks glass: gin, vermouth, Campari — equal parts, no argument needed.","An Old Fashioned: whisky, bitters, sugar, ice — the cocktail that needs absolutely nothing else.","Champagne bubbles rising in a flute — carbonation as celebration physics, universal and reliable.","A craft beer poured into the correct glass — foam settling as the revival of local brewing culture.","A gin and tonic with botanicals — the spirit's complexity made legible by the right tonic water."] },
+  "flowers":           { q:"flowers+floral+botanical+bloom+garden",
+    titles:["Peony Abundance","Single Red Rose","Wildflower Field","Orchid Elegance","Sunflower Field","Cherry Blossom","Tulip Season","Lavender Row","Dahlia Drama","Poppy Field"],
+    descs:["Peonies in full bloom — a profusion of petals that lasts a week and is worth waiting for all year.","A single rose at peak: the most familiar flower still capable of stopping you completely.","A wildflower meadow in full summer — ecological complexity masquerading as aesthetic pleasure.","An orchid evolved into specific beauty through millions of years of pollinator communication.","Sunflowers tracking light across a field — heliotropism as agricultural and visual spectacle.","Cherry blossom in full flower — hanami celebrating beauty that lasts only days, perfectly.","A tulip field in spring colour — Dutch horticulture producing annual seasonal spectacle.","Lavender rows in Provence — the fragrance reaching you before the purple becomes visible.","A dahlia in full bloom: complex petal geometry in a flower rewarding close examination.","Poppies in a grain field — red flowers in green, the combination that defined a generation's mourning."] },
 };
 
 // Unsplash search queries (used when API key is available)
@@ -553,6 +571,14 @@ const UNSPLASH_QUERIES = {
   "workspace":          "workspace desk minimal office",
   "interior design":    "interior design home decor",
   "ladies accessories": "jewelry accessories necklace",
+  "tattoos":             "tattoo ink body art",
+  "plants":              "houseplants indoor botanical",
+  "fitness":             "gym fitness workout training",
+  "music":               "music studio guitar vinyl",
+  "pets":                "pets dogs cats animals",
+  "superheroes":         "superhero comic book hero",
+  "drinks":              "cocktail whisky bar drinks",
+  "flowers":             "flowers floral botanical bloom",
 };
 
 // ── Direct Unsplash API call from browser ────────────────────
@@ -584,29 +610,83 @@ async function fetchUnsplash(category, page = 1) {
 
 const IMG_HEIGHTS = [700, 750, 680, 800, 720, 760, 650, 740];
 
-// Get category-matched photos using source.unsplash.com/featured
-// OFFICIAL no-key Unsplash URL — always returns correct keyword-matched photos
-// &sig=N gives different matching photos for infinite variety
+// Build placeholder card when no API key is set
+// Uses gradient placeholder with category icon — always loads, never 404s
+function makePlaceholder(category, idx, title, desc) {
+  const GRAD = {
+    "cars":              "linear-gradient(135deg,#1a1a2e,#16213e,#0f3460)",
+    "bikes":             "linear-gradient(135deg,#2d1b69,#11998e,#38ef7d)",
+    "anime":             "linear-gradient(135deg,#f093fb,#f5576c,#4facfe)",
+    "scenery":           "linear-gradient(135deg,#4facfe,#00f2fe,#43e97b)",
+    "gaming":            "linear-gradient(135deg,#0f0c29,#302b63,#24243e)",
+    "fashion":           "linear-gradient(135deg,#f7971e,#ffd200,#f7971e)",
+    "nature":            "linear-gradient(135deg,#134e5e,#71b280,#134e5e)",
+    "food":              "linear-gradient(135deg,#f46b45,#eea849,#f46b45)",
+    "travel":            "linear-gradient(135deg,#2980b9,#6dd5fa,#ffffff)",
+    "tech":              "linear-gradient(135deg,#1a1a2e,#7c3aed,#1a1a2e)",
+    "art":               "linear-gradient(135deg,#ec008c,#fc6767,#ec008c)",
+    "architecture":      "linear-gradient(135deg,#2c3e50,#4ca1af,#2c3e50)",
+    "workspace":         "linear-gradient(135deg,#2c3e50,#3498db,#2c3e50)",
+    "interior design":   "linear-gradient(135deg,#d4a574,#a0785a,#6b4c3b)",
+    "ladies accessories":"linear-gradient(135deg,#b8860b,#ffd700,#b8860b)",
+    "tattoos":           "linear-gradient(135deg,#1a1a1a,#8b0000)",
+    "plants":            "linear-gradient(135deg,#1a4731,#56ab2f)",
+    "fitness":           "linear-gradient(135deg,#232526,#414345)",
+    "music":             "linear-gradient(135deg,#200122,#6f0000)",
+    "pets":              "linear-gradient(135deg,#614385,#516395)",
+    "superheroes":       "linear-gradient(135deg,#0d0d0d,#b22222)",
+    "drinks":            "linear-gradient(135deg,#1a1a2e,#c94b4b)",
+    "flowers":           "linear-gradient(135deg,#f953c6,#b91d73)",
+  };
+  const ICON = {
+    "cars":"🚗","bikes":"🏍","anime":"🎌","scenery":"🌄","gaming":"🎮",
+    "fashion":"👗","nature":"🌿","food":"🍜","travel":"✈️","tech":"⚡",
+    "art":"🎨","architecture":"🏛","workspace":"💻","interior design":"🏠",
+    "ladies accessories":"💎",
+    "tattoos":"🖊️","plants":"🪴","fitness":"💪",
+    "music":"🎵","pets":"🐾","superheroes":"🦸",
+    "drinks":"🥃","flowers":"🌸",
+  };
+  const key  = category.toLowerCase();
+  const grad = GRAD[key] || "linear-gradient(135deg,#7c3aed,#db2777)";
+  const icon = ICON[key] || "✦";
+  const h    = [700,750,680,800,720,760,650,740][idx % 8];
+  // Use a colored SVG data URL as the image — always loads, no network needed
+  // Use category gradient colours for the SVG background
+  const c1 = encodeURIComponent(grad.split(",")[1]?.match(/#[0-9a-f]{3,6}/i)?.[0] || "#667eea");
+  const c2 = encodeURIComponent(grad.split(",").pop()?.match(/#[0-9a-f]{3,6}/i)?.[0] || "#764ba2");
+  const shortTitle = (title||"").slice(0,22).replace(/[<>&"']/g,"");
+  const svg  = `<svg xmlns='http://www.w3.org/2000/svg' width='500' height='${h}'>`
+    + `<defs><linearGradient id='g${idx}' x1='0%25' y1='0%25' x2='100%25' y2='100%25'>`
+    + `<stop offset='0%25' stop-color='${c1}'/><stop offset='100%25' stop-color='${c2}'/>`
+    + `</linearGradient></defs>`
+    + `<rect width='500' height='${h}' fill='url(%23g${idx})'/>` 
+    + `<text x='250' y='${Math.floor(h*0.42)}' font-size='88' text-anchor='middle' dominant-baseline='middle'>${icon}</text>`
+    + `<text x='250' y='${Math.floor(h*0.60)}' font-size='19' fill='rgba(255,255,255,0.88)' text-anchor='middle' dominant-baseline='middle' font-family='sans-serif'>${shortTitle}</text>`
+    + `<text x='250' y='${Math.floor(h*0.70)}' font-size='13' fill='rgba(255,255,255,0.45)' text-anchor='middle' dominant-baseline='middle' font-family='sans-serif'>${key.toUpperCase()}</text>`
+    + `</svg>`;
+  return `data:image/svg+xml,${svg}`;
+}
+
 function getLocalDiscovery(category, page = 1) {
   const key    = category.toLowerCase();
   const cfg    = CAT_CONFIG[key] || CAT_CONFIG["scenery"];
   const PER    = 8;
-  const H_LIST = [700, 750, 680, 800, 720, 760, 650, 740];
 
   return Array.from({ length: PER }, (_, i) => {
-    const gIdx = (page - 1) * PER + i;
-    const h    = H_LIST[gIdx % H_LIST.length];
-    const sig  = gIdx + (page * 100);
-    const url  = `https://source.unsplash.com/500x${h}/?${cfg.q}&sig=${sig}`;
+    const gIdx  = (page - 1) * PER + i;
+    const title = cfg.titles[gIdx % cfg.titles.length];
+    const desc  = cfg.descs[gIdx % cfg.descs.length];
+    const url   = makePlaceholder(key, gIdx, title, desc);
     return {
       id:          -(Date.now() + gIdx * 100 + page * 10000),
-      title:       cfg.titles[gIdx % cfg.titles.length],
+      title,
       image_url:   url,
       category:    category.charAt(0).toUpperCase() + category.slice(1),
       source:      "discovery",
       saves_count: 0, likes_count: 0,
       difficulty:  2, creativity: 4, usefulness: 3,
-      description: cfg.descs[gIdx % cfg.descs.length],
+      description: desc,
     };
   });
 }
@@ -623,14 +703,12 @@ async function loadDiscoveryImages(category, page = 1) {
   const unsplashResult = await fetchUnsplash(category, page);
   if (unsplashResult?.length) return unsplashResult;
 
-  // 2. Pixabay direct from browser
-  const pixabayResult = await fetchPixabay(category, page);
-  if (pixabayResult?.length) return pixabayResult;
+  // 2. Pixabay — skipped (fetchPixabay requires a user key; handled in backend tier 3)
 
   // 3. Render backend (tries Unsplash/Pexels server-side if keys set)
   try {
     const controller = new AbortController();
-    setTimeout(() => controller.abort(), 4000);
+    setTimeout(() => controller.abort(), 1500); // fast timeout — backend sleeping is common
     const res = await fetch(
       `${API_URL}/images/category?name=${encodeURIComponent(category)}&page=${page}&limit=12`,
       { mode: "cors", credentials: "omit", signal: controller.signal }
@@ -669,7 +747,8 @@ async function initHome() {
   const ALL_CATEGORIES = [
     "anime","cars","bikes","scenery","gaming","ladies accessories",
     "interior design","workspace","architecture","art",
-    "nature","food","fashion","travel","tech"
+    "nature","food","fashion","travel","tech",
+    "tattoos","plants","fitness","music","pets"
   ];
   const cat = S.filter && S.filter !== "all" ? S.filter.toLowerCase() : null;
 
@@ -752,15 +831,28 @@ function skeletonHTML(n) {
 async function initExplore() {
   const grid = $("exploreGrid");
   if (!grid) return;
-  grid.innerHTML = skeletonHTML(16);
+
+  // Show local images immediately — no wait, no skeleton freeze
+  const cat = S.filter && S.filter !== "all" ? S.filter.toLowerCase() : null;
+  const ALL_CATS = Object.keys(CAT_CONFIG);
+  let localIdeas = [];
+  if (cat) {
+    localIdeas = getLocalDiscovery(cat);
+  } else {
+    const shuffled = [...ALL_CATS].sort(() => Math.random() - 0.5).slice(0, 6);
+    localIdeas = shuffled.flatMap(c => getLocalDiscovery(c)).sort(() => Math.random() - 0.5);
+  }
+  renderGrid(grid, localIdeas);
+
+  // Then enhance with backend content silently
   try {
     const p = new URLSearchParams({ limit:40, sort:"trending" });
     if (S.filter !== "all") p.set("category", S.filter);
     if (S.search) p.set("search", S.search);
     const { ideas } = await apiFetch("GET", `/ideas?${p}`);
-    renderGrid(grid, ideas);
+    if (ideas?.length) renderGrid(grid, ideas);
   } catch {
-    grid.innerHTML = `<div class="load-error">Could not load ideas.</div>`;
+    // Backend asleep — local images already showing, nothing to do
   }
 }
 
@@ -1291,6 +1383,14 @@ const DESC_MAP = {
   "Workspace":          "A space designed around how you actually think and work — where every object earns its place and the environment itself becomes a tool for clearer thinking.",
   "Interior Design":    "A room where every decision — material, proportion, light, texture — works together to create an atmosphere that's both beautiful and deeply liveable.",
   "Ladies Accessories": "The finishing details that complete an outfit and express personality — jewellery, bags, and accessories chosen with intention, worn with confidence.",
+  "Tattoos":  "Permanent marks made with intention — each one a decision that carries the weight of knowing it will outlast every passing trend.",
+  "Plants":   "Living things that ask very little and give a lot back — greenery that makes every space feel more alive and more human.",
+  "Fitness":  "The daily practice of showing up for yourself — not for an aesthetic but for the way it makes everything else in life feel more manageable.",
+  "Music":    "Sound arranged deliberately to produce feeling — the art form that bypasses every rational defence and gets directly to something essential.",
+  "Pets":     "Companionship without agenda — the daily reminder that unconditional presence is among the most valuable things one living thing can offer another.",
+  "Superheroes": "Icons of power, justice, and human potential — the myths of our age rendered in colour, action, and conviction.",
+  "Drinks":      "The craft of the glass — spirits, technique, and presentation elevated into ritual and genuine sensory pleasure.",
+  "Flowers":     "Nature's most concentrated beauty — petals and colour arranged by evolution and human intention in equal measure.",
 };
 
 function modalStars(val) {
@@ -1324,13 +1424,20 @@ function downloadImage(url, title = "zenpin-image") {
     });
 }
 
+async function navigateModal(dir) {
+  const allCards = [...S.allIdeas, ...S.ideas].filter((v,i,a) => a.findIndex(x=>x.id===v.id)===i);
+  const idx = allCards.findIndex(x => x.id === S.modalId);
+  if (idx < 0) return;
+  const next = allCards[idx + dir];
+  if (next) openModal(next.id);
+}
+
 async function openModal(id) {
-  let idea;
-  try {
-    idea = await apiFetch("GET", `/ideas/${id}`);
-  } catch {
-    // Fallback to cached
-    idea = S.allIdeas.find(i => i.id === id) || null;
+  // First try local cache (instant)
+  let idea = S.allIdeas.find(x => x.id === id) || S.ideas.find(x => x.id === id) || null;
+  // If not in cache and positive id, try backend
+  if (!idea && id > 0) {
+    try { idea = await apiFetch("GET", `/ideas/${id}`); } catch {}
   }
   if (!idea) return;
   S.modalId = id;
@@ -1532,6 +1639,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("modalBackdrop")?.addEventListener("click", e => {
     if (e.target === $("modalBackdrop")) closeModal();
   });
+
+  // ── Modal prev/next navigation ─────────────────────────────
+  $("modalPrevBtn")?.addEventListener("click", () => navigateModal(-1));
+  $("modalNextBtn")?.addEventListener("click", () => navigateModal(+1));
   $("modalSaveBtn")?.addEventListener("click", () => {
     if (S.modalId) handleSave(S.modalId);
   });
@@ -1568,18 +1679,20 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // ── Keyboard shortcuts ─────────────────────────────────────
   document.addEventListener("keydown", e => {
-    if (e.key === "Escape") closeModal();
+    if (e.key === "Escape")      closeModal();
+    if (e.key === "ArrowLeft"  && S.modalId) navigateModal(-1);
+    if (e.key === "ArrowRight" && S.modalId) navigateModal(+1);
     if (e.key === "/" && document.activeElement !== $("globalSearch")) {
       e.preventDefault();
       $("globalSearch")?.focus();
     }
   });
 
-  // ── Scroll shadow on navbar ────────────────────────────────
-  window.addEventListener("scroll", () =>
-    $("navbar")?.classList.toggle("scrolled", window.scrollY > 10),
-    { passive: true }
-  );
+  // ── Scroll shadow on navbar + back-to-top visibility ────────
+  window.addEventListener("scroll", () => {
+    $("navbar")?.classList.toggle("scrolled", window.scrollY > 10);
+    $("backToTop")?.classList.toggle("visible", window.scrollY > 500);
+  }, { passive: true });
 
   // ── Load more — infinite discovery pages ──────────────────
   // ── INFINITE SCROLL — loads more images forever as you scroll ──
@@ -1593,11 +1706,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (spinner) spinner.style.display = "block";
 
     try {
-      const ALL_CATS = [
-        "anime","cars","bikes","scenery","gaming","ladies accessories",
-        "interior design","workspace","architecture","art",
-        "nature","food","fashion","travel","tech"
-      ];
+      const ALL_CATS = Object.keys(CAT_CONFIG);
 
       const cat    = S.filter && S.filter !== "all" ? S.filter.toLowerCase() : null;
       const catKey = cat || "all";
@@ -1626,16 +1735,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         S.allIdeas = [...S.allIdeas, ...newImages];
       }
 
-      // Silently try backend DB ideas too (bonus content if Render is awake)
-      try {
-        const p = buildParams({ offset: S.loaded });
-        const { ideas: dbNew } = await apiFetch("GET", `/ideas?${p}`);
-        if (dbNew?.length) {
-          appendGrid(grid, dbNew, S.allIdeas.length);
-          S.allIdeas = [...S.allIdeas, ...dbNew];
-          S.loaded  += dbNew.length;
-        }
-      } catch (_) { /* backend asleep — fine, discovery images already appended */ }
+      // Note: we don't call backend on scroll — it causes lag when sleeping
+      // Local images load instantly and provide infinite variety
 
     } catch (e) {
       console.warn("loadMore error:", e);
@@ -1860,6 +1961,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // ── Dashboard nav link ─────────────────────────────────────
   $("navDashboardBtn")?.addEventListener("click", () => go("dashboard"));
+  $("newBoardBtn")?.addEventListener("click", showNewBoardModal);
   $("dashNewPostBtn")?.addEventListener("click", () => openCreatorPost?.());
 
   // ── Collab chat ────────────────────────────────────────────
