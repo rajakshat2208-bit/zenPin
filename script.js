@@ -283,61 +283,117 @@ const TypographySettings = {
 // PAGE: DASHBOARD
 // ─────────────────────────────────────────────────────────────
 async function initDashboard() {
+  // ── Not logged in: show a friendly prompt instead of redirecting ──
   const user = getUser();
-  if (!user) { go("home"); return; }
+  if (!user) {
+    const inner = document.querySelector("#page-dashboard .page-inner");
+    if (inner) inner.innerHTML = `
+      <div style="text-align:center;padding:80px 20px">
+        <div style="font-size:3rem;margin-bottom:16px">📊</div>
+        <h2 style="font-size:1.4rem;font-weight:700;margin-bottom:8px">Your Dashboard</h2>
+        <p style="color:var(--text-3);margin-bottom:24px">Sign in to track your posts, saves, and creative activity.</p>
+        <button class="btn-primary" onclick="window.location.href='login.html'">Sign In</button>
+      </div>`;
+    return;
+  }
 
-  // Show skeleton states
+  // ── Show loading skeletons ──────────────────────────────────
   ["dashPosts","dashSaves","dashLikes","dashBoards"].forEach(id => {
-    if ($(id)) $(id).textContent = "…";
+    const el = $(id); if (el) el.textContent = "…";
   });
+  const uploadGrid = $("dashUploadsGrid");
+  const savesGrid  = $("dashSavesGrid");
+  const catWrap    = $("dashCategoryList");
+  if (uploadGrid) uploadGrid.innerHTML = skeletonHTML(3);
+  if (savesGrid)  savesGrid.innerHTML  = skeletonHTML(3);
+  if (catWrap)    catWrap.innerHTML    = `<div class="empty-state-sm">Loading…</div>`;
 
   try {
     const data = await apiFetch("GET", "/dashboard");
 
-    // Stats
-    if ($("dashPosts"))  $("dashPosts").textContent  = fmt(data.posts);
-    if ($("dashSaves"))  $("dashSaves").textContent  = fmt(data.saves);
-    if ($("dashLikes"))  $("dashLikes").textContent  = fmt(data.likes);
-    if ($("dashBoards")) $("dashBoards").textContent = fmt(data.boards);
+    // ── Stats ──
+    if ($("dashPosts"))  $("dashPosts").textContent  = fmt(data.posts  || 0);
+    if ($("dashSaves"))  $("dashSaves").textContent  = fmt(data.saves  || 0);
+    if ($("dashLikes"))  $("dashLikes").textContent  = fmt(data.likes  || 0);
+    if ($("dashBoards")) $("dashBoards").textContent = fmt(data.boards || 0);
 
-    // Recent uploads
-    const uploadGrid = $("dashUploadsGrid");
+    // ── Recent uploads ──
     if (uploadGrid) {
-      if (data.recent_uploads?.length) {
-        renderGrid(uploadGrid, data.recent_uploads);
+      const uploads = data.recent_uploads || [];
+      if (uploads.length) {
+        renderGrid(uploadGrid, uploads);
       } else {
-        uploadGrid.innerHTML = `<div class="empty-state-sm">No posts yet. <button class="link-btn" id="dashCreateBtn">Share your first idea →</button></div>`;
-        $("dashCreateBtn")?.addEventListener("click", () => openCreatorPost());
+        uploadGrid.innerHTML = `
+          <div class="empty-state-sm">
+            No posts yet.
+            <button class="link-btn" id="dashCreateBtn">Share your first idea →</button>
+          </div>`;
+        $("dashCreateBtn")?.addEventListener("click", () => {
+          const fn = document.querySelector && typeof openCreatorPost !== "undefined"
+            ? openCreatorPost : null;
+          if (fn) fn(); else $("creatorPostModal")?.classList.add("open");
+        });
       }
     }
 
-    // Recent saves
-    const savesGrid = $("dashSavesGrid");
+    // ── Recent saves ──
     if (savesGrid) {
-      if (data.recent_saves?.length) {
-        renderGrid(savesGrid, data.recent_saves);
+      const saves = data.recent_saves || [];
+      if (saves.length) {
+        renderGrid(savesGrid, saves);
       } else {
-        savesGrid.innerHTML = `<div class="empty-state-sm">Nothing saved yet. <button class="link-btn" data-page="explore">Explore ideas →</button></div>`;
+        savesGrid.innerHTML = `
+          <div class="empty-state-sm">
+            Nothing saved yet.
+            <button class="link-btn" data-page="explore">Explore ideas →</button>
+          </div>`;
       }
     }
 
-    // Trending categories
-    const catWrap = $("dashCategoryList");
+    // ── Top categories ──
     if (catWrap) {
-      if (data.top_categories?.length) {
-        catWrap.innerHTML = data.top_categories.map((c, i) => `
+      const cats = data.top_categories || [];
+      if (cats.length) {
+        catWrap.innerHTML = cats.map((c, i) => `
           <div class="dash-cat-row">
             <span class="dash-cat-rank">#${i+1}</span>
             <span class="dash-cat-name">${c.category}</span>
-            <span class="dash-cat-count">${c.count} saves</span>
+            <span class="dash-cat-count">${c.count} save${c.count !== 1 ? "s" : ""}</span>
             <button class="dash-cat-btn chip" data-filter="${c.category}" data-page="explore">Explore</button>
           </div>`).join("");
       } else {
-        catWrap.innerHTML = `<div class="empty-state-sm">Start saving ideas to see your trends.</div>`;
+        catWrap.innerHTML = `
+          <div class="empty-state-sm">
+            Save some ideas to see your trending categories here.
+          </div>`;
       }
     }
+
   } catch (e) {
-    toast("Could not load dashboard. " + (e.message || ""), true);
+    console.error("Dashboard error:", e);
+    // Show error state with retry
+    const inner = document.querySelector("#page-dashboard .page-inner");
+    if (inner) {
+      // Restore header
+      const head = inner.querySelector(".page-head");
+      if (!head) {
+        inner.insertAdjacentHTML("afterbegin", `
+          <div class="page-head">
+            <h2 class="page-title">Your Dashboard</h2>
+            <p class="page-subtitle">Track your creative activity</p>
+          </div>`);
+      }
+    }
+    ["dashPosts","dashSaves","dashLikes","dashBoards"].forEach(id => {
+      const el = $(id); if (el) el.textContent = "—";
+    });
+    if (uploadGrid) uploadGrid.innerHTML = `
+      <div class="empty-state-sm">
+        Could not load. 
+        <button class="link-btn" onclick="initDashboard()">Retry →</button>
+      </div>`;
+    if (savesGrid)  savesGrid.innerHTML  = "";
+    if (catWrap)    catWrap.innerHTML    = "";
   }
 }
 
