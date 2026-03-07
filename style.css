@@ -509,6 +509,10 @@ input, select { font-family: var(--f-ui); }
 @keyframes cardin2 { from {opacity:0;transform:translateY(18px) scale(0.97)} to {opacity:1;transform:translateY(0) scale(1)} }
 
 .card-img-wrap { position: relative; overflow: hidden; }
+/* ── Image loading optimisation ── */
+.card-img {
+  content-visibility: auto;
+}
 .card-img { width: 100%; display: block; transition: transform var(--t-slow) var(--ease); }
 .idea-card:hover .card-img { transform: scale(1.05); }
 
@@ -1200,6 +1204,36 @@ input, select { font-family: var(--f-ui); }
 .modal-backdrop.open { display: flex; animation: mfade 0.25s var(--ease) both; }
 @keyframes mfade { from{opacity:0} to{opacity:1} }
 
+/* ── Modal navigation arrows ── */
+.modal-nav-btn {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.12);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1001;
+  transition: background 0.2s, transform 0.2s;
+}
+.modal-nav-btn:hover {
+  background: rgba(124,58,237,0.4);
+  transform: translateY(-50%) scale(1.08);
+}
+.modal-prev-btn { left: 20px; }
+.modal-next-btn { right: 20px; }
+@media (max-width: 600px) {
+  .modal-prev-btn { left: 8px; width: 38px; height: 38px; }
+  .modal-next-btn { right: 8px; width: 38px; height: 38px; }
+}
+
 .modal-x-btn {
   position: absolute; top: 18px; right: 18px;
   width: 44px; height: 44px; border-radius: 50%;
@@ -1571,3 +1605,155 @@ body  { font-family: var(--font-body); }
 .dash-stat-card:nth-child(2) .dash-stat-num { background: linear-gradient(135deg,#db2777,#f472b6); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
 .dash-stat-card:nth-child(3) .dash-stat-num { background: linear-gradient(135deg,#0891b2,#67e8f9); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
 .dash-stat-card:nth-child(4) .dash-stat-num { background: linear-gradient(135deg,#059669,#6ee7b7); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+
+/* ── Pixabay infinite images setting ───────────────────────── */
+.pixabay-setting { background:var(--surface-2); border-radius:14px; padding:16px; margin-top:4px; }
+.pixabay-setting-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+.pixabay-label { font-weight:700; font-size:0.85rem; }
+.pixabay-get-key { font-size:0.75rem; color:var(--purple); font-weight:600; text-decoration:none; }
+.pixabay-get-key:hover { text-decoration:underline; }
+.pixabay-hint { font-size:0.75rem; color:var(--text-3); margin-bottom:10px; line-height:1.4; }
+.pixabay-input-row { display:flex; gap:8px; }
+.pixabay-input {
+  flex:1; height:36px; padding:0 12px;
+  border:1.5px solid var(--surface-3); border-radius:8px;
+  font-size:0.8rem; background:var(--surface);
+  transition:border-color var(--t-fast);
+}
+.pixabay-input:focus { border-color:var(--purple); outline:none; }
+.pixabay-save-btn {
+  height:36px; padding:0 14px;
+  background:var(--purple); color:#fff;
+  border-radius:8px; font-size:0.8rem; font-weight:700;
+  cursor:pointer; border:none; transition:background var(--t-fast);
+}
+.pixabay-save-btn:hover { background:#6d28d9; }
+.pixabay-status { font-size:0.72rem; margin-top:8px; color:var(--text-3); }
+.pixabay-status.active { color:#059669; font-weight:600; }
+
+/* ── Scroll to top button ── */
+#backToTop {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: var(--grad-brand);
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 900;
+  box-shadow: 0 4px 20px rgba(124,58,237,0.4);
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.3s, transform 0.3s;
+  pointer-events: none;
+}
+#backToTop.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+#backToTop:hover { filter: brightness(1.1); transform: translateY(-2px); }
+
+/* ── Navbar auth elements ── */
+.nav-btn-login {
+  padding: 7px 18px;
+  border-radius: var(--r-pill);
+  background: var(--grad-brand);
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: opacity var(--t-fast);
+}
+.nav-btn-login:hover { opacity: 0.88; }
+
+.nav-user-menu {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.nav-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--grad-brand);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.nav-username {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nav-btn-logout {
+  background: none;
+  border: 1px solid var(--border-2);
+  border-radius: var(--r-xs);
+  color: var(--text-3);
+  cursor: pointer;
+  padding: 5px 7px;
+  display: flex;
+  align-items: center;
+  transition: color var(--t-fast), border-color var(--t-fast);
+}
+.nav-btn-logout:hover { color: #dc2626; border-color: #dc2626; }
+
+/* ── Filter chips scroll arrows ── */
+.chips-scroll-btn {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1.5px solid var(--border-2);
+  color: var(--text-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background var(--t-fast), box-shadow var(--t-fast), color var(--t-fast);
+  z-index: 2;
+  box-shadow: var(--sh-card);
+}
+.chips-scroll-btn:hover {
+  background: var(--purple);
+  color: #fff;
+  border-color: var(--purple);
+  box-shadow: 0 2px 12px rgba(124,58,237,0.35);
+}
+.chips-scroll-btn:active { transform: scale(0.93); }
+/* hide arrows on desktop when not needed — show on narrow screens always */
+@media (min-width: 900px) {
+  .chips-scroll-btn { display: flex; }
+}
+
+/* ── Image loading shimmer ── */
+.card-img {
+  background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 50%, var(--surface-2) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+.card-img[src] { animation: none; background: none; }
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+/* Smooth AI image upgrade transition */
+.card-img { transition: opacity 0.4s ease; }
