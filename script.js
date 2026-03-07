@@ -1,1539 +1,1671 @@
-/* ============================================================
-   ZenPin — style.css
-   Faithful to Figma design:
-   • Purple → Pink → Orange brand gradient
-   • White / light-gray surfaces
-   • Glassmorphism navbar
-   • Animated hero blobs
-   • Masonry grid with hover overlays
-   • Rating badges (blue / purple / green dots)
-   • Frosted-glass stat pills
-   • Full modal with steps + tools
-   • Collaboration canvas
-   • AI generator page
-   • Profile cover
-============================================================ */
-
-/* ============================================================
-   TOKENS
-============================================================ */
-:root {
-  /* Brand */
-  --purple:      #7c3aed;
-  --pink:        #db2777;
-  --orange:      #f97316;
-  --grad-brand:  linear-gradient(135deg, #7c3aed 0%, #db2777 52%, #f97316 100%);
-  --grad-warm:   linear-gradient(135deg, #f97316, #db2777);
-  --grad-hero-bg:linear-gradient(135deg, #f5f0ff 0%, #fdf2f8 50%, #fff7ed 100%);
-
-  /* Neutrals */
-  --bg:          #fafaf8;
-  --surface:     #ffffff;
-  --surface-2:   #f4f3f0;
-  --surface-3:   #ede9e4;
-  --border:      rgba(0,0,0,0.07);
-  --border-2:    rgba(0,0,0,0.11);
-  --text:        #1a1714;
-  --text-2:      #6b6560;
-  --text-3:      #a39d97;
-
-  /* Fonts */
-  --f-display: 'Playfair Display', Georgia, serif;
-  --f-ui:      'Plus Jakarta Sans', system-ui, sans-serif;
-
-  /* Sizes */
-  --nav-h:  68px;
-  --max-w:  1440px;
-  --px:     clamp(14px, 3.5vw, 48px);
-
-  /* Radii */
-  --r-xs:   6px;
-  --r-sm:   10px;
-  --r-md:   16px;
-  --r-lg:   22px;
-  --r-xl:   30px;
-  --r-pill: 9999px;
-
-  /* Shadows */
-  --sh-card:  0 1px 3px rgba(0,0,0,0.05), 0 4px 20px rgba(0,0,0,0.07);
-  --sh-hover: 0 8px 20px rgba(0,0,0,0.08), 0 20px 60px rgba(0,0,0,0.13);
-  --sh-modal: 0 32px 100px rgba(0,0,0,0.22), 0 8px 24px rgba(0,0,0,0.1);
-  --sh-glow:  0 8px 30px rgba(124,58,237,0.4);
-
-  /* Motion */
-  --ease:        cubic-bezier(0.4, 0, 0.2, 1);
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --t-fast:   120ms;
-  --t-mid:    260ms;
-  --t-slow:   480ms;
-}
-
-/* ============================================================
-   RESET
-============================================================ */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
-body {
-  font-family: var(--f-ui);
-  background: var(--bg);
-  color: var(--text);
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
-}
-ul { list-style: none; }
-a  { text-decoration: none; color: inherit; }
-img { display: block; max-width: 100%; }
-button { cursor: pointer; font-family: var(--f-ui); border: none; background: none; }
-input, select { font-family: var(--f-ui); }
-:focus-visible { outline: 2px solid var(--purple); outline-offset: 3px; border-radius: 4px; }
-
-::-webkit-scrollbar       { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 3px; }
-
-
-/* ============================================================
-   NAVBAR — exactly from Navigation.tsx:
-   white/80 blur, border-bottom, shadow-sm
-============================================================ */
-.navbar {
-  position: fixed;
-  inset: 0 0 auto 0;
-  height: var(--nav-h);
-  z-index: 900;
-  background: rgba(255,255,255,0.8);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(209,213,219,0.5);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-  transition: box-shadow var(--t-mid) var(--ease);
-}
-.navbar.scrolled { box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
-
-.nav-inner {
-  max-width: var(--max-w);
-  margin: 0 auto;
-  height: 100%;
-  padding: 0 var(--px);
-  display: flex;
-  align-items: center;
-  gap: 18px;
-}
-
-/* Logo */
-.nav-logo { display: flex; align-items: center; gap: 9px; flex-shrink: 0; }
-.logo-gem {
-  width: 40px; height: 40px;
-  background: var(--grad-brand);
-  border-radius: 12px;
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 4px 14px rgba(124,58,237,0.35);
-  transition: transform var(--t-mid) var(--ease-spring), box-shadow var(--t-mid) var(--ease);
-}
-.nav-logo:hover .logo-gem { transform: scale(1.08) rotate(-6deg); box-shadow: 0 6px 22px rgba(124,58,237,0.48); }
-.logo-wordmark {
-  font-size: 1.2rem;
-  font-weight: 700;
-  background: var(--grad-brand);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  letter-spacing: -0.02em;
-}
-
-/* Search */
-.nav-search-wrap {
-  flex: 1;
-  max-width: 520px;
-  position: relative;
-}
-.nav-search-ico {
-  position: absolute;
-  left: 15px; top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-3);
-  pointer-events: none;
-}
-.nav-search-input {
-  width: 100%;
-  height: 42px;
-  padding: 0 42px 0 42px;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: var(--r-pill);
-  font-size: 0.875rem;
-  color: var(--text);
-  outline: none;
-  transition: all var(--t-mid) var(--ease);
-}
-.nav-search-input::placeholder { color: #9ca3af; }
-.nav-search-input:focus {
-  background: var(--surface);
-  border-color: #a78bfa;
-  box-shadow: 0 0 0 3px rgba(167,139,250,0.25);
-}
-.nav-search-kbd {
-  position: absolute;
-  right: 13px; top: 50%;
-  transform: translateY(-50%);
-  font-size: 0.68rem; font-weight: 600;
-  color: var(--text-3);
-  background: var(--surface-2);
-  border: 1px solid var(--border-2);
-  border-radius: 4px;
-  padding: 2px 7px;
-  pointer-events: none;
-  transition: opacity var(--t-fast);
-}
-.nav-search-input:focus ~ .nav-search-kbd { opacity: 0; }
-
-/* Nav links */
-.nav-links { display: flex; gap: 2px; }
-.nav-link {
-  font-size: 0.875rem; font-weight: 500;
-  color: #374151;
-  padding: 7px 16px;
-  border-radius: var(--r-pill);
-  transition: all var(--t-fast);
-}
-.nav-link:hover { background: #f3f4f6; }
-.nav-link.active { background: #ede9fe; color: var(--purple); font-weight: 600; }
-
-/* Nav actions */
-.nav-actions { display: flex; align-items: center; gap: 10px; margin-left: auto; }
-
-.nav-btn-create {
-  display: flex; align-items: center; gap: 7px;
-  height: 38px;
-  padding: 0 18px;
-  background: var(--grad-brand);
-  color: white;
-  border-radius: var(--r-pill);
-  font-size: 0.82rem; font-weight: 700;
-  box-shadow: 0 4px 14px rgba(124,58,237,0.32);
-  transition: all var(--t-mid) var(--ease);
-}
-.nav-btn-create:hover { transform: translateY(-2px) scale(1.03); box-shadow: 0 8px 24px rgba(124,58,237,0.44); }
-
-.nav-btn-profile {
-  width: 38px; height: 38px;
-  border-radius: var(--r-pill);
-  background: #f3f4f6;
-  color: #374151;
-  display: flex; align-items: center; justify-content: center;
-  transition: all var(--t-fast);
-}
-.nav-btn-profile:hover,
-.nav-btn-profile.active {
-  background: var(--grad-brand);
-  color: white;
-  box-shadow: 0 4px 14px rgba(124,58,237,0.3);
-}
-
-.nav-hamburger {
-  display: none;
-  flex-direction: column; gap: 5px;
-  padding: 6px;
-}
-.nav-hamburger span {
-  display: block;
-  width: 20px; height: 2px;
-  background: var(--text);
-  border-radius: 2px;
-  transition: all var(--t-mid) var(--ease);
-}
-
-
-/* ============================================================
-   PAGES
-============================================================ */
-.page { display: none; min-height: 100vh; padding-top: var(--nav-h); animation: pagein 0.35s var(--ease) both; }
-.page.active { display: block; }
-@keyframes pagein { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
-
-
-/* ============================================================
-   HERO — exactly from HeroSection.tsx:
-   purple-50 → pink-50 → orange-50 gradient bg
-   animated blobs, hero title with italic gradient
-   stat cards: white/60 backdrop blur
-============================================================ */
-.hero {
-  position: relative;
-  overflow: hidden;
-  background: var(--grad-hero-bg);
-  padding: 88px var(--px) 80px;
-  text-align: center;
-}
-
-/* Animated background blobs */
-.hero-blobs { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
-.blob {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(70px);
-  will-change: transform, opacity;
-}
-.blob-1 {
-  width: 480px; height: 480px;
-  top: -140px; left: -100px;
-  background: radial-gradient(circle, rgba(124,58,237,0.3) 0%, transparent 70%);
-  animation: blob1 20s ease-in-out infinite;
-}
-.blob-2 {
-  width: 440px; height: 440px;
-  bottom: -130px; right: -90px;
-  background: radial-gradient(circle, rgba(249,115,22,0.28) 0%, transparent 70%);
-  animation: blob2 15s ease-in-out infinite;
-}
-.blob-3 {
-  width: 360px; height: 360px;
-  top: 50%; left: 50%;
-  transform: translate(-50%,-50%);
-  background: radial-gradient(circle, rgba(219,39,119,0.22) 0%, transparent 70%);
-  animation: blob3 12s ease-in-out infinite;
-}
-@keyframes blob1 { 0%,100%{transform:scale(1) rotate(0deg);opacity:.3} 50%{transform:scale(1.2) rotate(90deg);opacity:.5} }
-@keyframes blob2 { 0%,100%{transform:scale(1) rotate(0deg);opacity:.3} 50%{transform:scale(1.3) rotate(-90deg);opacity:.6} }
-@keyframes blob3 { 0%,100%{transform:translate(-50%,-50%) scale(1);opacity:.4} 50%{transform:translate(-50%,-60%) scale(1.15);opacity:.7} }
-
-/* Grid lines overlay */
-.hero-grid-lines {
-  position: absolute; inset: 0; pointer-events: none;
-  background-image:
-    linear-gradient(rgba(124,58,237,0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(124,58,237,0.05) 1px, transparent 1px);
-  background-size: 44px 44px;
-}
-
-.hero-body { position: relative; max-width: 800px; margin: 0 auto; }
-
-/* "Discover · Create · Collaborate" pill */
-.hero-eyebrow {
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 8px 20px;
-  background: rgba(255,255,255,0.6);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(124,58,237,0.22);
-  border-radius: var(--r-pill);
-  font-size: 0.75rem; font-weight: 700;
-  color: var(--purple);
-  letter-spacing: 0.06em; text-transform: uppercase;
-  margin-bottom: 30px;
-  box-shadow: 0 4px 18px rgba(124,58,237,0.1);
-  animation: rise 0.8s var(--ease) both;
-}
-.hero-eyebrow svg { color: var(--purple); }
-
-/* "Where Ideas Come to Life" */
-.hero-title {
-  font-family: var(--f-display);
-  font-size: clamp(3rem, 7vw, 5.5rem);
-  font-weight: 900;
-  line-height: 1.08;
-  letter-spacing: -0.03em;
-  color: var(--text);
-  margin-bottom: 24px;
-  animation: rise 0.8s 0.12s var(--ease) both;
-}
-.hero-title em {
-  font-style: italic;
-  background: var(--grad-brand);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.hero-sub {
-  font-size: clamp(0.95rem, 2vw, 1.15rem);
-  color: #4b5563;
-  font-weight: 400;
-  max-width: 560px;
-  margin: 0 auto 38px;
-  line-height: 1.72;
-  animation: rise 0.8s 0.24s var(--ease) both;
-}
-
-.hero-cta-row {
-  display: flex; align-items: center; justify-content: center;
-  gap: 14px; flex-wrap: wrap;
-  margin-bottom: 52px;
-  animation: rise 0.8s 0.36s var(--ease) both;
-}
-
-/* Stat cards: white/60 backdrop blur from Figma */
-.hero-stats-row {
-  display: flex; align-items: stretch; justify-content: center;
-  gap: 14px; flex-wrap: wrap;
-  animation: rise 0.8s 0.48s var(--ease) both;
-}
-.stat-card {
-  display: flex; align-items: center; gap: 14px;
-  background: rgba(255,255,255,0.6);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(209,213,219,0.5);
-  border-radius: 18px;
-  padding: 18px 24px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-  min-width: 150px;
-  transition: transform var(--t-mid) var(--ease-spring);
-}
-.stat-card:hover { transform: translateY(-5px); }
-.stat-icon {
-  width: 46px; height: 46px;
-  border-radius: 13px;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-}
-.stat-card:nth-child(1) .stat-icon { background: linear-gradient(135deg,#7c3aed,#6d28d9); box-shadow: 0 4px 14px rgba(124,58,237,0.35); color: white; }
-.stat-card:nth-child(2) .stat-icon { background: linear-gradient(135deg,#db2777,#be185d); box-shadow: 0 4px 14px rgba(219,39,119,0.35); color: white; }
-.stat-card:nth-child(3) .stat-icon { background: linear-gradient(135deg,#f97316,#ea580c); box-shadow: 0 4px 14px rgba(249,115,22,0.35); color: white; }
-.stat-num { font-weight: 700; font-size: 1.05rem; color: var(--text); }
-.stat-lbl { font-size: 0.78rem; color: var(--text-2); margin-top: 1px; }
-
-@keyframes rise { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
-
-
-/* ============================================================
-   CONTROLS BAR — filters + sort
-============================================================ */
-.controls-bar {
-  max-width: var(--max-w);
-  margin: 0 auto;
-  padding: 22px var(--px) 6px;
-  display: flex; align-items: center; gap: 14px;
-}
-.filter-chips {
-  display: flex; gap: 8px; flex: 1;
-  overflow-x: auto; scrollbar-width: none; padding-bottom: 2px;
-}
-.filter-chips::-webkit-scrollbar { display: none; }
-.chip {
-  flex-shrink: 0;
-  height: 34px; padding: 0 16px;
-  background: var(--surface);
-  border: 1.5px solid var(--border-2);
-  border-radius: var(--r-pill);
-  font-size: 0.78rem; font-weight: 600; color: #374151;
-  transition: all var(--t-mid) var(--ease);
-  white-space: nowrap;
-}
-.chip:hover { background: var(--surface-2); border-color: rgba(0,0,0,0.14); }
-.chip.active {
-  background: var(--grad-brand);
-  border-color: transparent;
-  color: white;
-  box-shadow: 0 4px 14px rgba(124,58,237,0.35);
-}
-.sort-sel {
-  flex-shrink: 0;
-  height: 34px; padding: 0 14px;
-  background: var(--surface);
-  border: 1.5px solid var(--border-2);
-  border-radius: var(--r-pill);
-  font-size: 0.78rem; font-weight: 600; color: #374151;
-  cursor: pointer; outline: none; appearance: none;
-  padding-right: 28px;
-  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%23a39d97' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 10px center;
-  transition: border-color var(--t-fast);
-}
-.sort-sel:focus { border-color: var(--purple); }
-
-
-/* ============================================================
-   MASONRY GRID — CSS columns masonry, Pinterest-style
-============================================================ */
-.feed-wrap {
-  max-width: var(--max-w);
-  margin: 0 auto;
-  padding: 16px var(--px) 64px;
-}
-.masonry { column-count: 5; column-gap: 14px; }
-
-.load-more-row { text-align: center; padding: 12px 0 24px; }
-.btn-load-more {
-  display: inline-flex; align-items: center; gap: 10px;
-  height: 46px; padding: 0 30px;
-  background: var(--surface);
-  border: 1.5px solid var(--border-2);
-  border-radius: var(--r-pill);
-  font-size: 0.85rem; font-weight: 600; color: var(--text-2);
-  transition: all var(--t-mid) var(--ease);
-}
-.btn-load-more:hover { background: var(--surface-2); color: var(--text); transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
-.btn-load-more.busy { color: var(--purple); border-color: var(--purple); pointer-events: none; animation: lpulse 1.1s ease infinite; }
-@keyframes lpulse { 0%,100%{opacity:1} 50%{opacity:.5} }
-
-
-/* ============================================================
-   IDEA CARD — from IdeaCard.tsx:
-   rounded-2xl overflow-hidden shadow-md hover:shadow-2xl
-   gradient overlay, heart + bookmark buttons, rating badges
-============================================================ */
-.idea-card {
-  break-inside: avoid;
-  margin-bottom: 14px;
-  border-radius: 18px;
-  overflow: hidden;
-  background: var(--surface);
-  box-shadow: var(--sh-card);
-  cursor: pointer;
-  position: relative;
-  animation: cardin calc(var(--delay, 0ms)) both, cardin2 0.5s var(--ease) both;
-  animation-delay: calc(var(--i, 0) * 55ms);
-  transition: transform var(--t-mid) var(--ease), box-shadow var(--t-mid) var(--ease);
-  will-change: transform;
-}
-.idea-card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.12), 0 30px 80px rgba(0,0,0,0.1); }
-@keyframes cardin2 { from {opacity:0;transform:translateY(18px) scale(0.97)} to {opacity:1;transform:translateY(0) scale(1)} }
-
-.card-img-wrap { position: relative; overflow: hidden; }
-.card-img { width: 100%; display: block; transition: transform var(--t-slow) var(--ease); }
-.idea-card:hover .card-img { transform: scale(1.05); }
-
-/* Gradient overlay — from black/70 to transparent */
-.card-overlay {
-  position: absolute; inset: 0;
-  background: linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.28) 45%, transparent 100%);
-  opacity: 0;
-  transition: opacity var(--t-mid) var(--ease);
-  display: flex; flex-direction: column; justify-content: space-between;
-  padding: 12px;
-}
-.idea-card:hover .card-overlay { opacity: 1; }
-
-/* Top action buttons — heart & bookmark */
-.card-top-row {
-  display: flex; justify-content: flex-end; gap: 7px;
-  transform: translateY(-5px);
-  transition: transform var(--t-mid) var(--ease);
-}
-.idea-card:hover .card-top-row { transform: translateY(0); }
-.card-ico-btn {
-  width: 36px; height: 36px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.92);
-  display: flex; align-items: center; justify-content: center;
-  color: #374151;
-  backdrop-filter: blur(8px);
-  transition: all var(--t-fast);
-  border: none; cursor: pointer;
-}
-.card-ico-btn:hover { transform: scale(1.12); background: white; }
-.card-ico-btn.heart-on   { background: #ec4899; color: white; }
-.card-ico-btn.save-on    { background: var(--purple); color: white; }
-
-/* Bottom card info */
-.card-bot-row {
-  transform: translateY(6px);
-  transition: transform var(--t-mid) var(--ease);
-}
-.idea-card:hover .card-bot-row { transform: translateY(0); }
-
-/* Category pill */
-.card-cat-pill {
-  display: inline-flex;
-  padding: 4px 10px;
-  background: rgba(255,255,255,0.9);
-  backdrop-filter: blur(8px);
-  border-radius: var(--r-pill);
-  font-size: 0.62rem; font-weight: 700;
-  color: #374151;
-  letter-spacing: 0.05em; text-transform: uppercase;
-  margin-bottom: 7px;
-}
-
-.card-title {
-  font-size: 0.875rem; font-weight: 700;
-  color: white; line-height: 1.3;
-  margin-bottom: 9px;
-  text-shadow: 0 1px 3px rgba(0,0,0,0.3);
-}
-
-/* Rating badges — from RatingBadge in IdeaCard.tsx */
-.card-ratings { display: flex; gap: 6px; flex-wrap: wrap; }
-.rating-badge {
-  display: flex; align-items: center; gap: 4px;
-  padding: 4px 8px;
-  background: rgba(255,255,255,0.18);
-  border: 1px solid rgba(255,255,255,0.22);
-  backdrop-filter: blur(8px);
-  border-radius: var(--r-pill);
-}
-.rb-label {
-  font-size: 0.58rem; font-weight: 700;
-  color: rgba(255,255,255,0.82);
-  letter-spacing: 0.04em; text-transform: uppercase;
-}
-.rb-stars { display: flex; gap: 2px; }
-.rb-star { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,0.25); }
-.rb-star.on-blue   { background: #60a5fa; }
-.rb-star.on-purple { background: #a78bfa; }
-.rb-star.on-green  { background: #34d399; }
-
-/* Static category tag (visible before hover) */
-.card-static-cat {
-  position: absolute; top: 10px; left: 10px;
-  padding: 4px 10px;
-  background: rgba(255,255,255,0.92);
-  backdrop-filter: blur(8px);
-  border-radius: var(--r-pill);
-  font-size: 0.6rem; font-weight: 700;
-  color: #374151;
-  letter-spacing: 0.05em; text-transform: uppercase;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  transition: opacity var(--t-fast);
-  pointer-events: none;
-}
-.idea-card:hover .card-static-cat { opacity: 0; }
-
-/* Card footer — saves count */
-.card-footer { padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; }
-.card-saves {
-  display: flex; align-items: center; gap: 5px;
-  font-size: 0.72rem; font-weight: 700; color: var(--text-3);
-}
-.card-saves svg { color: var(--pink); }
-
-
-/* ============================================================
-   INNER PAGE HEADER
-============================================================ */
-.inner-page-header {
-  max-width: var(--max-w);
-  margin: 0 auto;
-  padding: 44px var(--px) 4px;
-  display: flex; align-items: flex-end; gap: 20px; flex-wrap: wrap;
-}
-.inner-page-title {
-  font-family: var(--f-display);
-  font-size: clamp(1.9rem, 4vw, 2.8rem);
-  font-weight: 900; letter-spacing: -0.03em; line-height: 1.1;
-}
-.inner-page-sub {
-  font-size: 0.95rem; color: var(--text-2); font-weight: 400; flex: 1;
-}
-.section-rule {
-  max-width: var(--max-w); margin: 28px auto 20px;
-  padding: 0 var(--px);
-  display: flex; align-items: center; gap: 14px;
-  font-size: 0.75rem; font-weight: 700; color: var(--text-3);
-  letter-spacing: 0.06em; text-transform: uppercase;
-}
-.section-rule::before, .section-rule::after { content:''; flex:1; height:1px; background: var(--border-2); }
-
-
-/* ============================================================
-   BOARDS PAGE
-============================================================ */
-.boards-grid-wrap { max-width: var(--max-w); margin: 0 auto; padding: 20px var(--px); }
-.boards-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
-  gap: 18px;
-}
-.board-card {
-  background: var(--surface);
-  border-radius: var(--r-lg);
-  overflow: hidden;
-  box-shadow: var(--sh-card);
-  cursor: pointer;
-  transition: all var(--t-mid) var(--ease);
-  animation: cardin2 0.5s calc(var(--i,0) * 60ms) both;
-}
-.board-card:hover { transform: translateY(-5px); box-shadow: var(--sh-hover); }
-.board-mosaic {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  grid-template-rows: 100px 100px;
-  gap: 3px;
-  height: 203px;
-}
-.bm-img { overflow: hidden; background: var(--surface-2); }
-.bm-img:first-child { grid-row: 1 / 3; }
-.bm-img img { width: 100%; height: 100%; object-fit: cover; }
-.board-info { padding: 14px 16px; }
-.board-name { font-weight: 800; font-size: 0.95rem; margin-bottom: 3px; letter-spacing: -0.01em; }
-.board-cnt { font-size: 0.78rem; color: var(--text-3); }
-
-.collab-boards-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
-  gap: 16px;
-}
-.cboard-card {
-  background: var(--surface);
-  border-radius: var(--r-lg);
-  padding: 20px;
-  border: 1.5px solid var(--border-2);
-  box-shadow: var(--sh-card);
-  cursor: pointer;
-  transition: all var(--t-mid) var(--ease);
-  animation: cardin2 0.5s calc(var(--i,0) * 60ms) both;
-}
-.cboard-card:hover { transform: translateY(-3px); box-shadow: var(--sh-hover); border-color: rgba(124,58,237,0.22); }
-.cboard-header { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
-.cboard-icon {
-  width: 44px; height: 44px;
-  background: var(--grad-brand);
-  border-radius: 13px;
-  display: flex; align-items: center; justify-content: center;
-  color: white; flex-shrink: 0;
-}
-.cboard-name { font-weight: 800; font-size: 0.92rem; letter-spacing: -0.01em; }
-.cboard-desc { font-size: 0.82rem; color: var(--text-2); line-height: 1.55; margin-bottom: 14px; }
-.cboard-members { display: flex; align-items: center; }
-.cboard-av {
-  width: 28px; height: 28px;
-  border-radius: 50%;
-  border: 2px solid white;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 0.65rem; font-weight: 800; color: white;
-  margin-right: -8px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.12);
-}
-.cboard-member-cnt { margin-left: 18px; font-size: 0.72rem; color: var(--text-3); font-weight: 600; }
-
-
-/* ============================================================
-   COLLABORATION PAGE
-============================================================ */
-.collab-live-badge {
-  display: flex; align-items: center; gap: 8px;
-  font-size: 0.78rem; font-weight: 700; color: var(--text-2);
-  padding: 6px 14px;
-  background: var(--surface);
-  border-radius: var(--r-pill);
-  border: 1.5px solid var(--border-2);
-}
-.live-dot-pulse {
-  width: 9px; height: 9px;
-  background: #22c55e;
-  border-radius: 50%;
-  box-shadow: 0 0 0 3px rgba(34,197,94,0.22);
-  animation: livep 2s ease infinite;
-}
-@keyframes livep { 0%,100%{box-shadow:0 0 0 3px rgba(34,197,94,0.2)} 50%{box-shadow:0 0 0 7px rgba(34,197,94,0.08)} }
-
-.collab-layout {
-  max-width: var(--max-w); margin: 0 auto;
-  padding: 20px var(--px) 56px;
-  display: grid; grid-template-columns: 1fr 290px; gap: 18px;
-  min-height: calc(100vh - var(--nav-h) - 110px);
-}
-.collab-canvas-panel {
-  background: var(--surface);
-  border-radius: var(--r-lg);
-  border: 1.5px solid var(--border-2);
-  overflow: hidden;
-  display: flex; flex-direction: column;
-}
-.canvas-toolbar {
-  padding: 9px 14px;
-  border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; gap: 6px;
-  background: var(--surface);
-}
-.tool-btn {
-  width: 32px; height: 32px;
-  border-radius: var(--r-sm);
-  display: flex; align-items: center; justify-content: center;
-  color: var(--text-2);
-  transition: all var(--t-fast);
-}
-.tool-btn:hover { background: var(--surface-2); color: var(--text); }
-.tool-btn.active { background: rgba(124,58,237,0.1); color: var(--purple); }
-.toolbar-divider { width: 1px; height: 18px; background: var(--border-2); margin: 0 4px; }
-.collab-avatars-row { display: flex; margin-left: auto; }
-.collab-av {
-  width: 26px; height: 26px; border-radius: 50%;
-  border: 2px solid white;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 0.62rem; font-weight: 800; color: white;
-  margin-left: -7px; box-shadow: 0 1px 4px rgba(0,0,0,0.15);
-}
-.collab-canvas {
-  flex: 1; min-height: 380px;
-  background-image: radial-gradient(circle at 20px 20px, rgba(124,58,237,0.05) 1px, transparent 1px);
-  background-size: 40px 40px;
-  background-color: #fafaf8;
-  position: relative; overflow: hidden;
-}
-.canvas-empty-hint {
-  position: absolute; top:50%; left:50%;
-  transform: translate(-50%,-50%);
-  text-align: center; color: var(--text-3);
-  pointer-events: none;
-}
-.canvas-empty-hint p { font-size: 0.82rem; margin-top: 10px; }
-.pinned-card {
-  position: absolute; width: 116px;
-  background: white; border-radius: 12px;
-  overflow: hidden; box-shadow: var(--sh-card);
-  border: 2px solid white; cursor: grab;
-  transition: box-shadow var(--t-fast);
-  user-select: none;
-}
-.pinned-card:hover { box-shadow: var(--sh-hover); }
-.pinned-card:active { cursor: grabbing; }
-.pinned-card img { width: 100%; height: 74px; object-fit: cover; }
-.pinned-card-label { padding: 5px 7px; font-size: 0.6rem; font-weight: 700; background: white; line-height: 1.3; }
-
-.collab-sidebar { display: flex; flex-direction: column; gap: 14px; }
-.collab-sidebar-section { background: var(--surface); border-radius: var(--r-lg); border: 1.5px solid var(--border-2); padding: 14px; }
-.sidebar-heading { font-size: 0.72rem; font-weight: 800; color: var(--text-3); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; }
-.pin-idea-list { display: flex; flex-direction: column; gap: 7px; max-height: 240px; overflow-y: auto; }
-.pin-idea-item {
-  display: flex; align-items: center; gap: 10px;
-  padding: 7px; border-radius: 10px;
-  border: 1px solid var(--border);
-  cursor: pointer; transition: all var(--t-fast);
-}
-.pin-idea-item:hover { border-color: rgba(124,58,237,0.3); background: rgba(124,58,237,0.03); }
-.pin-idea-thumb { width: 38px; height: 38px; border-radius: 7px; object-fit: cover; flex-shrink: 0; }
-.pin-idea-name { font-size: 0.75rem; font-weight: 500; line-height: 1.3; }
-
-/* Chat */
-.chat-box { display: flex; flex-direction: column; gap: 10px; }
-.chat-msgs { display: flex; flex-direction: column; gap: 9px; max-height: 200px; overflow-y: auto; }
-.chat-msg { display: flex; align-items: flex-start; gap: 8px; }
-.chat-av {
-  width: 26px; height: 26px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 0.62rem; font-weight: 800; color: white; flex-shrink: 0;
-}
-.chat-bubble { background: var(--surface-2); border-radius: 10px 10px 10px 3px; padding: 8px 11px; font-size: 0.78rem; line-height: 1.45; }
-.chat-name { font-weight: 700; color: var(--purple); font-size: 0.68rem; display: block; margin-bottom: 2px; }
-.chat-input-row { display: flex; gap: 8px; }
-.chat-input {
-  flex: 1; height: 36px; padding: 0 12px;
-  background: var(--surface-2);
-  border: 1.5px solid var(--border-2);
-  border-radius: var(--r-pill);
-  font-size: 0.8rem; outline: none;
-  transition: border-color var(--t-fast);
-}
-.chat-input:focus { border-color: var(--purple); }
-.chat-send-btn {
-  width: 36px; height: 36px; border-radius: 50%;
-  background: var(--grad-brand);
-  display: flex; align-items: center; justify-content: center;
-  color: white; transition: transform var(--t-mid) var(--ease-spring);
-}
-.chat-send-btn:hover { transform: scale(1.12) rotate(-12deg); }
-
-
-/* ============================================================
-   AI GENERATOR PAGE
-============================================================ */
-.ai-page { max-width: 860px; margin: 0 auto; padding: 52px var(--px) 80px; }
-.ai-hero-section { text-align: center; margin-bottom: 44px; }
-.ai-star-icon {
-  width: 70px; height: 70px; margin: 0 auto 18px;
-  background: var(--grad-brand);
-  border-radius: 22px;
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 12px 40px rgba(124,58,237,0.38);
-  animation: floatstar 4s ease-in-out infinite;
-}
-@keyframes floatstar { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-9px)} }
-.ai-page-title {
-  font-family: var(--f-display);
-  font-size: clamp(1.9rem, 4vw, 2.8rem);
-  font-weight: 900; letter-spacing: -0.03em; margin-bottom: 12px;
-}
-.ai-page-sub { font-size: 0.95rem; color: var(--text-2); max-width: 460px; margin: 0 auto; line-height: 1.7; }
-
-.ai-input-card {
-  background: var(--surface);
-  border: 1.5px solid var(--border-2);
-  border-radius: var(--r-xl);
-  padding: 8px 8px 14px 22px;
-  box-shadow: var(--sh-card);
-  margin-bottom: 36px;
-  transition: border-color var(--t-mid), box-shadow var(--t-mid);
-}
-.ai-input-card:focus-within { border-color: rgba(124,58,237,0.45); box-shadow: 0 0 0 4px rgba(124,58,237,0.07), var(--sh-card); }
-.ai-input-row { display: flex; gap: 10px; margin-bottom: 12px; }
-.ai-text-input {
-  flex: 1; border: none; outline: none;
-  font-size: 0.95rem; color: var(--text);
-  background: transparent; padding: 10px 0;
-}
-.ai-text-input::placeholder { color: var(--text-3); }
-.ai-gen-btn {
-  display: flex; align-items: center; gap: 8px;
-  height: 48px; padding: 0 24px;
-  background: var(--grad-brand);
-  color: white; border-radius: var(--r-md);
-  font-size: 0.875rem; font-weight: 700;
-  box-shadow: 0 4px 18px rgba(124,58,237,0.38);
-  transition: all var(--t-mid) var(--ease); white-space: nowrap;
-}
-.ai-gen-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(124,58,237,0.48); }
-.quick-prompts-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 0 0 4px; }
-.quick-label { font-size: 0.72rem; font-weight: 700; color: var(--text-3); letter-spacing: 0.04em; text-transform: uppercase; }
-.quick-btn {
-  padding: 6px 13px;
-  background: var(--surface-2);
-  border: 1.5px solid var(--border-2);
-  border-radius: var(--r-pill);
-  font-size: 0.76rem; color: var(--text-2);
-  transition: all var(--t-fast);
-}
-.quick-btn:hover { background: rgba(124,58,237,0.07); border-color: rgba(124,58,237,0.3); color: var(--purple); }
-
-.ai-loading-state { text-align: center; padding: 52px 0; color: var(--text-2); }
-.ai-dots { display: flex; justify-content: center; gap: 8px; margin-bottom: 16px; }
-.ai-dots span {
-  width: 11px; height: 11px; border-radius: 50%;
-  background: var(--grad-brand);
-  animation: dotb 1.2s ease infinite;
-}
-.ai-dots span:nth-child(2) { animation-delay: .15s; }
-.ai-dots span:nth-child(3) { animation-delay: .3s; }
-@keyframes dotb { 0%,80%,100%{transform:scale(.8);opacity:.5} 40%{transform:scale(1.2);opacity:1} }
-
-.ai-output-section { margin-bottom: 44px; }
-.ai-output-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; }
-.ai-output-title { font-family: var(--f-display); font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; }
-.ai-output-btns { display: flex; gap: 10px; }
-.ai-masonry { column-count: 3; column-gap: 12px; }
-
-.ai-history-section { margin-top: 44px; }
-.empty-note { font-size: 0.82rem; color: var(--text-3); padding: 6px 0; }
-.ai-hist-item {
-  display: flex; align-items: center; gap: 12px;
-  padding: 11px 16px;
-  background: var(--surface);
-  border-radius: var(--r-md); border: 1.5px solid var(--border-2);
-  margin-bottom: 8px; cursor: pointer;
-  transition: all var(--t-fast);
-}
-.ai-hist-item:hover { border-color: rgba(124,58,237,0.3); background: rgba(124,58,237,0.02); }
-.ai-hist-prompt { flex: 1; font-size: 0.875rem; font-weight: 500; }
-.ai-hist-date { font-size: 0.72rem; color: var(--text-3); }
-
-
-/* ============================================================
-   PROFILE PAGE
-============================================================ */
-/* ============================================================
-   PROFILE PAGE — Redesigned
-============================================================ */
-.profile-cover-bg {
-  height: 180px;
-  background: linear-gradient(135deg, #1e1233 0%, #3b1a6b 40%, #1a1035 100%);
-  position: relative; overflow: hidden;
-}
-.profile-cover-bg::before {
-  content: "";
-  position: absolute; inset: 0;
-  background: radial-gradient(ellipse at 30% 50%, rgba(124,58,237,0.35) 0%, transparent 60%),
-              radial-gradient(ellipse at 80% 30%, rgba(219,39,119,0.2) 0%, transparent 50%);
-}
-.profile-cover-bg::after {
-  content: "";
-  position: absolute; bottom: 0; left: 0; right: 0; height: 60px;
-  background: linear-gradient(to bottom, transparent, var(--bg));
-}
-
-.profile-card-wrap {
-  max-width: var(--max-w);
-  margin: -60px auto 0;
-  padding: 0 var(--px) 8px;
-  position: relative; z-index: 2;
-}
-.profile-card {
-  background: var(--surface);
-  border: 1px solid var(--border-2);
-  border-radius: 20px;
-  padding: 24px 28px 22px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-}
-
-/* Top row: avatar + actions */
-.profile-top-row {
-  display: flex; align-items: flex-start;
-  justify-content: space-between; margin-bottom: 18px;
-}
-.profile-av-ring { position: relative; }
-.profile-av {
-  width: 80px; height: 80px; border-radius: 50%;
-  background: var(--grad-brand);
-  border: 3px solid var(--bg);
-  box-shadow: 0 4px 20px rgba(124,58,237,0.4);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.8rem; font-weight: 800; color: white;
-  cursor: default;
-}
-.profile-av-edit-btn {
-  position: absolute; bottom: 0; right: 0;
-  width: 26px; height: 26px; border-radius: 50%;
-  background: var(--purple);
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; border: 2px solid var(--bg);
-  color: white; transition: background var(--t-fast);
-}
-.profile-av-edit-btn:hover { background: #9333ea; }
-
-.profile-actions-row { display: flex; gap: 8px; align-items: center; }
-.profile-edit-btn {
-  display: flex; align-items: center; gap: 6px;
-  padding: 8px 16px; border-radius: 10px;
-  background: rgba(124,58,237,0.15);
-  border: 1px solid rgba(124,58,237,0.35);
-  color: #c4b5fd; font-size: 0.8rem; font-weight: 600;
-  cursor: pointer; transition: all var(--t-fast);
-}
-.profile-edit-btn:hover { background: rgba(124,58,237,0.28); color: white; }
-.profile-share-btn {
-  width: 36px; height: 36px; border-radius: 10px;
-  background: var(--surface-2); border: 1px solid var(--border-2);
-  color: var(--text-3); display: flex; align-items: center; justify-content: center;
-  cursor: pointer; transition: all var(--t-fast);
-}
-.profile-share-btn:hover { color: var(--text); border-color: var(--border); }
-
-/* Identity */
-.profile-identity { margin-bottom: 18px; }
-.profile-name { font-family: var(--f-display); font-size: 1.4rem; font-weight: 900; letter-spacing: -0.02em; margin-bottom: 2px; }
-.profile-handle { font-size: 0.82rem; color: var(--purple); font-weight: 600; margin-bottom: 8px; }
-.profile-bio { font-size: 0.85rem; color: var(--text-2); line-height: 1.6; max-width: 480px; }
-
-/* Stats */
-.profile-stats-row {
-  display: flex; align-items: center; gap: 0;
-  background: var(--surface-2); border: 1px solid var(--border-2);
-  border-radius: 12px; padding: 14px 20px;
-  margin-bottom: 14px;
-}
-.profile-stat-pill { display: flex; flex-direction: column; align-items: center; flex: 1; }
-.profile-stat-pill strong { font-size: 1.1rem; font-weight: 800; color: var(--text); line-height: 1; }
-.profile-stat-pill span { font-size: 0.7rem; color: var(--text-3); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.04em; }
-.profile-stat-divider { width: 1px; height: 30px; background: var(--border-2); flex-shrink: 0; }
-
-/* Badges */
-.profile-badge-row { display: flex; gap: 8px; flex-wrap: wrap; }
-.profile-badge {
-  display: inline-flex; align-items: center; gap: 5px;
-  padding: 5px 10px; border-radius: 20px;
-  background: rgba(124,58,237,0.12); border: 1px solid rgba(124,58,237,0.25);
-  font-size: 0.72rem; font-weight: 600; color: #a78bfa;
-}
-.profile-badge-date {
-  background: rgba(255,255,255,0.04); border-color: var(--border-2); color: var(--text-3);
-}
-
-/* Tabs */
-.profile-tabs-bar {
-  max-width: var(--max-w); margin: 20px auto 0;
-  padding: 0 var(--px);
-  display: flex; gap: 4px;
-  border-bottom: 1px solid var(--border-2);
-}
-.profile-tab {
-  display: flex; align-items: center; gap: 6px;
-  padding: 12px 18px;
-  font-size: 0.8rem; font-weight: 700;
-  color: var(--text-3);
-  border-bottom: 2px solid transparent;
-  transition: all var(--t-fast);
-}
-.profile-tab svg { opacity: 0.6; }
-.profile-tab:hover { color: var(--text); }
-.profile-tab.active { color: var(--purple); border-bottom-color: var(--purple); }
-.profile-tab.active svg { opacity: 1; }
-
-/* Empty state */
-.profile-empty-state {
-  display: flex; flex-direction: column; align-items: center;
-  gap: 12px; padding: 60px 20px; text-align: center;
-}
-.profile-empty-state p { color: var(--text-3); font-size: 0.9rem; }
-
-/* ============================================================
-   EDIT PROFILE MODAL — Clean design
-============================================================ */
-.zp-modal-backdrop {
-  position: fixed; inset: 0; z-index: 1000;
-  background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
-  display: none; align-items: center; justify-content: center;
-  padding: 20px;
-}
-.zp-modal-backdrop.open { display: flex; animation: fadeIn 0.2s ease; }
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-.zp-modal {
-  background: #1a1625; border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 20px; width: 100%; max-width: 440px;
-  box-shadow: 0 24px 60px rgba(0,0,0,0.6);
-  animation: slideUp 0.25s ease;
-  overflow: hidden;
-}
-@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: none; opacity: 1; } }
-
-.zp-modal-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 20px 24px 0;
-}
-.zp-modal-header h3 {
-  font-size: 1rem; font-weight: 800; color: var(--text);
-}
-.zp-modal-close {
-  width: 30px; height: 30px; border-radius: 8px;
-  background: var(--surface-2); border: 1px solid var(--border-2);
-  color: var(--text-3); display: flex; align-items: center; justify-content: center;
-  cursor: pointer; transition: all var(--t-fast);
-}
-.zp-modal-close:hover { color: var(--text); background: var(--surface-3); }
-
-.zp-modal-body { padding: 20px 24px; display: flex; flex-direction: column; gap: 18px; }
-
-/* Avatar section */
-.ep-avatar-section {
-  display: flex; align-items: center; gap: 16px;
-  padding: 16px; border-radius: 12px;
-  background: rgba(124,58,237,0.08); border: 1px solid rgba(124,58,237,0.2);
-}
-.ep-avatar-preview {
-  width: 56px; height: 56px; border-radius: 50%;
-  background: var(--grad-brand);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.4rem; font-weight: 800; color: white; flex-shrink: 0;
-}
-.ep-avatar-label { font-size: 0.85rem; font-weight: 700; color: var(--text); margin-bottom: 3px; }
-.ep-avatar-hint { font-size: 0.75rem; color: var(--text-3); line-height: 1.4; }
-
-/* Fields */
-.ep-field { display: flex; flex-direction: column; gap: 6px; position: relative; }
-.ep-label { font-size: 0.78rem; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.05em; }
-.ep-input {
-  width: 100%; padding: 11px 14px;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 10px; color: var(--text);
-  font-family: var(--f-body); font-size: 0.9rem;
-  transition: border-color var(--t-fast);
-  box-sizing: border-box;
-}
-.ep-input:focus { outline: none; border-color: var(--purple); background: rgba(124,58,237,0.06); }
-.ep-textarea { resize: vertical; min-height: 80px; }
-.ep-hint { font-size: 0.72rem; color: var(--text-3); }
-.ep-char-count { font-size: 0.72rem; color: var(--text-3); text-align: right; }
-.ep-error-msg { font-size: 0.78rem; color: #f87171; flex: 1; }
-
-/* Footer */
-.zp-modal-footer {
-  display: flex; align-items: center; gap: 10px;
-  padding: 16px 24px; border-top: 1px solid var(--border-2);
-  background: rgba(0,0,0,0.2);
-}
-.zp-btn-cancel {
-  padding: 9px 18px; border-radius: 10px;
-  background: transparent; border: 1px solid var(--border-2);
-  color: var(--text-3); font-size: 0.82rem; font-weight: 600;
-  cursor: pointer; transition: all var(--t-fast); margin-left: auto;
-}
-.zp-btn-cancel:hover { color: var(--text); border-color: var(--border); }
-.zp-btn-save {
-  display: flex; align-items: center; gap: 6px;
-  padding: 9px 20px; border-radius: 10px;
-  background: var(--grad-brand);
-  color: white; font-size: 0.82rem; font-weight: 700;
-  cursor: pointer; border: none; transition: opacity var(--t-fast);
-}
-.zp-btn-save:hover { opacity: 0.88; }
-.zp-btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
-
-.profile-tabs-bar {
-  max-width: var(--max-w); margin: 0 auto;
-  padding: 0 var(--px);
-  display: flex; gap: 2px;
-  border-bottom: 1px solid var(--border-2);
-}
-.profile-tab {
-  padding: 13px 22px;
-  font-size: 0.82rem; font-weight: 700;
-  color: var(--text-3);
-  border-bottom: 2px solid transparent;
-  transition: all var(--t-fast);
-}
-.profile-tab:hover { color: var(--text); }
-.profile-tab.active { color: var(--purple); border-bottom-color: var(--purple); }
-
-
-/* ============================================================
-   MODAL — IdeaDetailModal
-============================================================ */
-.modal-backdrop {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,0.72);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  z-index: 950;
-  display: none;
-  align-items: center; justify-content: center;
-  padding: 20px;
-}
-.modal-backdrop.open { display: flex; animation: mfade 0.25s var(--ease) both; }
-@keyframes mfade { from{opacity:0} to{opacity:1} }
-
-.modal-x-btn {
-  position: absolute; top: 18px; right: 18px;
-  width: 44px; height: 44px; border-radius: 50%;
-  background: rgba(255,255,255,0.14);
-  backdrop-filter: blur(10px);
-  display: flex; align-items: center; justify-content: center;
-  color: white; z-index: 10;
-  transition: background var(--t-fast), transform var(--t-mid) var(--ease-spring);
-}
-.modal-x-btn:hover { background: rgba(255,255,255,0.24); transform: rotate(90deg); }
-
-.modal-card {
-  background: var(--surface);
-  border-radius: var(--r-xl);
-  overflow: hidden;
-  width: 100%; max-width: 1000px;
-  max-height: 90vh;
-  display: grid; grid-template-columns: 1fr 1fr;
-  box-shadow: var(--sh-modal);
-  animation: mslide 0.38s cubic-bezier(0.34,1.1,0.64,1) both;
-}
-@keyframes mslide { from{transform:translateY(30px) scale(0.97);opacity:0} to{transform:translateY(0) scale(1);opacity:1} }
-
-.modal-image-col { overflow: hidden; }
-.modal-img { width: 100%; height: 100%; object-fit: cover; min-height: 380px; }
-
-.modal-detail-col {
-  padding: 28px 28px 28px;
-  overflow-y: auto; scrollbar-width: thin;
-  display: flex; flex-direction: column; gap: 18px;
-}
-
-.modal-category-tag {
-  display: inline-flex;
-  padding: 4px 12px;
-  background: rgba(124,58,237,0.08);
-  border-radius: var(--r-pill);
-  font-size: 0.7rem; font-weight: 700; color: var(--purple);
-  letter-spacing: 0.05em; text-transform: uppercase;
-  width: fit-content;
-}
-.modal-title {
-  font-family: var(--f-display);
-  font-size: 1.6rem; font-weight: 900;
-  letter-spacing: -0.02em; line-height: 1.18;
-}
-
-/* Ratings row */
-.modal-ratings-row { display: flex; gap: 9px; flex-wrap: wrap; }
-.modal-rating-box {
-  flex: 1; min-width: 80px;
-  background: var(--surface-2);
-  border-radius: var(--r-md);
-  padding: 10px 12px;
-  display: flex; flex-direction: column; gap: 5px;
-}
-.mrl { font-size: 0.62rem; font-weight: 800; color: var(--text-3); letter-spacing: 0.05em; text-transform: uppercase; }
-.mrs { display: flex; gap: 3px; }
-.mr-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--surface-3); }
-.mr-dot.on { background: var(--grad-brand); }
-
-.modal-desc { font-size: 0.88rem; color: var(--text-2); line-height: 1.72; font-weight: 400; }
-
-.modal-section { display: flex; flex-direction: column; gap: 10px; }
-.modal-section-head { font-size: 0.72rem; font-weight: 800; color: var(--text-3); letter-spacing: 0.06em; text-transform: uppercase; }
-
-.steps-ol { display: flex; flex-direction: column; gap: 9px; list-style: none; }
-.step-row { display: flex; align-items: flex-start; gap: 11px; font-size: 0.85rem; color: var(--text-2); line-height: 1.5; }
-.step-num-badge {
-  width: 24px; height: 24px;
-  background: var(--grad-brand);
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 0.62rem; font-weight: 800; color: white;
-  flex-shrink: 0; margin-top: 1px;
-}
-.tools-row { display: flex; flex-wrap: wrap; gap: 8px; }
-.tool-tag {
-  padding: 5px 12px;
-  background: var(--surface-2);
-  border: 1px solid var(--border-2);
-  border-radius: var(--r-pill);
-  font-size: 0.78rem; color: var(--text-2);
-  transition: all var(--t-fast);
-}
-.tool-tag:hover { background: rgba(124,58,237,0.06); border-color: rgba(124,58,237,0.22); color: var(--purple); }
-
-.modal-action-row { display: flex; gap: 10px; }
-.modal-share-btn { }
-
-.related-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
-.related-thumb {
-  aspect-ratio: 1; border-radius: var(--r-md);
-  overflow: hidden; cursor: pointer;
-  transition: transform var(--t-mid) var(--ease), opacity var(--t-fast);
-}
-.related-thumb:hover { transform: scale(1.04); opacity: .9; }
-.related-thumb img { width: 100%; height: 100%; object-fit: cover; }
-
-
-/* ============================================================
-   SHARED BUTTONS
-============================================================ */
-.btn-primary {
-  display: inline-flex; align-items: center; gap: 8px;
-  height: 44px; padding: 0 22px;
-  background: var(--grad-brand);
-  color: white; border-radius: var(--r-pill);
-  font-size: 0.875rem; font-weight: 700;
-  box-shadow: 0 4px 18px rgba(124,58,237,0.3);
-  transition: all var(--t-mid) var(--ease); border: none; cursor: pointer;
-}
-.btn-primary:hover { transform: translateY(-2px) scale(1.03); box-shadow: 0 8px 26px rgba(124,58,237,0.45); }
-.btn-primary:active { transform: translateY(0); }
-
-.btn-ghost {
-  display: inline-flex; align-items: center; gap: 8px;
-  height: 44px; padding: 0 22px;
-  background: transparent; color: var(--text);
-  border-radius: var(--r-pill);
-  font-size: 0.875rem; font-weight: 700;
-  border: 1.5px solid var(--border-2);
-  transition: all var(--t-mid) var(--ease); cursor: pointer;
-}
-.btn-ghost:hover { background: var(--surface-2); transform: translateY(-1px); }
-
-.btn-glass {
-  display: inline-flex; align-items: center; gap: 9px;
-  height: 44px; padding: 0 22px;
-  background: rgba(255,255,255,0.8);
-  backdrop-filter: blur(12px);
-  color: #374151;
-  border-radius: var(--r-pill);
-  font-size: 0.875rem; font-weight: 700;
-  border: 1px solid rgba(209,213,219,0.5);
-  box-shadow: 0 4px 14px rgba(0,0,0,0.08);
-  transition: all var(--t-mid) var(--ease); cursor: pointer;
-}
-.btn-glass:hover { background: white; transform: translateY(-2px); }
-
-.btn-lg { height: 52px; padding: 0 30px; font-size: 0.95rem; }
-.btn-sm { height: 36px; padding: 0 16px; font-size: 0.78rem; }
-
-
-/* ============================================================
-   TOAST
-============================================================ */
-.toast-bar {
-  position: fixed; bottom: 26px; left: 50%;
-  transform: translateX(-50%) translateY(12px);
-  background: #1a1714;
-  color: white; padding: 10px 20px;
-  border-radius: var(--r-pill);
-  font-size: 0.82rem; font-weight: 700;
-  display: flex; align-items: center; gap: 8px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.26);
-  opacity: 0; pointer-events: none; white-space: nowrap;
-  transition: all 0.32s cubic-bezier(0.34,1.2,0.64,1);
-  z-index: 9999;
-}
-.toast-bar svg { color: #4ade80; }
-.toast-bar.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-
-/* ============================================================
-   RESPONSIVE
-============================================================ */
-@media (max-width: 1280px) { .masonry { column-count: 4; } .ai-masonry { column-count: 3; } }
-@media (max-width: 1024px) {
-  .masonry { column-count: 3; }
-  .modal-card { grid-template-columns: 1fr; max-width: 480px; }
-  .modal-img { min-height: 260px; max-height: 300px; }
-  .nav-links { display: none; }
-  .collab-layout { grid-template-columns: 1fr; }
-  .ai-masonry { column-count: 2; }
-}
-@media (max-width: 768px) {
-  .masonry { column-count: 2; column-gap: 10px; }
-  .nav-search-wrap { display: none; }
-  .nav-hamburger { display: flex; }
-  .hero { padding: 60px var(--px) 52px; }
-  .stat-card { min-width: 130px; }
-  .profile-cover-inner { flex-direction: column; align-items: flex-start; }
-  .ai-masonry { column-count: 2; }
-  .related-row { grid-template-columns: repeat(2,1fr); }
-}
-@media (max-width: 480px) {
-  :root { --px: 14px; }
-  .masonry { column-count: 2; column-gap: 8px; }
-  .hero-cta-row { flex-direction: column; }
-  .btn-lg { width: 100%; justify-content: center; }
-  .ai-input-row { flex-direction: column; }
-  .ai-gen-btn { width: 100%; justify-content: center; }
-  .modal-detail-col { padding: 18px; }
-}
-
-/* ── ZenPin AI Chat ─────────────────────────────────── */
-.chat-msg-ai .chat-bubble {
-  background: linear-gradient(135deg, rgba(124,58,237,0.15), rgba(219,39,119,0.1));
-  border: 1px solid rgba(124,58,237,0.25);
-}
-.chat-msg-ai .chat-av {
-  font-size: 16px;
-  display: flex; align-items: center; justify-content: center;
-}
-.chat-typing {
-  display: inline-flex; gap: 4px; align-items: center; padding: 4px 0;
-}
-.chat-typing span {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: var(--purple);
-  animation: chatBounce 1.2s infinite ease-in-out;
-}
-.chat-typing span:nth-child(2) { animation-delay: 0.2s; }
-.chat-typing span:nth-child(3) { animation-delay: 0.4s; }
-@keyframes chatBounce {
-  0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
-  40%           { transform: translateY(-6px); opacity: 1; }
-}
-/* Edit Profile Modal */
-.simple-modal-input textarea {
-  width: 100%; padding: 10px 14px;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 8px; color: #fff;
-  font-family: inherit; font-size: 14px;
-  box-sizing: border-box;
-}
-
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* ── Creator Post Modal extras ─────────────────────────── */
-.cp-upload-area {
-  border: 2px dashed rgba(124,58,237,0.35);
-  border-radius: 12px; padding: 28px 20px;
-  display: flex; flex-direction: column; align-items: center; gap: 8px;
-  cursor: pointer; transition: all var(--t-fast); color: var(--text-3);
-  background: rgba(124,58,237,0.04);
-}
-.cp-upload-area:hover { border-color: var(--purple); background: rgba(124,58,237,0.1); color: var(--text); }
-.cp-upload-area p { font-size: 0.88rem; font-weight: 600; margin: 0; }
-.cp-upload-area span { font-size: 0.72rem; }
-.cp-row { display: flex; gap: 12px; }
-
-/* ── Source badge on cards ─────────────────────────────── */
-.card-source-badge {
-  position: absolute; top: 8px; left: 8px;
-  padding: 3px 8px; border-radius: 20px;
-  font-size: 0.65rem; font-weight: 700; letter-spacing: 0.04em;
-  text-transform: uppercase; pointer-events: none;
-}
-.card-source-badge.discovery {
-  background: rgba(6,182,212,0.2); color: #67e8f9;
-  border: 1px solid rgba(6,182,212,0.3);
-}
-.card-source-badge.creator {
-  background: rgba(124,58,237,0.2); color: #c4b5fd;
-  border: 1px solid rgba(124,58,237,0.3);
-}
-
-/* ── Feed source toggle ───────────────────────────────── */
-.feed-source-toggle {
-  display: flex; gap: 6px; align-items: center;
-  margin-left: auto; flex-shrink: 0;
-}
-.source-toggle-btn {
-  padding: 5px 12px; border-radius: 20px;
-  font-size: 0.75rem; font-weight: 600;
-  border: 1px solid var(--border-2); color: var(--text-3);
-  cursor: pointer; transition: all var(--t-fast); background: transparent;
-}
-.source-toggle-btn.active {
-  background: rgba(124,58,237,0.15); color: #c4b5fd;
-  border-color: rgba(124,58,237,0.4);
-}
-
-/* ── Typography CSS variable ───────────────────────────────── */
-:root { --font-body: 'Inter', 'DM Sans', sans-serif; }
-body  { font-family: var(--font-body); }
-
-/* ── Font Picker ────────────────────────────────────────────── */
-.font-picker-wrap {
-  display: flex; flex-direction: column; gap: 8px;
-}
-.font-opt-btn {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 10px 14px; border-radius: 10px;
-  border: 1px solid var(--border-2); background: transparent;
-  color: var(--text); cursor: pointer; transition: all var(--t-fast);
-  font-size: 0.82rem; font-weight: 600; text-align: left;
-}
-.font-opt-btn:hover { border-color: var(--purple); background: rgba(124,58,237,0.07); }
-.font-opt-btn.active {
-  border-color: var(--purple); background: rgba(124,58,237,0.14);
-  color: #c4b5fd;
-}
-.font-preview {
-  font-size: 0.78rem; color: var(--text-3); font-weight: 400;
-  opacity: 0.7; margin-left: 8px;
-}
-
-/* ── Dashboard Page ─────────────────────────────────────────── */
-.dash-stats-row {
-  display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
-  margin-bottom: 36px;
-}
-@media (max-width: 640px) { .dash-stats-row { grid-template-columns: repeat(2, 1fr); } }
-
-.dash-stat-card {
-  background: var(--surface-2); border: 1px solid var(--border-2);
-  border-radius: 16px; padding: 22px 18px; text-align: center;
-  transition: transform var(--t-fast), border-color var(--t-fast);
-}
-.dash-stat-card:hover { transform: translateY(-2px); border-color: rgba(124,58,237,0.4); }
-.dash-stat-num {
-  font-size: 2rem; font-weight: 800; letter-spacing: -0.03em;
-  background: var(--grad-purple); -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent; background-clip: text;
-  line-height: 1;
-}
-.dash-stat-label { font-size: 0.74rem; color: var(--text-3); margin-top: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
-
-.dash-section { margin-bottom: 40px; }
-.dash-section-head {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 16px;
-}
-.dash-section-head h3 { font-size: 1rem; font-weight: 700; }
-.dash-section-action {
-  font-size: 0.77rem; padding: 6px 14px; border-radius: 20px;
-  cursor: pointer; font-weight: 600;
-}
-
-.dash-category-list { display: flex; flex-direction: column; gap: 10px; }
-.dash-cat-row {
-  display: flex; align-items: center; gap: 14px;
-  padding: 12px 16px; border-radius: 12px;
-  background: var(--surface-2); border: 1px solid var(--border-2);
-  transition: border-color var(--t-fast);
-}
-.dash-cat-row:hover { border-color: rgba(124,58,237,0.3); }
-.dash-cat-rank  { font-size: 0.72rem; font-weight: 800; color: var(--text-3); width: 24px; }
-.dash-cat-name  { flex: 1; font-weight: 600; font-size: 0.88rem; }
-.dash-cat-count { font-size: 0.75rem; color: var(--text-3); }
-.dash-cat-btn   { font-size: 0.72rem !important; padding: 4px 12px !important; margin: 0; }
-
-.empty-state-sm {
-  padding: 24px; text-align: center; color: var(--text-3);
-  font-size: 0.85rem; grid-column: 1/-1;
-}
-.link-btn {
-  background: none; border: none; color: var(--purple);
-  cursor: pointer; font-size: inherit; padding: 0;
-}
+// ============================================================
+// script.js — ZenPin SPA Core
+// Fully wired to https://zenpin-api.onrender.com
+// ============================================================
+
+const API_URL = "https://zenpin-api.onrender.com";
+
+// ─────────────────────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────────────────────
+const S = {
+  page:       "home",
+  filter:     "all",
+  search:     "",
+  sort:       "newest",
+  loaded:     20,
+  savedIds:   new Set(),
+  likedIds:   new Set(),
+  modalId:    null,
+  profileTab: "saved",
+  aiHistory:  [],
+  ideas:      [],      // live from backend
+  allIdeas:   [],      // full cache for offline fallback
+};
+
+// ─────────────────────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const fmt = n => n >= 1000 ? (n/1000).toFixed(1).replace(".0","")+"k" : String(n||0);
+
+function token()     { return localStorage.getItem("zenpin_token"); }
+function isLoggedIn(){ return !!token(); }
+
+function getUser() {
+  try { return JSON.parse(localStorage.getItem("zenpin_user") || "null"); }
+  catch { return null; }
+}
+
+// ─────────────────────────────────────────────────────────────
+// API WRAPPER
+// ─────────────────────────────────────────────────────────────
+async function apiFetch(method, path, body = null, isForm = false) {
+  const headers = {};
+  if (token()) headers["Authorization"] = `Bearer ${token()}`;
+  if (body && !isForm) headers["Content-Type"] = "application/json";
+
+  const res  = await fetch(`${API_URL}${path}`, {
+    method,
+    mode: "cors",
+    credentials: "omit",
+    headers,
+    body: body ? (isForm ? body : JSON.stringify(body)) : undefined,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
+  return data;
+}
+
+// ─────────────────────────────────────────────────────────────
+// TOAST
+// ─────────────────────────────────────────────────────────────
+let _toastTimer;
+function toast(msg = "Done!", isError = false) {
+  const bar  = $("toastBar");
+  const text = $("toastText");
+  if (!bar || !text) return;
+  text.textContent = msg;
+  bar.style.background = isError ? "#dc2626" : "#1a1714";
+  bar.classList.add("show");
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => bar.classList.remove("show"), 2800);
+}
+
+// ─────────────────────────────────────────────────────────────
+// AUTH GUARD
+// ─────────────────────────────────────────────────────────────
+function requireLogin(action) {
+  if (!isLoggedIn()) {
+    // show the auth-required modal from auth.js if available
+    if (window.Auth?.showLoginModal) {
+      Auth.showLoginModal(action || "Sign in to continue");
+    } else {
+      window.location.href = "login.html";
+    }
+    return false;
+  }
+  return true;
+}
+
+// ─────────────────────────────────────────────────────────────
+// NAVBAR — auth state
+// ─────────────────────────────────────────────────────────────
+function updateNavbar() {
+  const loginBtn   = $("navLoginBtn");
+  const userMenu   = $("navUserMenu");
+  const usernameEl = $("navUsername");
+  const avatarEl   = $("navAvatar");
+  const logoutBtn  = $("navLogoutBtn");
+  const user       = getUser();
+
+  if (isLoggedIn() && user) {
+    if (loginBtn)   loginBtn.style.display  = "none";
+    if (userMenu)   { userMenu.style.display = "flex"; }
+    if (usernameEl) usernameEl.textContent   = user.username || "You";
+    if (avatarEl) {
+      avatarEl.textContent = (user.username || "Y")[0].toUpperCase();
+      if (user.avatar_url) {
+        avatarEl.style.backgroundImage = `url(${user.avatar_url})`;
+        avatarEl.style.backgroundSize  = "cover";
+        avatarEl.textContent = "";
+      }
+    }
+    if (logoutBtn) logoutBtn.onclick = () => {
+      localStorage.removeItem("token");
+      localStorage.removeItem("zenpin_user");
+      S.savedIds.clear(); S.likedIds.clear();
+      updateNavbar();
+      go("home");
+      toast("Logged out. See you soon!");
+    };
+  } else {
+    if (loginBtn) loginBtn.style.display = "flex";
+    if (userMenu) userMenu.style.display = "none";
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// LOAD USER STATE (saves + likes) from backend
+// ─────────────────────────────────────────────────────────────
+async function loadUserState() {
+  if (!isLoggedIn()) return;
+  try {
+    const me = await apiFetch("GET", "/auth/me");
+    localStorage.setItem("zenpin_user", JSON.stringify(me));
+    S.savedIds = new Set(me.saved_idea_ids  || []);
+    S.likedIds = new Set(me.liked_idea_ids  || []);
+    updateNavbar();
+  } catch (e) {
+    // Token expired — clear it
+    if (e.message.includes("401") || e.message.includes("expired")) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("zenpin_user");
+      updateNavbar();
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// CARD BUILDER — single source of truth
+// ─────────────────────────────────────────────────────────────
+function stars(val, cls) {
+  return Array.from({length:5}, (_,i) =>
+    `<div class="rb-star ${i < val ? "on-"+cls : ""}"></div>`
+  ).join("");
+}
+
+function cardHTML(idea, idx) {
+  if (!idea) return "";
+  const saved = S.savedIds.has(idea.id);
+  const liked = S.likedIds.has(idea.id);
+  const diff  = idea.difficulty  || idea.diff  || 3;
+  const creat = idea.creativity  || idea.creat || 3;
+  const use   = idea.usefulness  || idea.use   || 3;
+  const saves = (idea.saves_count || idea.saves || 0) + (saved ? 0 : 0);
+
+    const sourceBadge = idea.source === "creator"
+    ? `<div class="card-source-badge creator">Creator</div>`
+    : idea.source === "discovery"
+    ? `<div class="card-source-badge discovery">Discovery</div>`
+    : "";
+
+  return `
+<div class="idea-card" data-id="${idea.id}" style="--i:${idx}">
+  <div class="card-img-wrap">
+    <img class="card-img" src="${idea.image_url || idea.img}" alt="${idea.title}" loading="lazy"/>
+    ${sourceBadge}
+    <div class="card-static-cat">${idea.category}</div>
+    <div class="card-overlay">
+      <div class="card-top-row">
+        <button class="card-ico-btn ${liked?"heart-on":""}" data-action="like" data-id="${idea.id}">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="${liked?"currentColor":"none"}" stroke="currentColor" stroke-width="2">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+          </svg>
+        </button>
+        <button class="card-ico-btn ${saved?"save-on":""}" data-action="save" data-id="${idea.id}">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="${saved?"currentColor":"none"}" stroke="currentColor" stroke-width="2">
+            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+          </svg>
+        </button>
+      </div>
+      <div class="card-bot-row">
+        <div class="card-cat-pill">${idea.category}</div>
+        <div class="card-title">${idea.title}</div>
+        <div class="card-ratings">
+          <div class="rating-badge"><span class="rb-label">Diff</span><div class="rb-stars">${stars(diff,"blue")}</div></div>
+          <div class="rating-badge"><span class="rb-label">Create</span><div class="rb-stars">${stars(creat,"purple")}</div></div>
+          <div class="rating-badge"><span class="rb-label">Use</span><div class="rb-stars">${stars(use,"green")}</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="card-footer">
+    <div class="card-saves">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+      ${fmt(saves)}
+    </div>
+    <div class="card-author">${idea.username || ""}</div>
+  </div>
+</div>`;
+}
+
+function renderGrid(container, ideas) {
+  if (!container) return;
+  container.innerHTML = ideas.map((idea, i) => cardHTML(idea, i)).join("");
+}
+
+function appendGrid(container, ideas, startIdx) {
+  if (!container) return;
+  const tmp = document.createElement("div");
+  tmp.innerHTML = ideas.map((idea, i) => cardHTML(idea, startIdx + i)).join("");
+  while (tmp.firstChild) container.appendChild(tmp.firstChild);
+}
+
+// ─────────────────────────────────────────────────────────────
+// TYPOGRAPHY SETTINGS
+// Fonts stored in localStorage, applied on page load + change
+// ─────────────────────────────────────────────────────────────
+const FONT_PRESETS = {
+  default:     { name: "ZenPin Default", css: "'Inter', 'DM Sans', sans-serif" },
+  serif:       { name: "Elegant Serif",  css: "'Playfair Display', 'Georgia', serif" },
+  minimal:     { name: "Minimal Modern", css: "'DM Mono', 'Fira Code', monospace" },
+  handwritten: { name: "Creative Script",css: "'Caveat', 'Dancing Script', cursive" },
+};
+
+const TypographySettings = {
+  STORAGE_KEY: "zenpin_font",
+
+  getCurrent() {
+    return localStorage.getItem(this.STORAGE_KEY) || "default";
+  },
+
+  apply(key) {
+    const preset = FONT_PRESETS[key] || FONT_PRESETS.default;
+    document.documentElement.style.setProperty("--font-body", preset.css);
+    // Update active state in any open font picker
+    document.querySelectorAll(".font-opt-btn").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.font === key);
+    });
+  },
+
+  set(key) {
+    localStorage.setItem(this.STORAGE_KEY, key);
+    this.apply(key);
+    toast(`Font: ${FONT_PRESETS[key]?.name || key}`);
+  },
+
+  init() {
+    this.apply(this.getCurrent());
+  },
+
+  renderPicker(containerId) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    const current = this.getCurrent();
+    el.innerHTML = Object.entries(FONT_PRESETS).map(([key, p]) => `
+      <button class="font-opt-btn ${current === key ? "active" : ""}" data-font="${key}"
+              style="font-family:${p.css}">
+        ${p.name}
+        <span class="font-preview" style="font-family:${p.css}">Aa Bb Cc</span>
+      </button>`).join("");
+    el.addEventListener("click", e => {
+      const btn = e.target.closest(".font-opt-btn");
+      if (btn) TypographySettings.set(btn.dataset.font);
+    });
+  },
+};
+
+// ─────────────────────────────────────────────────────────────
+// ROUTER
+// ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+// PAGE: DASHBOARD
+// ─────────────────────────────────────────────────────────────
+async function initDashboard() {
+  const user = getUser();
+  if (!user) { go("home"); return; }
+
+  // Show skeleton states
+  ["dashPosts","dashSaves","dashLikes","dashBoards"].forEach(id => {
+    if ($(id)) $(id).textContent = "…";
+  });
+
+  try {
+    const data = await apiFetch("GET", "/dashboard");
+
+    // Stats
+    if ($("dashPosts"))  $("dashPosts").textContent  = fmt(data.posts);
+    if ($("dashSaves"))  $("dashSaves").textContent  = fmt(data.saves);
+    if ($("dashLikes"))  $("dashLikes").textContent  = fmt(data.likes);
+    if ($("dashBoards")) $("dashBoards").textContent = fmt(data.boards);
+
+    // Recent uploads
+    const uploadGrid = $("dashUploadsGrid");
+    if (uploadGrid) {
+      if (data.recent_uploads?.length) {
+        renderGrid(uploadGrid, data.recent_uploads);
+      } else {
+        uploadGrid.innerHTML = `<div class="empty-state-sm">No posts yet. <button class="link-btn" id="dashCreateBtn">Share your first idea →</button></div>`;
+        $("dashCreateBtn")?.addEventListener("click", () => openCreatorPost());
+      }
+    }
+
+    // Recent saves
+    const savesGrid = $("dashSavesGrid");
+    if (savesGrid) {
+      if (data.recent_saves?.length) {
+        renderGrid(savesGrid, data.recent_saves);
+      } else {
+        savesGrid.innerHTML = `<div class="empty-state-sm">Nothing saved yet. <button class="link-btn" data-page="explore">Explore ideas →</button></div>`;
+      }
+    }
+
+    // Trending categories
+    const catWrap = $("dashCategoryList");
+    if (catWrap) {
+      if (data.top_categories?.length) {
+        catWrap.innerHTML = data.top_categories.map((c, i) => `
+          <div class="dash-cat-row">
+            <span class="dash-cat-rank">#${i+1}</span>
+            <span class="dash-cat-name">${c.category}</span>
+            <span class="dash-cat-count">${c.count} saves</span>
+            <button class="dash-cat-btn chip" data-filter="${c.category}" data-page="explore">Explore</button>
+          </div>`).join("");
+      } else {
+        catWrap.innerHTML = `<div class="empty-state-sm">Start saving ideas to see your trends.</div>`;
+      }
+    }
+  } catch (e) {
+    toast("Could not load dashboard. " + (e.message || ""), true);
+  }
+}
+
+function go(page) {
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+  const el = document.getElementById("page-" + page);
+  if (el) el.classList.add("active");
+  document.querySelectorAll(".nav-link").forEach(l =>
+    l.classList.toggle("active", l.dataset.page === page)
+  );
+  $("navProfileBtn")?.classList.toggle("active", page === "profile");
+  S.page = page;
+  window.scrollTo({ top:0, behavior:"smooth" });
+  const inits = { home:initHome, explore:initExplore, boards:initBoards,
+                  collab:initCollab, ai:initAI, profile:initProfile, trends:initTrends,
+                  dashboard:initDashboard };
+  (inits[page] || (() => {}))();
+}
+
+// ─────────────────────────────────────────────────────────────
+// DISCOVERY — load images from external API into the feed
+// ─────────────────────────────────────────────────────────────
+
+// Map discovery images into idea-like objects for the card renderer
+function discoveryToIdeas(images, category) {
+  return images.map((img, i) => ({
+    id:          -(i + 1),          // Negative IDs = discovery (not in DB)
+    title:       img.title || category + " Inspiration",
+    image_url:   img.image_url,
+    category:    category,
+    source:      "discovery",
+    saves_count: 0,
+    likes_count: 0,
+    difficulty:  2,
+    creativity:  4,
+    usefulness:  3,
+    description: img.author ? `Photo by ${img.author}` : "",
+  }));
+}
+
+async function loadDiscoveryImages(category, page = 1) {
+  try {
+    const res = await fetch(
+      `${API_URL}/images/category?name=${encodeURIComponent(category)}&page=${page}&limit=12`,
+      { mode: "cors", credentials: "omit" }
+    );
+    const data = await res.json();
+    return discoveryToIdeas(data.images || [], category);
+  } catch (e) {
+    console.warn("Discovery load failed:", e);
+    return [];
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// PAGE: HOME
+// ─────────────────────────────────────────────────────────────
+async function initHome() {
+  const grid = $("homeGrid");
+  if (!grid) return;
+
+  // Show skeleton while loading
+  grid.innerHTML = skeletonHTML(10);
+
+  try {
+    const params = buildParams();
+
+    // Load DB ideas (creator + seeded discovery posts)
+    const { ideas: dbIdeas } = await apiFetch("GET", `/ideas?${params}`);
+
+    // Always load discovery images — use selected category or rotate through all
+    const ALL_CATEGORIES = [
+      "anime","cars","bikes","scenery","gaming","ladies accessories",
+      "interior design","workspace","architecture","art",
+      "nature","food","fashion","travel","tech"
+    ];
+    const cat = S.filter && S.filter !== "all" ? S.filter.toLowerCase() : null;
+
+    // For "all" feed: pick 3 random categories to get variety
+    let discoveryIdeas = [];
+    if (cat) {
+      discoveryIdeas = await loadDiscoveryImages(cat);
+    } else {
+      // Shuffle and pick 3 categories, load in parallel
+      const shuffled = [...ALL_CATEGORIES].sort(() => Math.random() - 0.5).slice(0, 3);
+      const results  = await Promise.all(shuffled.map(c => loadDiscoveryImages(c)));
+      discoveryIdeas = results.flat();
+      // Shuffle the combined list so they mix well
+      discoveryIdeas.sort(() => Math.random() - 0.5);
+    }
+
+    // Merge: interleave discovery every 4th card for a mixed feel
+    const merged = [];
+    let di = 0;
+    for (let i = 0; i < dbIdeas.length; i++) {
+      merged.push(dbIdeas[i]);
+      if ((i + 1) % 4 === 0 && di < discoveryIdeas.length) {
+        merged.push(discoveryIdeas[di++]);
+      }
+    }
+    // Append remaining discovery images at the end
+    while (di < discoveryIdeas.length) merged.push(discoveryIdeas[di++]);
+
+    S.ideas = merged;
+    S.allIdeas = merged;
+    applySkillFilter();
+    renderGrid(grid, S.ideas);
+  } catch (e) {
+    console.error("initHome error:", e);
+    grid.innerHTML = `<div class="load-error">Could not load ideas. Check your connection.</div>`;
+  }
+
+  // Trending strip
+  if (window.Trends) Trends.renderTrendingStrip("trendingStrip");
+  // Skill selector
+  if (window.SkillLevel) SkillLevel.renderSelector("skillLevelWrap");
+}
+
+function buildParams(extra = {}) {
+  const p = new URLSearchParams({
+    sort:   S.sort || "newest",
+    limit:  S.loaded,
+    offset: 0,
+    ...extra,
+  });
+  if (S.filter && S.filter !== "all") p.set("category", S.filter);
+  if (S.search) p.set("search", S.search);
+  return p.toString();
+}
+
+function applySkillFilter() {
+  if (window.SkillLevel) {
+    S.ideas = SkillLevel.filterIdeas(S.allIdeas);
+  }
+}
+
+function skeletonHTML(n) {
+  return Array.from({length:n}, (_, i) => `
+    <div class="idea-card skeleton-card" style="--i:${i}">
+      <div class="skeleton-img"></div>
+      <div class="skeleton-footer">
+        <div class="skeleton-line short"></div>
+        <div class="skeleton-line long"></div>
+      </div>
+    </div>`).join("");
+}
+
+// ─────────────────────────────────────────────────────────────
+// PAGE: EXPLORE
+// ─────────────────────────────────────────────────────────────
+async function initExplore() {
+  const grid = $("exploreGrid");
+  if (!grid) return;
+  grid.innerHTML = skeletonHTML(16);
+  try {
+    const p = new URLSearchParams({ limit:40, sort:"trending" });
+    if (S.filter !== "all") p.set("category", S.filter);
+    if (S.search) p.set("search", S.search);
+    const { ideas } = await apiFetch("GET", `/ideas?${p}`);
+    renderGrid(grid, ideas);
+  } catch {
+    grid.innerHTML = `<div class="load-error">Could not load ideas.</div>`;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// PAGE: BOARDS
+// ─────────────────────────────────────────────────────────────
+const BOARD_COLORS = ["var(--grad-brand)","linear-gradient(135deg,#f97316,#ec4899)","linear-gradient(135deg,#06b6d4,#7c3aed)","linear-gradient(135deg,#10b981,#3b82f6)"];
+
+async function initBoards() {
+  const grid = $("boardsGrid");
+  const collabList = $("collabBoardsList");
+  if (!grid) return;
+
+  // Project panel
+  if (window.ProjectMode) {
+    const projPanel = $("projectsPanel");
+    if (projPanel) ProjectMode.renderProjectList("projectsPanel");
+  }
+
+  if (!isLoggedIn()) {
+    grid.innerHTML = `<div class="boards-login-prompt">
+      <p>Sign in to see your boards</p>
+      <a href="login.html" class="btn-primary" style="margin-top:12px">Sign In</a>
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = `<div class="loading-spinner-wrap"><div class="loading-spin"></div></div>`;
+  try {
+    const { boards } = await apiFetch("GET", "/boards");
+    if (!boards.length) {
+      grid.innerHTML = `<div class="boards-empty">
+        <p>No boards yet.</p>
+        <button class="btn-primary" id="firstBoardBtn" style="margin-top:12px">Create your first board</button>
+      </div>`;
+      $("firstBoardBtn")?.addEventListener("click", showNewBoardModal);
+      return;
+    }
+    grid.innerHTML = boards.map((b, i) => {
+      const imgs = (b.preview_images || []).slice(0, 4);
+      while (imgs.length < 4) imgs.push(null);
+      return `
+        <div class="board-card" data-bid="${b.id}" style="--i:${i}">
+          <div class="board-mosaic">
+            ${imgs.map((img, j) => `
+              <div class="bm-img"${j===0?" style='grid-row:1/3'":""}>
+                ${img ? `<img src="${img}" alt="" loading="lazy"/>` : `<div class="bm-placeholder" style="background:${BOARD_COLORS[j%4]};opacity:0.15"></div>`}
+              </div>`).join("")}
+          </div>
+          <div class="board-info">
+            <div class="board-name">${b.name}</div>
+            <div class="board-cnt">${b.idea_count || 0} ideas</div>
+          </div>
+        </div>`;
+    }).join("");
+  } catch (e) {
+    grid.innerHTML = `<div class="load-error">Could not load boards.</div>`;
+  }
+
+  // Collab boards (static demo — extend with backend later)
+  if (collabList) {
+    collabList.innerHTML = DEMO_COLLAB_BOARDS.map((cb, i) => {
+      const avs = cb.members.map((m, j) => `<div class="cboard-av" style="background:${BOARD_COLORS[j%4]}">${m}</div>`).join("");
+      return `<div class="cboard-card" style="--i:${i}">
+        <div class="cboard-header">
+          <div class="cboard-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+          <div class="cboard-name">${cb.name}</div>
+        </div>
+        <p class="cboard-desc">${cb.desc}</p>
+        <div class="cboard-members">${avs}<span class="cboard-member-cnt">${cb.members.length} collaborators</span></div>
+      </div>`;
+    }).join("");
+  }
+}
+
+const DEMO_COLLAB_BOARDS = [
+  { name:"Studio Redesign 2025",  desc:"Collaborative moodboard for our studio refresh.",         members:["Y","A","S","M"] },
+  { name:"Brand Campaign Q3",     desc:"Visual direction for upcoming campaign assets.",           members:["Y","J","K"]     },
+  { name:"Product Launch Vibes",  desc:"Gathering references for the new product identity.",      members:["Y","A","L","P"] },
+];
+
+function showNewBoardModal() {
+  if (!requireLogin("Sign in to create boards")) return;
+  let modal = $("newBoardModal");
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.id = "newBoardModal";
+    modal.className = "simple-modal-backdrop";
+    modal.innerHTML = `
+      <div class="simple-modal-card">
+        <h3 class="simple-modal-title">New Board</h3>
+        <input class="simple-modal-input" id="nbName" type="text" placeholder="Board name…"/>
+        <input class="simple-modal-input" id="nbDesc" type="text" placeholder="Description (optional)"/>
+        <div class="simple-modal-btns">
+          <button class="btn-primary" id="nbCreate">Create Board</button>
+          <button class="btn-ghost"   id="nbCancel">Cancel</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+    $("nbCancel").onclick = () => modal.classList.remove("open");
+    modal.addEventListener("click", e => { if (e.target === modal) modal.classList.remove("open"); });
+  }
+  $("nbCreate").onclick = async () => {
+    const name = $("nbName").value.trim();
+    if (!name) { $("nbName").focus(); return; }
+    try {
+      await apiFetch("POST", "/boards", { name, description: $("nbDesc").value.trim() });
+      modal.classList.remove("open");
+      toast("Board created! 🎉");
+      initBoards();
+    } catch (e) { toast(e.message, true); }
+  };
+  requestAnimationFrame(() => modal.classList.add("open"));
+}
+
+// ─────────────────────────────────────────────────────────────
+// PAGE: COLLAB
+// ─────────────────────────────────────────────────────────────
+async function initCollab() {
+  const pinList = $("pinIdeaList");
+  if (pinList) {
+    try {
+      const { ideas } = await apiFetch("GET", "/ideas?limit=12");
+      pinList.innerHTML = ideas.map(idea => `
+        <div class="pin-idea-item" data-pin-id="${idea.id}">
+          <img class="pin-idea-thumb" src="${idea.image_url || idea.img}" alt="${idea.title}" loading="lazy"/>
+          <span class="pin-idea-name">${idea.title}</span>
+        </div>`).join("");
+    } catch {
+      pinList.innerHTML = `<p class="empty-note">Could not load ideas.</p>`;
+    }
+  }
+
+  // Pre-seed canvas with a few pins
+  try {
+    const { ideas } = await apiFetch("GET", "/ideas?limit=4");
+    const canvas = $("collabCanvas");
+    const hint   = $("canvasHint");
+    if (hint) hint.style.display = "none";
+    const positions = [
+      {top:"10%",left:"6%"},{top:"35%",left:"30%"},
+      {top:"12%",left:"55%"},{top:"52%",left:"10%"},
+    ];
+    ideas.forEach((idea, i) => addPin(idea, positions[i]?.top || "20%", positions[i]?.left || "20%"));
+  } catch {}
+
+  // Voting UI
+  setupVoting();
+}
+
+function addPin(idea, top, left) {
+  const canvas = $("collabCanvas");
+  if (!canvas) return;
+  const pin = document.createElement("div");
+  pin.className = "pinned-card";
+  pin.style.top = top; pin.style.left = left;
+  pin.innerHTML = `
+    <img src="${idea.image_url || idea.img}" alt="${idea.title}" loading="lazy"/>
+    <div class="pinned-card-label">${idea.title.substring(0, 26)}…</div>
+    <div class="pin-vote-row">
+      <button class="pin-vote-btn" data-vote="up">👍 <span class="pin-vote-cnt">0</span></button>
+      <button class="pin-vote-btn" data-vote="down">👎</button>
+    </div>`;
+  canvas.appendChild(pin);
+  makeDraggable(pin);
+
+  // Vote handlers
+  pin.querySelectorAll(".pin-vote-btn").forEach(btn => {
+    btn.addEventListener("click", e => {
+      e.stopPropagation();
+      if (btn.dataset.vote === "up") {
+        const cnt = btn.querySelector(".pin-vote-cnt");
+        cnt.textContent = String(parseInt(cnt.textContent) + 1);
+        btn.style.background = "rgba(124,58,237,0.15)";
+      }
+    });
+  });
+}
+
+function makeDraggable(el) {
+  let ox, oy, drag = false;
+  el.addEventListener("mousedown", e => {
+    if (e.target.closest(".pin-vote-btn")) return;
+    drag = true;
+    const r = el.getBoundingClientRect();
+    ox = e.clientX - r.left; oy = e.clientY - r.top;
+    el.style.transition = "none"; el.style.zIndex = 99; el.style.cursor = "grabbing";
+    e.preventDefault();
+  });
+  document.addEventListener("mousemove", e => {
+    if (!drag) return;
+    const pr = el.parentElement.getBoundingClientRect();
+    el.style.left = Math.max(0, Math.min(pr.width  - el.offsetWidth,  e.clientX - pr.left - ox)) + "px";
+    el.style.top  = Math.max(0, Math.min(pr.height - el.offsetHeight, e.clientY - pr.top  - oy)) + "px";
+  });
+  document.addEventListener("mouseup", () => { if (!drag) return; drag = false; el.style.transition = ""; el.style.zIndex = ""; el.style.cursor = ""; });
+}
+
+function setupVoting() {
+  // Wire pin-idea-list click to add to canvas
+  const pinList = $("pinIdeaList");
+  const canvas  = $("collabCanvas");
+  const hint    = $("canvasHint");
+  if (!pinList) return;
+  pinList.addEventListener("click", e => {
+    const item = e.target.closest(".pin-idea-item");
+    if (!item) return;
+    const img   = item.querySelector("img");
+    const name  = item.querySelector(".pin-idea-name").textContent;
+    const idea  = { id: item.dataset.pinId, image_url: img?.src, img: img?.src, title: name };
+    if (hint) hint.style.display = "none";
+    addPin(idea, (10 + Math.random() * 55) + "%", (5 + Math.random() * 65) + "%");
+    toast("Pinned to board!");
+  });
+}
+
+// Chat
+function setupChat() {
+  const sendBtn   = $("chatSendBtn");
+  const chatInput = $("chatInput");
+  const chatMsgs  = $("chatMsgs");
+  if (!sendBtn) return;
+
+  // Conversation history for context
+  let _chatHistory = [];
+
+  function appendMsg(role, text, isLoading = false) {
+    const user    = getUser();
+    const initial = (user?.username || "Y")[0].toUpperCase();
+    const isUser  = role === "user";
+    const id      = isLoading ? "aiTyping" : "";
+    chatMsgs.innerHTML += `
+      <div class="chat-msg${isUser ? "" : " chat-msg-ai"}" ${id ? `id="${id}"` : ""}>
+        <div class="chat-av" style="background:${isUser ? "var(--grad-brand)" : "linear-gradient(135deg,#7c3aed,#db2777)"}">
+          ${isUser ? initial : "✦"}
+        </div>
+        <div class="chat-bubble">
+          <span class="chat-name">${isUser ? (user?.username || "You") : "ZenPin AI"}</span>
+          ${isLoading ? `<span class="chat-typing"><span></span><span></span><span></span></span>` : text}
+        </div>
+      </div>`;
+    chatMsgs.scrollTop = chatMsgs.scrollHeight;
+  }
+
+  async function sendMsg() {
+    const msg = chatInput.value.trim();
+    if (!msg) return;
+    chatInput.value = "";
+    sendBtn.disabled = true;
+
+    appendMsg("user", msg);
+    _chatHistory.push({ role: "user", content: msg });
+
+    appendMsg("assistant", "", true); // typing indicator
+
+    try {
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1000,
+          system: `You are ZenPin AI — a creative assistant for ZenPin, a visual inspiration platform.
+You help users discover ideas, plan creative projects, suggest aesthetics, and explore design concepts.
+You know about interior design, architecture, fashion, food, travel, art, tech, and workspace aesthetics.
+Keep responses concise, inspiring, and practical. Use emojis sparingly to add warmth.
+The user is browsing ZenPin — a Pinterest-like platform for creative inspiration.`,
+          messages: _chatHistory
+        })
+      });
+
+      const data = await response.json();
+      const reply = data.content?.[0]?.text || "I couldn't generate a response. Please try again.";
+
+      // Remove typing indicator
+      $("aiTyping")?.remove();
+
+      _chatHistory.push({ role: "assistant", content: reply });
+      // Keep last 20 messages for context
+      if (_chatHistory.length > 20) _chatHistory = _chatHistory.slice(-20);
+
+      appendMsg("assistant", reply.replace(/\n/g, "<br>"));
+
+    } catch (err) {
+      $("aiTyping")?.remove();
+      appendMsg("assistant", "Sorry, I couldn't connect right now. Try again in a moment.");
+      console.error("AI chat error:", err);
+    } finally {
+      sendBtn.disabled = false;
+      chatInput.focus();
+    }
+  }
+
+  // Welcome message
+  if (!chatMsgs.innerHTML.trim()) {
+    appendMsg("assistant", "Hi! I'm ZenPin AI ✦ Ask me anything — design ideas, aesthetic advice, project inspiration, or help exploring the platform!");
+  }
+
+  sendBtn.addEventListener("click", sendMsg);
+  chatInput.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) sendMsg(); });
+}
+
+// ─────────────────────────────────────────────────────────────
+// PAGE: AI GENERATOR
+// ─────────────────────────────────────────────────────────────
+async function initAI() {
+  if (window.AIModule) AIModule.renderHistory($("aiHistoryList"));
+}
+
+async function runAI() {
+  const topic = $("aiInput")?.value.trim();
+  if (!topic) { $("aiInput")?.focus(); return; }
+
+  $("aiOutput").style.display  = "none";
+  $("aiLoading").style.display = "block";
+  $("aiGenBtn").disabled       = true;
+
+  try {
+    const data = await apiFetch("POST", "/ai/generate", { topic });
+
+    $("aiLoading").style.display = "none";
+    $("aiOutput").style.display  = "block";
+
+    // Title
+    $("aiOutputTitle").textContent = `"${topic}"`;
+
+    // Powered-by badge
+    const badge = $("aiPoweredBadge");
+    if (badge) {
+      badge.textContent   = data.powered_by === "openai" ? "✨ GPT-4o" : "⚡ Smart Match";
+      badge.style.display = "inline-flex";
+    }
+
+    // Render cards
+    const ideas = data.ideas || [];
+    renderGrid($("aiGrid"), ideas);
+
+    // Color palette
+    if (window.AIModule) {
+      // Color palette
+      const palette = AIModule.generatePalette(topic);
+      AIModule.renderPalette(palette, $("aiPaletteWrap"));
+
+      // Style tags as a simple label row
+      const tags = AIModule.getStyleTags(topic);
+      const styleEl = $("aiStyleCard");
+      if (styleEl && tags.length) {
+        styleEl.innerHTML = tags.map(t =>
+          `<span style="background:rgba(124,58,237,0.2);border:1px solid rgba(124,58,237,0.4);
+            padding:4px 10px;border-radius:20px;font-size:12px;color:#c4b5fd">${t}</span>`
+        ).join(" ");
+        styleEl.style.display = "flex";
+        styleEl.style.flexWrap = "wrap";
+        styleEl.style.gap = "6px";
+      }
+
+      // Save to history
+      AIModule.renderHistory($("aiHistoryList"));
+    }
+
+    toast(`✨ Board generated for "${topic}"`);
+
+  } catch (e) {
+    $("aiLoading").style.display = "none";
+    toast("AI generation failed: " + e.message, true);
+  } finally {
+    $("aiGenBtn").disabled = false;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// PAGE: PROFILE
+// ─────────────────────────────────────────────────────────────
+function fillProfileHeader(user) {
+  const initial = (user.username || "?")[0].toUpperCase();
+  if ($("profileAvatar"))  $("profileAvatar").textContent  = initial;
+  if ($("profileName"))    $("profileName").textContent    = user.username || "Your Studio";
+  if ($("profileHandle"))  $("profileHandle").textContent  = "@" + (user.username || "yourstudio").toLowerCase();
+  if ($("profileBio"))     $("profileBio").textContent     = user.bio || "Visual thinker & creative explorer. Curating the world's best ideas.";
+  if ($("epAvatarPreview")) $("epAvatarPreview").textContent = initial;
+  // Member since
+  if ($("profileJoined") && user.created_at) {
+    const d = new Date(user.created_at);
+    $("profileJoined").textContent = d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+  }
+}
+
+async function initProfile() {
+  const user = getUser();
+  if (!user) { navigate("home"); return; }
+  fillProfileHeader(user);
+
+  // Fetch real stats
+  try {
+    const [savedData, boardsData] = await Promise.allSettled([
+      apiFetch("GET", `/users/${user.id}/saves`),
+      apiFetch("GET", "/boards"),
+    ]);
+    const savedCount  = savedData.status  === "fulfilled" ? (savedData.value.ideas  || []).length : 0;
+    const boardsCount = boardsData.status === "fulfilled" ? (boardsData.value.boards || []).length : 0;
+    if ($("statSaved"))  $("statSaved").textContent  = savedCount;
+    if ($("statBoards")) $("statBoards").textContent = boardsCount;
+  } catch {}
+
+  renderProfileTab(S.profileTab || "saved");
+}
+
+async function renderProfileTab(tab) {
+  S.profileTab = tab;
+  document.querySelectorAll(".profile-tab").forEach(t =>
+    t.classList.toggle("active", t.dataset.tab === tab)
+  );
+  const grid  = $("profileGrid");
+  const empty = $("profileEmptyState");
+  if (empty) empty.style.display = "none";
+  grid.innerHTML = skeletonHTML(6);
+
+  try {
+    const user = getUser();
+    if (!user) { grid.innerHTML = ""; return; }
+
+    if (tab === "saved") {
+      const data = await apiFetch("GET", `/users/${user.id}/saves`);
+      const ideas = data.ideas || [];
+      if ($("statSaved")) $("statSaved").textContent = ideas.length;
+      if (!ideas.length) {
+        grid.innerHTML = "";
+        if (empty) empty.style.display = "flex";
+        return;
+      }
+      renderGrid(grid, ideas);
+
+    } else if (tab === "boards") {
+      const { boards } = await apiFetch("GET", "/boards");
+      if ($("statBoards")) $("statBoards").textContent = boards.length;
+      if (!boards.length) {
+        grid.innerHTML = `
+          <div class="profile-empty-state" style="display:flex;grid-column:1/-1">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" style="color:#4b5563"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            <p>No boards yet — create your first one!</p>
+            <button class="btn-primary btn-sm" onclick="navigate('boards')">Go to Boards</button>
+          </div>`;
+        return;
+      }
+      grid.innerHTML = boards.map((b, i) => `
+        <div class="idea-card" style="--i:${i};cursor:pointer" onclick="navigate('boards')">
+          <div class="card-img-wrap" style="min-height:130px;background:linear-gradient(135deg,rgba(124,58,237,0.15),rgba(219,39,119,0.1));display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;padding:12px">
+            ${(b.preview_images||[]).slice(0,4).map(u =>
+              `<img src="${u}" style="width:48%;height:55px;object-fit:cover;border-radius:6px" loading="lazy"/>`
+            ).join("") || `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(124,58,237,0.5)" stroke-width="1.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>`}
+          </div>
+          <div class="card-footer" style="flex-direction:column;align-items:flex-start;gap:3px;padding:12px 14px">
+            <div style="font-weight:700;font-size:0.88rem;color:var(--text)">${b.name}</div>
+            <div style="font-size:0.72rem;color:var(--text-3)">${b.idea_count||0} ideas${b.description ? " · " + b.description.slice(0,40) : ""}</div>
+          </div>
+        </div>`).join("");
+
+    } else {
+      // Created tab — ideas created by this user
+      const { ideas: all } = await apiFetch("GET", `/ideas?limit=50`);
+      const mine = all.filter(i => i.user_id === user.id || i.username === user.username);
+      if ($("statIdeas")) $("statIdeas").textContent = mine.length;
+      if (!mine.length) {
+        grid.innerHTML = `
+          <div class="profile-empty-state" style="display:flex;grid-column:1/-1">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" style="color:#4b5563"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+            <p>You haven't created any ideas yet.</p>
+            <button class="btn-primary btn-sm" onclick="navigate('explore')">Get Inspired</button>
+          </div>`;
+        return;
+      }
+      renderGrid(grid, mine);
+    }
+  } catch (e) {
+    grid.innerHTML = `<div class="load-error" style="grid-column:1/-1;padding:24px;color:var(--text-3);text-align:center">Could not load. <button onclick="renderProfileTab('${tab}')" style="color:var(--purple);cursor:pointer">Retry</button></div>`;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// PAGE: TRENDS
+// ─────────────────────────────────────────────────────────────
+function initTrends() {
+  if (window.Trends) {
+    Trends.renderTrendsGrid("trendsGrid");
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// IDEA MODAL — fully connected to backend
+// ─────────────────────────────────────────────────────────────
+const STEPS_MAP = {
+  "Interior Design": ["Choose neutral palette","Source natural materials","Plan furniture layout","Layer textures and lighting","Add plants and organic accents"],
+  "Workspace":       ["Audit your current setup","Order core items first","Manage all cables","Set up monitor and lighting","Final arrangement and style"],
+  "Architecture":    ["Site analysis and context","Develop concept sketches","Create floor plans","3D model and refine","Documentation and presentation"],
+  "Art":             ["Gather references","Sketch thumbnail compositions","Prepare your surface","Block in major shapes","Refine, detail, and finish"],
+  "Fashion":         ["Sketch design concepts","Select fabric and palette","Create pattern pieces","Sew and fit mockup","Final sewing and photography"],
+  "Food":            ["Read full recipe","Mise en place preparation","Execute core technique","Taste and adjust seasoning","Plate and photograph"],
+  "Travel":          ["Research location deeply","Scout spots on arrival","Shoot at golden hour","Review and cull shots","Edit and share the story"],
+  "Nature":          ["Scout location beforehand","Arrive at blue hour","Set up camera carefully","Bracket exposures","Post-process in Lightroom"],
+  "Tech":            ["Define requirements","Source components","Prototype on breadboard","Test and iterate","Final build and document"],
+};
+
+const TOOLS_MAP = {
+  "Interior Design": ["Mood Board Kit","Paint Swatches","3D Planner","Fabric Samples","CAD Software"],
+  "Workspace":       ["Monitor Arm","Cable Management Kit","LED Strip Lights","Desk Organizer","Anti-fatigue Mat"],
+  "Architecture":    ["AutoCAD","Revit","SketchUp","Rhino 3D","Adobe InDesign"],
+  "Art":             ["Procreate","Lino Cutter","Watercolor Set","Gesso + Canvas","Lightroom"],
+  "Fashion":         ["Sewing Machine","Pattern Paper","Dressmaker's Scissors","Mannequin","Serger"],
+  "Food":            ["Stand Mixer","Dutch Oven","Kitchen Scale","Bench Scraper","Instant Thermometer"],
+  "Travel":          ["Sony A7 Camera","Tripod","ND Filter","Drone","Adobe Lightroom"],
+  "Nature":          ["Macro Lens","Field Journal","Cable Release","Lightroom Classic","Waterproof Bag"],
+  "Tech":            ["Soldering Iron","Oscilloscope","Arduino","3D Printer","Digital Multimeter"],
+};
+
+const DESC_MAP = {
+  "Interior Design": "A thoughtfully curated space that balances aesthetics with function. Natural materials, intentional layering, and a restrained palette create an environment that feels calm and inspiring.",
+  "Workspace":       "An optimised workspace designed for focus and creative output. Every element considered — from cable management to lighting temperature — creating conditions for deep work.",
+  "Architecture":    "A bold architectural statement challenging conventional form. The interplay of light, material, and structure creates a space that rewards close observation.",
+  "Art":             "An exploration of texture, form, and conceptual depth. Each mark carries deliberate intention, inviting dialogue between process and finished work.",
+  "Fashion":         "A study in material consciousness and silhouette — exploring the tension between structure and flow, comfort and presence.",
+  "Food":            "A culinary exploration rooted in seasonal ingredients and classical technique. Each element present for a clear reason, nothing superfluous.",
+  "Travel":          "A visual document of a place at a specific moment — capturing not just light and geometry, but atmosphere and presence.",
+  "Nature":          "An intimate encounter with the natural world at an unfamiliar scale — extraordinary beauty hiding in plain sight.",
+  "Tech":            "A project where engineering constraints become design opportunities. The build process is part of the art.",
+};
+
+function modalStars(val) {
+  return Array.from({length:5}, (_, i) =>
+    `<div class="mr-dot ${i < val ? "on" : ""}"></div>`
+  ).join("");
+}
+
+// ─────────────────────────────────────────────────────────────
+// IMAGE DOWNLOAD — works for discovery + creator images
+// ─────────────────────────────────────────────────────────────
+function downloadImage(url, title = "zenpin-image") {
+  // Sanitise filename
+  const filename = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 60) + ".jpg";
+  // Try fetch-blob approach (bypasses cross-origin download block)
+  fetch(url, { mode: "cors" })
+    .then(r => r.blob())
+    .then(blob => {
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
+    })
+    .catch(() => {
+      // Fallback: open in new tab (user can save manually)
+      window.open(url, "_blank");
+      toast("Image opened — right-click to save");
+    });
+}
+
+async function openModal(id) {
+  let idea;
+  try {
+    idea = await apiFetch("GET", `/ideas/${id}`);
+  } catch {
+    // Fallback to cached
+    idea = S.allIdeas.find(i => i.id === id) || null;
+  }
+  if (!idea) return;
+  S.modalId = id;
+
+  const diff  = idea.difficulty  || idea.diff  || 3;
+  const creat = idea.creativity  || idea.creat || 3;
+  const use   = idea.usefulness  || idea.use   || 3;
+  const saved = S.savedIds.has(id);
+
+  $("modalImg").src           = idea.image_url || idea.img;
+  $("modalImg").alt           = idea.title;
+  $("modalCatTag").textContent = idea.category;
+  $("modalTitle").textContent  = idea.title;
+  $("modalDesc").textContent   = idea.description || DESC_MAP[idea.category] || "";
+
+  $("modalRatings").innerHTML = [
+    { label:"Difficulty", val:diff  },
+    { label:"Creativity", val:creat },
+    { label:"Usefulness", val:use   },
+  ].map(r => `
+    <div class="modal-rating-box">
+      <div class="mrl">${r.label}</div>
+      <div class="mrs">${modalStars(r.val)}</div>
+    </div>`).join("");
+
+  $("modalSteps").innerHTML = (STEPS_MAP[idea.category] || STEPS_MAP["Art"]).map((s, i) => `
+    <li class="step-row">
+      <div class="step-num-badge">${i+1}</div>
+      <span>${s}</span>
+    </li>`).join("");
+
+  $("modalTools").innerHTML = (TOOLS_MAP[idea.category] || TOOLS_MAP["Art"]).map(t =>
+    `<span class="tool-tag">${t}</span>`
+  ).join("");
+
+  // Execution mode tab
+  if (window.ExecutionMode) {
+    const execEl = $("modalExecGuide");
+    if (execEl) ExecutionMode.renderExecutionGuide(idea, "modalExecGuide");
+  }
+
+  // Estimated time + cost
+  const metaEl = $("modalMeta");
+  if (metaEl && window.ExecutionMode) {
+    metaEl.innerHTML = `
+      <div class="exec-meta-row">
+        <div class="exec-meta-pill">⏱ ${ExecutionMode.getTime(idea.category)}</div>
+        <div class="exec-meta-pill">💰 ${ExecutionMode.getCost(idea.category)}</div>
+      </div>`;
+  }
+
+  syncSaveBtn();
+
+  // ── Download button ──────────────────────────────────────
+  const dlBtn = $("modalDownloadBtn");
+  if (dlBtn) {
+    dlBtn.onclick = () => downloadImage(idea.image_url, idea.title);
+  }
+
+  // Related ideas
+  try {
+    const { ideas: related } = await apiFetch("GET", `/ideas?category=${encodeURIComponent(idea.category)}&limit=9`);
+    $("relatedRow").innerHTML = related.filter(r => r.id !== id).slice(0, 6).map(r => `
+      <div class="related-thumb" data-id="${r.id}">
+        <img src="${r.image_url || r.img}" alt="${r.title}" loading="lazy"/>
+      </div>`).join("");
+  } catch {}
+
+  $("modalBackdrop").classList.add("open");
+  document.body.style.overflow = "hidden";
+}
+
+function closeModal() {
+  $("modalBackdrop")?.classList.remove("open");
+  document.body.style.overflow = "";
+  S.modalId = null;
+}
+
+function syncSaveBtn() {
+  const btn   = $("modalSaveBtn");
+  const saved = S.savedIds.has(S.modalId);
+  if (!btn) return;
+  btn.innerHTML = saved
+    ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg> Saved ✓`
+    : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg> Save Idea`;
+}
+
+// ─────────────────────────────────────────────────────────────
+// SOCIAL ACTIONS — save / like (wired to API)
+// ─────────────────────────────────────────────────────────────
+async function handleSave(ideaId) {
+  if (!requireLogin("Sign in to save ideas")) return;
+  try {
+    const { saved } = await apiFetch("POST", `/ideas/${ideaId}/save`);
+    if (saved) { S.savedIds.add(ideaId); toast("Saved! 🎉"); }
+    else        { S.savedIds.delete(ideaId); toast("Removed from saves"); }
+    refreshCard(ideaId);
+    if (S.modalId === ideaId) syncSaveBtn();
+  } catch (e) { toast(e.message, true); }
+}
+
+async function handleLike(ideaId) {
+  if (!requireLogin("Sign in to like ideas")) return;
+  try {
+    const { liked } = await apiFetch("POST", `/ideas/${ideaId}/like`);
+    if (liked) { S.likedIds.add(ideaId); toast("Liked! ❤️"); }
+    else        { S.likedIds.delete(ideaId); toast("Unliked"); }
+    refreshCard(ideaId);
+  } catch (e) { toast(e.message, true); }
+}
+
+function refreshCard(ideaId) {
+  // Find all cards with this id and re-render in place
+  document.querySelectorAll(`.idea-card[data-id="${ideaId}"]`).forEach(cardEl => {
+    const idea = S.allIdeas.find(i => i.id === ideaId);
+    if (!idea) return;
+    const idx  = parseInt(cardEl.style.getPropertyValue("--i") || "0");
+    const tmp  = document.createElement("div");
+    tmp.innerHTML = cardHTML(idea, idx);
+    cardEl.replaceWith(tmp.firstElementChild);
+  });
+}
+
+// ─────────────────────────────────────────────────────────────
+// UPLOAD IMAGE
+// ─────────────────────────────────────────────────────────────
+async function handleUpload(file) {
+  if (!requireLogin("Sign in to upload images")) return null;
+  const form = new FormData();
+  form.append("file", file);
+  try {
+    const data = await apiFetch("POST", "/upload", form, true);
+    toast("Image uploaded! ✅");
+    return data.url;
+  } catch (e) {
+    toast("Upload failed: " + e.message, true);
+    return null;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// FILTER HANDLERS
+// ─────────────────────────────────────────────────────────────
+function handleFilter(e, page) {
+  const btn = e.target.closest(".chip");
+  if (!btn) return;
+  btn.closest(".filter-chips").querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
+  btn.classList.add("active");
+  S.filter = btn.dataset.filter;
+  if (page === "home")    initHome();
+  if (page === "explore") initExplore();
+}
+
+// ─────────────────────────────────────────────────────────────
+// EVENT LISTENERS — single delegation root
+// ─────────────────────────────────────────────────────────────
+document.addEventListener("DOMContentLoaded", async () => {
+
+  // Init auth
+  updateNavbar();
+  await loadUserState();
+
+  // ── Navigation clicks ──────────────────────────────────────
+  document.addEventListener("click", e => {
+    // Skip card action buttons
+    if (e.target.closest(".card-ico-btn") ||
+        e.target.closest(".chip")         ||
+        e.target.closest(".pin-vote-btn")) return;
+
+    const navEl = e.target.closest("[data-page]");
+    if (navEl) { e.preventDefault(); go(navEl.dataset.page); return; }
+  });
+
+  // ── Card interactions ──────────────────────────────────────
+  document.addEventListener("click", e => {
+    const btn = e.target.closest(".card-ico-btn[data-action]");
+    if (btn) {
+      e.stopPropagation();
+      const id  = Number(btn.dataset.id);
+      const act = btn.dataset.action;
+      if (act === "save") handleSave(id);
+      if (act === "like") handleLike(id);
+      return;
+    }
+    // Open modal
+    const card = e.target.closest(".idea-card[data-id]");
+    if (card && !e.target.closest(".card-ico-btn")) {
+      openModal(Number(card.dataset.id));
+      return;
+    }
+    // Related thumb
+    const rel = e.target.closest(".related-thumb[data-id]");
+    if (rel) openModal(Number(rel.dataset.id));
+  });
+
+  // ── Modal ──────────────────────────────────────────────────
+  $("modalCloseBtn")?.addEventListener("click", closeModal);
+  $("modalBackdrop")?.addEventListener("click", e => {
+    if (e.target === $("modalBackdrop")) closeModal();
+  });
+  $("modalSaveBtn")?.addEventListener("click", () => {
+    if (S.modalId) handleSave(S.modalId);
+  });
+
+  // Modal tabs (Overview vs Execution)
+  document.querySelectorAll(".modal-tab-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".modal-tab-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".modal-tab-panel").forEach(p => p.classList.remove("active"));
+      btn.classList.add("active");
+      $(btn.dataset.panel)?.classList.add("active");
+    });
+  });
+
+  // ── Filters ────────────────────────────────────────────────
+  $("homeFilters")?.addEventListener("click",    e => handleFilter(e, "home"));
+  $("exploreFilters")?.addEventListener("click", e => handleFilter(e, "explore"));
+  $("homeSort")?.addEventListener("change", e => { S.sort = e.target.value; initHome(); });
+
+  // ── Search ─────────────────────────────────────────────────
+  let _st;
+  $("globalSearch")?.addEventListener("input", e => {
+    clearTimeout(_st);
+    _st = setTimeout(() => {
+      S.search = e.target.value.trim();
+      S.filter = "all";
+      document.querySelectorAll(".chip").forEach(c =>
+        c.classList.toggle("active", c.dataset.filter === "all")
+      );
+      if (S.page === "home")    initHome();
+      if (S.page === "explore") initExplore();
+    }, 260);
+  });
+
+  // ── Keyboard shortcuts ─────────────────────────────────────
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape") closeModal();
+    if (e.key === "/" && document.activeElement !== $("globalSearch")) {
+      e.preventDefault();
+      $("globalSearch")?.focus();
+    }
+  });
+
+  // ── Scroll shadow on navbar ────────────────────────────────
+  window.addEventListener("scroll", () =>
+    $("navbar")?.classList.toggle("scrolled", window.scrollY > 10),
+    { passive: true }
+  );
+
+  // ── Load more (manual + infinite scroll) ──────────────────
+  async function loadMoreIdeas() {
+    const btn = $("loadMoreBtn");
+    if (btn) { btn.classList.add("busy"); btn.querySelector("span").textContent = "Loading…"; }
+    try {
+      const p = buildParams({ offset: S.loaded });
+      const { ideas: newIdeas } = await apiFetch("GET", `/ideas?${p}`);
+      // Also fetch next page of discovery images for current category
+      let discoveryNew = [];
+      const cat = S.filter && S.filter !== "all" ? S.filter : null;
+      if (cat) {
+        const nextPage = Math.floor(S.loaded / 12) + 2;
+        discoveryNew = await loadDiscoveryImages(cat, nextPage);
+      }
+      const merged = [];
+      let di = 0;
+      for (let i = 0; i < newIdeas.length; i++) {
+        merged.push(newIdeas[i]);
+        if ((i + 1) % 4 === 0 && di < discoveryNew.length) merged.push(discoveryNew[di++]);
+      }
+      while (di < discoveryNew.length) merged.push(discoveryNew[di++]);
+
+      if (!merged.length) { if (btn) btn.style.display = "none"; return; }
+      appendGrid($("homeGrid"), merged, S.loaded);
+      S.allIdeas = [...S.allIdeas, ...merged];
+      S.loaded  += merged.length;
+      if (newIdeas.length < 20 && !discoveryNew.length) { if (btn) btn.style.display = "none"; }
+    } catch (e) {
+      toast(e.message, true);
+    } finally {
+      if (btn) { btn.classList.remove("busy"); btn.querySelector("span").textContent = "Load more ideas"; }
+    }
+  }
+
+  $("loadMoreBtn")?.addEventListener("click", loadMoreIdeas);
+
+  // ── Infinite scroll ─────────────────────────────────────
+  const _infiniteObserver = new IntersectionObserver(
+    entries => { if (entries[0].isIntersecting) loadMoreIdeas(); },
+    { rootMargin: "400px" }
+  );
+  const _sentinel = $("loadMoreBtn");
+  if (_sentinel) _infiniteObserver.observe(_sentinel);
+
+  // ── Lazy-load images via IntersectionObserver ───────────
+  function setupLazyImages() {
+    const lazyObserver = new IntersectionObserver(
+      entries => entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const img = entry.target;
+          if (img.dataset.src) { img.src = img.dataset.src; delete img.dataset.src; }
+          lazyObserver.unobserve(img);
+        }
+      }),
+      { rootMargin: "300px" }
+    );
+    document.querySelectorAll("img[data-src]").forEach(img => lazyObserver.observe(img));
+  }
+  setupLazyImages();
+  // Re-run after grid updates
+  window.addEventListener("zenpin:gridupdate", setupLazyImages);
+
+  // ── AI generator ──────────────────────────────────────────
+  $("aiGenBtn")?.addEventListener("click", runAI);
+  $("aiInput")?.addEventListener("keydown", e => { if (e.key === "Enter") runAI(); });
+  document.querySelectorAll(".quick-btn").forEach(btn =>
+    btn.addEventListener("click", () => {
+      if ($("aiInput")) $("aiInput").value = btn.textContent;
+      $("aiInput")?.focus();
+    })
+  );
+  $("aiSaveBtn")?.addEventListener("click", () => {
+    if (!requireLogin("Sign in to save boards")) return;
+    toast("Board saved! ✨");
+  });
+
+  // AI history click → re-run
+  $("aiHistoryList")?.addEventListener("click", e => {
+    const item = e.target.closest(".ai-hist-item");
+    if (item?.dataset?.topic && $("aiInput")) {
+      $("aiInput").value = item.dataset.topic;
+      runAI();
+    }
+  });
+
+  // ── Collab tool buttons ────────────────────────────────────
+  document.querySelectorAll(".tool-btn").forEach(btn =>
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".tool-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+    })
+  );
+
+  // ── Profile tabs ───────────────────────────────────────────
+  $("profileTabsBar")?.addEventListener("click", e => {
+    const tab = e.target.closest(".profile-tab");
+    if (tab) renderProfileTab(tab.dataset.tab);
+  });
+
+  // ── New board button ───────────────────────────────────────
+  $("newBoardBtn")?.addEventListener("click", showNewBoardModal);
+
+  // ── Edit Profile ──────────────────────────────────────────
+  function openEditProfile() {
+    const user = getUser();
+    if (!user) return;
+    const m = $("editProfileModal");
+    if (!m) return;
+    // Pre-fill
+    if ($("epUsername")) $("epUsername").value  = user.username || "";
+    if ($("epBio"))      $("epBio").value       = user.bio      || "";
+    if ($("epBioCount")) $("epBioCount").textContent = (user.bio || "").length;
+    if ($("epAvatarPreview")) $("epAvatarPreview").textContent = (user.username || "?")[0].toUpperCase();
+    if ($("epLocation")) $("epLocation").value  = user.location || "";
+    const sl = user.social_links || {};
+    if ($("epInstagram")) $("epInstagram").value = sl.instagram || "";
+    if ($("epTwitter"))  $("epTwitter").value   = sl.twitter   || "";
+    // Refresh font picker with current selection
+    TypographySettings.renderPicker("fontPickerWrap");
+    if ($("epError"))    $("epError").textContent = "";
+    m.classList.add("open");
+  }
+
+  $("editProfileBtn")?.addEventListener("click", openEditProfile);
+  $("profileAvEditBtn")?.addEventListener("click", openEditProfile);
+
+  $("editProfileClose")?.addEventListener("click", () => $("editProfileModal")?.classList.remove("open"));
+  $("epCancel")?.addEventListener("click",        () => $("editProfileModal")?.classList.remove("open"));
+  $("editProfileModal")?.addEventListener("click", e => {
+    if (e.target === $("editProfileModal")) $("editProfileModal").classList.remove("open");
+  });
+
+  // Live char count
+  $("epBio")?.addEventListener("input", () => {
+    if ($("epBioCount")) $("epBioCount").textContent = ($("epBio").value || "").length;
+  });
+
+  $("epSave")?.addEventListener("click", async () => {
+    const bio      = ($("epBio")?.value || "").trim();
+    const username = ($("epUsername")?.value || "").trim();
+    const location = ($("epLocation")?.value || "").trim();
+    const instagram= ($("epInstagram")?.value || "").trim();
+    const twitter  = ($("epTwitter")?.value || "").trim();
+    const btn   = $("epSave");
+    const errEl = $("epError");
+    if (errEl) errEl.textContent = "";
+    if (username.length > 0 && username.length < 2) {
+      if (errEl) errEl.textContent = "Username must be at least 2 characters.";
+      return;
+    }
+    btn.disabled = true;
+    btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation:spin 0.8s linear infinite"><path d="M12 2a10 10 0 1 0 10 10"/></svg> Saving…`;
+    try {
+      const payload = { bio };
+      if (username) payload.username = username;
+      if (location) payload.location = location;
+      const social = {};
+      if (instagram) social.instagram = instagram;
+      if (twitter)   social.twitter   = twitter;
+      if (Object.keys(social).length) payload.social_links = social;
+
+      const updated = await apiFetch("PATCH", "/auth/me", payload);
+      // Persist locally with all new fields
+      const stored = JSON.parse(localStorage.getItem("zenpin_user") || "{}");
+      Object.assign(stored, updated);
+      localStorage.setItem("zenpin_user", JSON.stringify(stored));
+      // Update navbar + profile header
+      fillProfileHeader(stored);
+      const navUsernameEl = $("navUsername");
+      if (navUsernameEl && stored.username) navUsernameEl.textContent = stored.username;
+      $("editProfileModal").classList.remove("open");
+      toast("✓ Profile updated!");
+    } catch(e) {
+      if (errEl) errEl.textContent = e.message || "Update failed. Please try again.";
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Save Changes`;
+    }
+  });
+
+  // ── Profile Share ──────────────────────────────────────────
+  $("profileShareBtn")?.addEventListener("click", () => {
+    const user = getUser();
+    const url  = window.location.href.split("?")[0];
+    const text = `Check out ${user?.username || "my"} profile on ZenPin!`;
+    if (navigator.share) {
+      navigator.share({ title: "ZenPin Profile", text, url });
+    } else {
+      navigator.clipboard?.writeText(url);
+      toast("Profile link copied!");
+    }
+  });
+
+  // ── AI Share Board ────────────────────────────────────────
+  $("aiShareBtn")?.addEventListener("click", () => {
+    const topic = $("aiInput")?.value.trim() || "ZenPin Board";
+    const url   = window.location.href.split("#")[0];
+    if (navigator.share) {
+      navigator.share({ title: `ZenPin — ${topic}`, url });
+    } else {
+      navigator.clipboard?.writeText(url);
+      toast("Link copied to clipboard!");
+    }
+  });
+
+  // ── Modal Share ───────────────────────────────────────────
+  $("modalShareBtn")?.addEventListener("click", () => {
+    const title = $("modalTitle")?.textContent || "ZenPin Idea";
+    const url   = window.location.href.split("#")[0];
+    if (navigator.share) {
+      navigator.share({ title: `ZenPin — ${title}`, url });
+    } else {
+      navigator.clipboard?.writeText(url);
+      toast("Link copied!");
+    }
+  });
+
+  // ── Login btn in navbar ────────────────────────────────────
+  $("navLoginBtn")?.addEventListener("click", () => { window.location.href = "login.html"; });
+
+  // ── Hamburger ─────────────────────────────────────────────
+  $("hamburger")?.addEventListener("click", () => {
+    const links = document.getElementById("navLinks");
+    if (links) links.style.display = links.style.display === "flex" ? "none" : "flex";
+  });
+
+  // ── Skill level change → re-filter grid ───────────────────
+  window.addEventListener("zenpin:skillchange", () => {
+    if (S.page === "home" || S.page === "explore") {
+      applySkillFilter();
+      renderGrid($("homeGrid") || $("exploreGrid"), S.ideas);
+    }
+  });
+
+  // ── Typography — apply saved font on load ────────────────
+  TypographySettings.init();
+
+  // ── Font picker in profile settings ───────────────────────
+  TypographySettings.renderPicker("fontPickerWrap");
+
+  // ── Dashboard nav link ─────────────────────────────────────
+  $("navDashboardBtn")?.addEventListener("click", () => go("dashboard"));
+  $("dashNewPostBtn")?.addEventListener("click", () => openCreatorPost?.());
+
+  // ── Collab chat ────────────────────────────────────────────
+  setupChat();
+
+  // ── Creator Post Modal ────────────────────────────────────
+  function openCreatorPost() {
+    if (!requireLogin("Sign in to share your ideas")) return;
+    $("creatorPostModal")?.classList.add("open");
+  }
+
+  // Wire up "Create" button in navbar to open creator post modal
+  $("createPostBtn")?.addEventListener("click", openCreatorPost);
+
+  // Close handlers
+  $("creatorPostClose")?.addEventListener("click", () => $("creatorPostModal")?.classList.remove("open"));
+  $("cpCancel")?.addEventListener("click",        () => $("creatorPostModal")?.classList.remove("open"));
+  $("creatorPostModal")?.addEventListener("click", e => {
+    if (e.target === $("creatorPostModal")) $("creatorPostModal").classList.remove("open");
+  });
+
+  // Image upload area
+  $("cpUploadArea")?.addEventListener("click", () => $("cpFile")?.click());
+  $("cpFile")?.addEventListener("change", async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // Preview locally
+    const preview = $("cpPreview");
+    preview.src = URL.createObjectURL(file);
+    preview.style.display = "block";
+
+    // Upload to backend
+    const errEl = $("cpError");
+    errEl.textContent = "Uploading image…";
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const data = await apiFetch("POST", "/upload", form, true);
+      $("cpImageUrl").value = data.url;
+      errEl.textContent = "";
+    } catch (e) {
+      errEl.textContent = "Upload failed: " + e.message;
+    }
+  });
+
+  // Preview from URL
+  $("cpImageUrl")?.addEventListener("input", () => {
+    const url = $("cpImageUrl").value.trim();
+    const preview = $("cpPreview");
+    if (url.startsWith("http")) {
+      preview.src = url;
+      preview.style.display = "block";
+    }
+  });
+
+  // Submit creator post
+  $("cpSubmit")?.addEventListener("click", async () => {
+    const errEl  = $("cpError");
+    const title  = $("cpTitle")?.value.trim();
+    const cat    = $("cpCategory")?.value;
+    const imgUrl = $("cpImageUrl")?.value.trim();
+
+    if (!title)  { errEl.textContent = "Please enter a title."; return; }
+    if (!cat)    { errEl.textContent = "Please select a category."; return; }
+    if (!imgUrl) { errEl.textContent = "Please add an image (upload or paste URL)."; return; }
+
+    const btn = $("cpSubmit");
+    btn.disabled = true;
+    btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation:spin 0.8s linear infinite"><path d="M12 2a10 10 0 1 0 10 10"/></svg> Posting…`;
+    errEl.textContent = "";
+
+    const steps = ($("cpSteps")?.value || "")
+      .split("\n").map(s => s.replace(/^\d+\.\s*/, "").trim()).filter(Boolean);
+    const tools = ($("cpTools")?.value || "")
+      .split(",").map(t => t.trim()).filter(Boolean);
+    const links = ($("cpLinks")?.value || "")
+      .split("\n").map(l => l.trim()).filter(l => l.startsWith("http"));
+
+    try {
+      const idea = await apiFetch("POST", "/ideas", {
+        title,
+        category:        cat,
+        image_url:       imgUrl,
+        description:     $("cpDesc")?.value.trim()  || "",
+        difficulty:      parseInt($("cpDifficulty")?.value || "3"),
+        creativity:      3,
+        usefulness:      3,
+        steps,
+        tools,
+        estimated_cost:  $("cpCost")?.value.trim()  || "",
+        reference_links: links,
+      });
+
+      // Close modal & reset
+      $("creatorPostModal").classList.remove("open");
+      ["cpTitle","cpDesc","cpSteps","cpTools","cpCost","cpLinks","cpImageUrl"]
+        .forEach(id => { if ($(id)) $(id).value = ""; });
+      if ($("cpPreview")) { $("cpPreview").src=""; $("cpPreview").style.display="none"; }
+      $("cpCategory").value = "";
+
+      toast("✦ Your idea has been posted!");
+      // Reload current page to show new idea
+      setTimeout(() => initHome(), 600);
+    } catch (e) {
+      errEl.textContent = e.message || "Post failed. Please try again.";
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Post Idea`;
+    }
+  });
+
+  // ── START ─────────────────────────────────────────────────
+  go("home");
+});
