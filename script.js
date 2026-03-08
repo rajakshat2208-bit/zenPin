@@ -169,11 +169,13 @@ function cardHTML(idea, idx) {
   const saves = (idea.saves_count || idea.saves || 0);
   const catKey = (idea.category||"scenery").toLowerCase();
 
-  // Image: Unsplash Source (category-matched, instant CDN)
-  // onerror → Picsum (random real photo) → SVG gradient (never fails)
-  const imgSrc     = idea.image_url || getPhotoUrl(catKey, idx);
-  const picsumFb   = idea.thumb_url || getPicsumUrl(catKey, idx);
-  const svgFb      = makePlaceholder(catKey, idx, idea.title);
+  // Image: always use baked-in image_url from the idea object.
+  // NEVER use render-position idx to derive image URL — idx is wrong after shuffling.
+  // Stable slot = abs(idea.id) % 50, guaranteed unique per idea regardless of render order
+  const stableSlot = Math.abs(idea.id) % 50;
+  const imgSrc     = idea.image_url || getPhotoUrl(catKey, stableSlot);
+  const picsumFb   = idea.thumb_url || getPicsumUrl(catKey, stableSlot);
+  const svgFb      = makePlaceholder(catKey, stableSlot, idea.title);
 
   const sourceBadge = idea.source === "creator"
     ? `<div class="card-source-badge creator">Creator</div>`
@@ -622,84 +624,86 @@ async function fetchUnsplash(category, page = 1) {
 const IMG_HEIGHTS = [700, 750, 680, 800, 720, 760, 650, 740];
 
 // ─────────────────────────────────────────────────────────────
-// IMAGE SYSTEM v3 — Verified Unsplash photo IDs per category
-// Direct CDN access, no API key, no keyword randomness, instant load
-// Each category has 15 real curated photos that ALWAYS match the category
-// URL: https://images.unsplash.com/photo-{ID}?w=500&h=700&q=80&auto=format&fit=crop
+// IMAGE SYSTEM — LoremFlickr (free, no key, category-correct)
+// URL structure: loremflickr.com/W/H/tag1,tag2?lock=N
+// ?lock=N → same N = same photo (stable layout), different N = different photo
+// Tags are Flickr search terms → real photos matching the subject exactly
 // ─────────────────────────────────────────────────────────────
 
-const PHOTO_IDS = {
-  "cars":["1492144534655-ae79c964c9d7","1544636331-9849d33b2f86","1503376780353-7e6692767b70","1541443131876-3346f4e9d967","1555215695-3004980ad54e","1568605117036-5c2e97b7e3dc","1494976388531-d1058494cdd8","1502877338535-766e1452684a","1583121274602-3e2820c69888","1549317661-bd32c8ce0db2","1504007082539-c3aa2e7f5059","1606016159991-4ce5de1c6d7a","1571019613454-1cb2f99b2d8b","1462396240927-2f87e90f7b9a","1533473359331-0135ef1b58bf"],
-  "bikes":["1558618666-fcd25c85cd64","1449426468-f3aa30e3a38e","1622185135505-2d795b710b35","1609630875171-b1321377ee65","1568772585407-9b217eda1c9d","1590762520757-b34b8b0e5eac","1571068316344-75bc9135e2a8","1547549082-7f5a9d606737","1601584674439-6f21ae00f3df","1591637333184-19aa84b3e01f","1506905925346-21bda4d32df4","1604154906893-e0dc76dba35a","1568138085834-b2e65df3b9b5","1519681393784-d120267933ba","1563455176830-f3cdef7a7948"],
-  "anime":["1578632767115-351597cf2a0d","1607604276583-edbf35b9b238","1560807707-8cc077767359","1545569341-9eb8b30979d9","1566041510639-8d95a2490bfb","1614309257163-b59a1a5a6c7a","1542751371-adc38448a05e","1610296669489-d9a9d7e3ea4b","1587502536575-6dfba0a6e017","1569701813229-33284b643e3c","1509909756405-be0199881695","1528360983277-13d401cdc186","1534796636912-3b584c7b9f28","1490376197562-a8f07b0da5a1","1464790861760-db3e2f58889a"],
-  "scenery":["1506905925346-21bda4d32df4","1464822759023-fed622ff2c3b","1501854140801-50d01698950b","1470770841072-f978cf4d7821","1472214103451-9374f2e987a6","1441974231531-c6227db76b6e","1500534314209-a25ddb2bd429","1505765050516-f72dc64571a3","1447752875215-b2761acb3c5d","1493246507139-91e8fad9978e","1434608519344-49d77a699e1d","1426604966848-d7adac402bff","1469474968028-56623f02e42e","1476514525663-7d9c7e3c5b1d","1519681393784-d120267933ba"],
-  "gaming":["1542751371-adc38448a05e","1538481199705-c710c4e965fc","1600861195091-690c92f1d272","1593305841991-05c297ba4575","1607853202273-797f1c22a38e","1612198188060-c7c2a3b66eae","1593508512255-86ab42a8e620","1616588589240-4887ee025abd","1594652634010-275456c808d0","1605647540924-852d61db7c43","1586182987788-f3ccd6cba22a","1547394765-185b5e8cd9a6","1493711662062-fa541adb3fc8","1536098561742-b4e129f3f3fe","1614294149010-950b698f72c0"],
-  "fashion":["1469334031218-e382a71b716b","1490481651871-ab68de25d43d","1515886657613-9f3515b0c78f","1539109136881-3be0616acf4b","1524504388868-fd219f6d2f4c","1509631179647-0177331693ae","1483985988355-763728e1e89a","1487222444575-c6e77f85c1f3","1534528741775-53994a69daeb","1571945153237-4929e783af4a","1566479179817-b58be8a52f82","1552902865-b72c031ac5ea","1558769132-cb1aea153895","1567401893414-76b7b1e5a7a5","1558618047-3e6d2f4c0c7a"],
-  "nature":["1474511320723-9a56873867b5","1437622368342-7a3d73a34c8f","1518020382113-a7e8fc38eac9","1466611653911-0265b048d87c","1484406566174-5da10a91c9b3","1456926631375-92c8ce872def","1440101197538-f5ac0f5a2c05","1508739773434-c26b3d09e071","1474552226712-ac184aba1e72","1437072397-c80c1e20f9d2","1455849318743-b2233052fcff","1549366021-9f761d040a94","1564349683136-77e08dba1ef7","1553991982-1c18e37d44d0","1516912481851-ca44e7b18d4d"],
-  "food":["1540189549336-e6e99eb4b951","1565299624946-b28f40a0ae38","1567620905732-2d1ec7ab7445","1546069901-ba9599a7e63c","1432139555190-58524dae6a55","1414235077428-338989a2e8c0","1568901346375-23c9450c58cd","1565958011703-44f9829ba187","1504674900247-0877df9cc836","1555939594-0c1cdabb406b","1482049016688-2d3e1b311543","1498837167922-ddd27525d352","1484980859896-0bf8b05e7e3d","1606787366850-de6330128bfc","1567188040759-fb8a883dc6d8"],
-  "travel":["1503917988258-f87a78e3c995","1499856374338-c63a35f84c5b","1492731890-c3a5d03e7ce4","1520250297959-02c69ace3b35","1501516069584-4e8e959c0a5a","1483347756197-b6bc1765ce3b","1500259783255-2b3fc9a6e22b","1504609773096-104ff2c73ba4","1516483638261-f4dbaf036963","1528702748617-c405b1b84e47","1470004914212-424e97f4b88a","1519046904884-53103b34b206","1547826939-b6bf7b28a45f","1494548162494-384bba1d0d1d","1539651044729-f5c69e438e18"],
-  "tech":["1518770660439-4636190af475","1550751827-4bd374c3f58b","1563986288458-f34e2f7d4a6a","1526374965328-7f61d4dc18c5","1516321318423-f06f85e504b3","1451187580459-43490279c0fa","1518096960592-4e0cba5a5bb9","1485827404703-89b55fcc595e","1544197150-b99a580bb7a8","1607706189992-eae32a9f8b44","1624953587687-ae615e49d88b","1615729947596-a598e5de0ab3","1581091226825-a6a2a5aee158","1620712943543-bcc4688e7485","1461749280684-dccba630e2f6"],
-  "art":["1541961017774-22349e4a1262","1513364776144-60967b0f800f","1578301978693-85fa9c0320b9","1460661419201-fd4cecdf8a8b","1547826039-a400eb2da2d4","1579783902614-a3fb3927b6a5","1604076913837-52ab5629fde9","1560180474-e8563fd75bab","1573221840310-aba9ab3f2b5f","1518998053901-5348d3961a04","1508700115892-45ecd05ae2ad","1561214115-f2f134cc4912","1589804019355-c23c3d2c7a48","1638803040283-7a5ffd48dad5","1506157786151-b8491531f063"],
-  "architecture":["1486325212027-8081e485255e","1512917774240-4993b13ef9b1","1513635269975-59663e0ac1ad","1494526585800-65bba985b41f","1508450859948-4e04fabaa4ea","1477959858617-67f85cf4f1df","1587325241014-60b3c89b0db1","1559136555-9303baea8eae","1545987796-200677720458","1470723255239-ab2b9df2d5a5","1611348586804-61bf6c080437","1568605114967-8130f3a36994","1567177662154-dfbc4f0a69fb","1600585154363-67eb9e2e2099","1587325241014-60b3c89b0db1"],
-  "workspace":["1518455027359-f3f8164ba6bd","1497366216548-37526070297c","1497215728317-cf7f4e2e25ad","1593642632559-0c6d3fc62b89","1517694712202-14dd9538aa97","1524758631624-e2822132978f","1527192491265-7e15c55b1ed2","1585771724684-38269d6639fd","1593642634867-5eb5f5e3c95c","1611532736597-de2d4265fba3","1588196749597-9ff075ee6b5b","1486312338219-ce68d2c6f44d","1599687351724-dfa3d4ff5f45","1562516155-e0d5d44b26ad","1448932223592-d1fc686e76ea"],
-  "interior design":["1555041469-db61528b393a","1586023492125-27b2c045efd3","1600210492493-0a1c1c8e3a2c","1618221195710-dd6b41faaea6","1505691938895-1758d7feb511","1556020685-b1fc3beae6a1","1583608205776-bfd35f0d9f83","1600566752355-35792bedcfea","1598928506311-c55ded91a20c","1567767292276-6e6bd1b18f9a","1519710164239-da123dc3f738","1561049933-c8fbef47b329","1600047509807-ba8f99d2cdde","1628744448840-55bdb2497bd4","1615529182904-14819c35db37"],
-  "ladies accessories":["1515562141207-7a88fb7ce338","1573221840310-aba9ab3f2b5f","1492707731509-56e7a5d69c1b","1611591437281-460bfbe1220a","1590839609626-f3d66e6bb90e","1601821765780-754fa98af5e3","1584917865442-de89df76afd3","1605100804763-247f67b3557e","1625591340274-63ade9d23311","1608667351380-b3b45b39bbb9","1572635196237-14b3f281503f","1526170375885-4d8ecf77b99f","1594938298603-3a08d0d13f8d","1561828995-aa79a2db86dd","1584917865442-de89df76afd3"],
-  "tattoos":["1543488702-b933c0e8af43","1568702846914-96b305d2aaeb","1562887245-610b8b8c0d03","1586803253568-8a46a3a9c72c","1526045431048-f857369baa09","1512218215043-40c26d304e4e","1570655653822-9152a5856d5f","1519823572734-fd28f5be9e87","1596386461350-326ccb383e9f","1536329583941-14287ec6fc4e","1522327646785-a07dc3b16fe1","1542736705-af7d77cbe78e","1579546929518-9e396f3cc809","1612532275214-e4ca76d9e5b1","1564349683136-77e08dba1ef7"],
-  "plants":["1416879595882-3373a0480b5b","1463936579013-966f9a24c60b","1484318571209-661cf29a69d8","1501004318641-b39e6451bec6","1545241047-6083a3f17943","1518335959124-f4a6c8aa9d48","1555400038-63f5ba517a47","1594139668-de93e7e134c8","1564682895970-0d7e2e71f92c","1585484173835-a787a65a21b1","1600411833200-a7c8c22d5b3c","1610022789602-51fa6e32c53c","1446071236358-8a4a49a3d847","1580906853135-e784c283e54c","1558618047-3e6d2f4c0c7a"],
-  "fitness":["1517836357463-d25dfeac3438","1534438327489-9c9f5b3e2ff4","1583454110551-21f2fa2afe61","1571019614242-c5c5dee9f50b","1549060279-7e168fcee0c2","1541534741688-6078c738a63b","1544724107-6d5c4caaac34","1558611439-36efebcd5b02","1556817411-31ae72c54d9f","1526506118085-60ce8714f8c5","1571388208497-36fb79346dcd","1599058917212-d750089bc07b","1567463537571-09a3f0e43ea4","1546519638-68e109498ffc","1539794830467-1f1755804d13"],
-  "music":["1511671001456-8c5b7fcb2e50","1493225457124-a3eb161ffa5f","1514320291840-2e0a9bf2a9ae","1516450360452-9312f5e86fc7","1510915361815-ffe5ab25c44b","1571330735066-03aaa9429d89","1519892300165-cb5542fb47c7","1524230572899-a752b3835840","1470229722913-7c0e2dbbafd3","1507838153414-b486b2b0d2c3","1478737270239-2f02b77fc618","1504898770640-29c4fa9b5e94","1557804506-669a67965ba0","1569930030899-6e71b2197cd0","1598387993441-a364f854cfef"],
-  "pets":["1543466835-00a7907e9de1","1587300003388-59208cc962cb","1574144611937-0df059b5ef3e","1517849845537-4d257902454a","1574158622682-e719686f9e05","1583511655826-05700d52f4d1","1548681528-6c2ceed91808","1601758123927-4d7cb4d4cb00","1553736435-c8ef7cd87e3b","1518715308788-3005a97f3f3f","1511382686132-4e2dc6e1a33a","1560743641-3914f2c45636","1587300003388-59208cc962cb","1517849845537-4d257902454a","1574158622682-e719686f9e05"],
-  "superheroes":["1608889175157-f67ef58e5bc2","1531259683007-c13b0a4cdfa7","1563089145-8a6a00bd3c84","1595769816263-9b910be24d5e","1509347528160-9a9e33742cdb","1608889175157-f67ef58e5bc2","1531259683007-c13b0a4cdfa7","1563089145-8a6a00bd3c84","1595769816263-9b910be24d5e","1509347528160-9a9e33742cdb","1608889175157-f67ef58e5bc2","1531259683007-c13b0a4cdfa7","1563089145-8a6a00bd3c84","1595769816263-9b910be24d5e","1509347528160-9a9e33742cdb"],
-  "drinks":["1551024709-8f23c42e6c7a","1546171753-97d7626c6011","1497534446932-3a06972602e3","1560180474-e8563fd75bab","1506377247-f9d6ebf30afe","1544145945-f90425340c7e","1578022761930-4e5e7e0a7a0f","1565299507177-b51e03e39d39","1572635196237-14b3f281503f","1504674900247-0877df9cc836","1555400038-63f5ba517a47","1567188040759-fb8a883dc6d8","1558618047-3e6d2f4c0c7a","1551024709-8f23c42e6c7a","1546171753-97d7626c6011"],
-  "flowers":["1490750967868-88df5691b2ba","1508610048-b40a5a5e4a79","1457573430-c2fe1ab2ccd3","1465577512280-1c2d41a79df3","1500530855697-b586d89ba3ee","1508739126509-4c3b07a026ab","1530982011411-54bbdb040c1b","1490750967868-88df5691b2ba","1508610048-b40a5a5e4a79","1457573430-c2fe1ab2ccd3","1465577512280-1c2d41a79df3","1500530855697-b586d89ba3ee","1508739126509-4c3b07a026ab","1530982011411-54bbdb040c1b","1490750967868-88df5691b2ba"]
+// Flickr search tags per category — these determine what photos show up
+// Multiple tags = AND search = more precise results
+const FLICKR_TAGS = {
+  "cars":               "sports-car,supercar,ferrari,lamborghini",
+  "bikes":              "motorcycle,motorbike,cafe-racer",
+  "anime":              "anime,manga,japan-anime",
+  "scenery":            "landscape,mountain,scenic",
+  "gaming":             "gaming,esports,battlestation",
+  "fashion":            "fashion,style,editorial",
+  "nature":             "wildlife,forest,animal",
+  "food":               "food,gourmet,restaurant",
+  "travel":             "travel,destination,landmark",
+  "tech":               "technology,computer,circuit",
+  "art":                "art,painting,creative",
+  "architecture":       "architecture,building,skyscraper",
+  "workspace":          "desk,workspace,office",
+  "interior design":    "interior,living-room,home-decor",
+  "ladies accessories": "jewelry,handbag,accessories",
+  "tattoos":            "tattoo,ink,body-art",
+  "plants":             "plants,botanical,garden",
+  "fitness":            "fitness,gym,workout",
+  "music":              "music,guitar,concert",
+  "pets":               "pets,cat,dog",
+  "superheroes":        "superhero,cosplay,comic",
+  "drinks":             "cocktail,coffee,bar",
+  "flowers":            "flowers,floral,bloom",
 };
 
 const CARD_HEIGHTS = [680, 750, 700, 820, 660, 780, 720, 800, 640, 760, 710, 770];
 
-// Get the direct Unsplash CDN URL for a verified, category-correct photo
-// Same idx always returns same photo (stable layout, no jumping on refresh)
+// Build a LoremFlickr URL — tag-searched, category-correct, no API key
+// lock=seed ensures the same card slot always shows the same photo
 function getPhotoUrl(category, idx) {
   const key  = (category || "scenery").toLowerCase();
-  const ids  = PHOTO_IDS[key] || PHOTO_IDS["scenery"];
-  const id   = ids[idx % ids.length];
+  const tags = FLICKR_TAGS[key] || "nature,landscape";
   const h    = CARD_HEIGHTS[idx % CARD_HEIGHTS.length];
-  return `https://images.unsplash.com/photo-${id}?w=500&h=${h}&q=80&auto=format&fit=crop`;
+  // seed: unique per category+slot so every card is different
+  const seed = Math.abs((key.split("").reduce((a,c)=>a+c.charCodeAt(0),0) * 97) + idx * 31) % 9973;
+  return `https://loremflickr.com/500/${h}/${encodeURIComponent(tags)}?lock=${seed}`;
 }
 
-// Picsum fallback — stable seeded real photos, always loads
+// Picsum fallback (random but stable per seed — used only if Flickr fails)
 function getPicsumUrl(category, idx) {
-  const catBase = {"cars":10,"bikes":25,"anime":40,"scenery":55,"gaming":70,"fashion":85,"nature":100,"food":115,"travel":130,"tech":145,"art":160,"architecture":175,"workspace":190,"interior design":205,"ladies accessories":220,"tattoos":235,"plants":250,"fitness":265,"music":280,"pets":295,"superheroes":310,"drinks":325,"flowers":340};
-  const base = catBase[(category||"scenery").toLowerCase()] || 50;
+  const seeds = {"cars":10,"bikes":25,"anime":40,"scenery":55,"gaming":70,"fashion":85,"nature":100,"food":115,"travel":130,"tech":145,"art":160,"architecture":175,"workspace":190,"interior design":205,"ladies accessories":220,"tattoos":235,"plants":250,"fitness":265,"music":280,"pets":295,"superheroes":310,"drinks":325,"flowers":340};
+  const base = seeds[(category||"scenery").toLowerCase()] || 50;
   const h    = CARD_HEIGHTS[idx % CARD_HEIGHTS.length];
   return `https://picsum.photos/seed/${base + idx * 3}/500/${h}`;
 }
 
-// SVG gradient — absolute last resort, never fails
+// SVG gradient — shown only while image loads or as absolute last resort
 function makePlaceholder(category, idx, title) {
   const ICON = {"cars":"🚗","bikes":"🏍","anime":"🎌","scenery":"🌄","gaming":"🎮","fashion":"👗","nature":"🌿","food":"🍜","travel":"✈️","tech":"⚡","art":"🎨","architecture":"🏛","workspace":"💻","interior design":"🏠","ladies accessories":"💎","tattoos":"🖊️","plants":"🪴","fitness":"💪","music":"🎵","pets":"🐾","superheroes":"🦸","drinks":"🥃","flowers":"🌸"};
   const GRAD = {"cars":"#0f3460,#e94560","bikes":"#11998e,#38ef7d","anime":"#f093fb,#f5576c","scenery":"#4facfe,#43e97b","gaming":"#302b63,#7c3aed","fashion":"#f7971e,#ffd200","nature":"#134e5e,#71b280","food":"#f46b45,#eea849","travel":"#2980b9,#6dd5fa","tech":"#7c3aed,#06b6d4","art":"#ec008c,#fc6767","architecture":"#2c3e50,#4ca1af","workspace":"#3498db,#2c3e50","interior design":"#d4a574,#6b4c3b","ladies accessories":"#b8860b,#ffd700","tattoos":"#1a1a1a,#8b0000","plants":"#1a4731,#56ab2f","fitness":"#232526,#ff6b6b","music":"#6f0000,#df73ff","pets":"#614385,#516395","superheroes":"#b22222,#1a1a2e","drinks":"#c94b4b,#4b134f","flowers":"#f953c6,#b91d73"};
-  const key = (category||"scenery").toLowerCase();
-  const icon = ICON[key] || "✦";
+  const key  = (category||"scenery").toLowerCase();
+  const icon = ICON[key]||"✦";
   const [c1,c2] = (GRAD[key]||"#7c3aed,#db2777").split(",");
-  const h = CARD_HEIGHTS[idx % CARD_HEIGHTS.length];
-  const label = (title||"").slice(0,22).replace(/[<>&]/g,"");
-  const gid = "g"+((idx*31+(key.charCodeAt(0)||0))%9999);
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="500" height="${h}"><defs><linearGradient id="${gid}" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="${c1}"/><stop offset="100%" stop-color="${c2}"/></linearGradient></defs><rect width="500" height="${h}" fill="url(#${gid})"/><text x="250" y="${Math.floor(h*.43)}" font-size="88" text-anchor="middle" dominant-baseline="middle">${icon}</text><text x="250" y="${Math.floor(h*.61)}" font-size="18" fill="rgba(255,255,255,0.85)" text-anchor="middle" dominant-baseline="middle" font-family="system-ui,sans-serif">${label}</text></svg>`;
+  const h    = CARD_HEIGHTS[idx % CARD_HEIGHTS.length];
+  const lbl  = (title||"").slice(0,22).replace(/[<>&]/g,"");
+  const gid  = "g"+((idx*31+(key.charCodeAt(0)||0))%9999);
+  const svg  = `<svg xmlns="http://www.w3.org/2000/svg" width="500" height="${h}"><defs><linearGradient id="${gid}" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="${c1}"/><stop offset="100%" stop-color="${c2}"/></linearGradient></defs><rect width="500" height="${h}" fill="url(#${gid})"/><text x="250" y="${Math.floor(h*.43)}" font-size="88" text-anchor="middle" dominant-baseline="middle">${icon}</text><text x="250" y="${Math.floor(h*.61)}" font-size="18" fill="rgba(255,255,255,0.85)" text-anchor="middle" dominant-baseline="middle" font-family="system-ui,sans-serif">${lbl}</text></svg>`;
   return "data:image/svg+xml;base64,"+btoa(unescape(encodeURIComponent(svg)));
 }
 
-// Build discovery cards with category-correct photos in correct order
+// Build discovery cards — category-correct photos in stable order
 function getLocalDiscovery(category, page = 1) {
   const key      = (category || "scenery").toLowerCase();
   const cfg      = CAT_CONFIG[key] || CAT_CONFIG["scenery"];
   const PER      = 12;
-  const catLabel = key.split(" ").map(w => w[0].toUpperCase()+w.slice(1)).join(" ");
-
-  return Array.from({ length: PER }, (_, i) => {
-    const gIdx = (page - 1) * PER + i;
-    const tIdx = gIdx % cfg.titles.length; // SAME index for title AND desc — always matched
+  const catLabel = key.split(" ").map(w=>w[0].toUpperCase()+w.slice(1)).join(" ");
+  return Array.from({length:PER}, (_,i) => {
+    const gIdx = (page-1)*PER + i;
+    const tIdx = gIdx % cfg.titles.length;
     return {
-      id:          -(800000 + (key.charCodeAt(0)||65)*10000 + gIdx*7 + page*300),
+      id:          -(700000+(key.charCodeAt(0)||65)*10000+gIdx*7+page*300),
       title:       cfg.titles[tIdx],
       image_url:   getPhotoUrl(key, gIdx),
       thumb_url:   getPicsumUrl(key, gIdx),
@@ -707,7 +711,7 @@ function getLocalDiscovery(category, page = 1) {
       source:      "discovery",
       saves_count: 0, likes_count: 0,
       difficulty:  (gIdx%3)+1, creativity: (gIdx%3)+3, usefulness: (gIdx%3)+2,
-      description: cfg.descs[tIdx], // guaranteed same index as title
+      description: cfg.descs[tIdx],
     };
   });
 }
@@ -773,9 +777,9 @@ async function initHome() {
   if (cat) {
     discoveryIdeas = getLocalDiscovery(cat);
   } else {
-    // Show 3 categories × 12 cards = 36 cards initially (fast load)
-    const shuffled = [...ALL_CATEGORIES].sort(() => Math.random() - 0.5).slice(0, 3);
-    discoveryIdeas = shuffled.flatMap(c => getLocalDiscovery(c)).sort(() => Math.random() - 0.5);
+    // Show 4 cards from EVERY category, grouped by category (no shuffle)
+    // This ensures each category's photos stay with their own category's URL logic
+    discoveryIdeas = ALL_CATEGORIES.flatMap(c => getLocalDiscovery(c).slice(0, 4));
   }
   // Show discovery images right away so grid is never empty
   S.ideas = discoveryIdeas;
@@ -787,6 +791,15 @@ async function initHome() {
     const params = buildParams();
     const { ideas: dbIdeas } = await apiFetch("GET", `/ideas?${params}`);
     if (dbIdeas?.length) {
+      // Stamp every DB idea with a stable image_url if it lacks one
+      dbIdeas.forEach(idea => {
+        if (!idea.image_url) {
+          const catK = (idea.category||"scenery").toLowerCase();
+          const slot = Math.abs(idea.id||0) % 50;
+          idea.image_url = getPhotoUrl(catK, slot);
+          idea.thumb_url = getPicsumUrl(catK, slot);
+        }
+      });
       // Merge DB ideas with discovery — interleave every 4th
       const merged = [];
       let di = 0;
@@ -854,10 +867,8 @@ async function initExplore() {
   const ALL_CATS = Object.keys(CAT_CONFIG);
   let localIdeas = [];
   if (cat) {
-    // Single category selected: show 24 cards for that category in order
     localIdeas = getLocalDiscovery(cat, 1).concat(getLocalDiscovery(cat, 2));
   } else {
-    // All categories: show 4 cards from each for variety (ordered per category)
     localIdeas = ALL_CATS.flatMap(c => getLocalDiscovery(c).slice(0, 4));
   }
   renderGrid(grid, localIdeas);
