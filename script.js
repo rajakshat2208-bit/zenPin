@@ -634,46 +634,59 @@ const IMG_HEIGHTS = [700, 750, 680, 800, 720, 760, 650, 740];
 // Tags are Flickr search terms → real photos matching the subject exactly
 // ─────────────────────────────────────────────────────────────
 
-// Flickr search tags per category — these determine what photos show up
-// Multiple tags = AND search = more precise results
+// Flickr tag per category — single well-known tag with huge photo pool
+// Single tag = reliable match, large pool = lock=N always finds a photo
 const FLICKR_TAGS = {
-  "cars":               "ferrari,lamborghini,supercar,racecar",
-  "bikes":              "motorcycle,harley,motorbike,scrambler",
-  "anime":              "anime,manga,otaku,akihabara",
-  "scenery":            "landscape,mountain,fjord,wilderness",
-  "gaming":             "videogames,playstation,xbox,nintendo",
-  "fashion":            "runway,couture,streetwear,lookbook",
-  "nature":             "tiger,eagle,wolf,wildlife",
-  "food":               "sushi,burger,pizza,ramen",
-  "travel":             "santorini,tokyo,paris,bali",
-  "tech":               "robotics,artificialintelligence,gadget,drone",
-  "art":                "painting,graffiti,sculpture,artwork",
-  "architecture":       "skyscraper,cathedral,bridge,modernarchitecture",
-  "workspace":          "homeoffice,desksetup,workstation,minimal",
-  "interior design":    "livingroom,bedroom,homedecor,scandinavian",
-  "ladies accessories": "necklace,bracelet,earrings,jewellery",
-  "tattoos":            "tattoo,bodyart,tattoosleeve,tattooed",
-  "plants":             "monstera,succulent,houseplants,botanical",
-  "fitness":            "weightlifting,crossfit,yoga,running",
-  "music":              "vinyl,guitarist,piano,concert",
-  "pets":               "kitten,puppy,goldenretriever,cat",
-  "superheroes":        "batman,ironman,spiderman,marvel",
-  "drinks":             "whiskey,cocktail,espresso,wine",
-  "flowers":            "rose,peony,sunflower,tulip",
-  "cigarettes":         "cigar,smoke,tobacco,cigarette",
+  "cars":               "car",
+  "bikes":              "motorcycle",
+  "anime":              "anime",
+  "scenery":            "landscape",
+  "gaming":             "gaming",
+  "fashion":            "fashion",
+  "nature":             "wildlife",
+  "food":               "food",
+  "travel":             "travel",
+  "tech":               "technology",
+  "art":                "art",
+  "architecture":       "architecture",
+  "workspace":          "workspace",
+  "interior design":    "interior",
+  "ladies accessories": "jewelry",
+  "tattoos":            "tattoo",
+  "plants":             "plants",
+  "fitness":            "fitness",
+  "music":              "music",
+  "pets":               "pets",
+  "superheroes":        "superhero",
+  "drinks":             "cocktail",
+  "flowers":            "flowers",
+  "cigarettes":         "cigarette",
 };
 
 const CARD_HEIGHTS = [680, 750, 700, 820, 660, 780, 720, 800, 640, 760, 710, 770];
 
-// Build a LoremFlickr URL — tag-searched, category-correct, no API key
-// lock=seed ensures the same card slot always shows the same photo
+// Service state — detected at first load
+window._imgSvc = "flickr"; // "flickr" or "picsum"
+
+// Test LoremFlickr at startup — if it doesn't load, switch all images to Picsum
+(function testFlickr() {
+  const test = new Image();
+  const t = Date.now();
+  test.onload  = () => { window._imgSvc = "flickr"; };
+  test.onerror = () => { window._imgSvc = "picsum"; console.warn("LoremFlickr unreachable, using Picsum"); };
+  // 5 second timeout
+  setTimeout(() => { if (Date.now() - t < 4900) return; window._imgSvc = "picsum"; }, 5000);
+  test.src = "https://loremflickr.com/50/50/car?lock=1";
+})();
+
+// Build URL — LoremFlickr if reachable, Picsum otherwise
 function getPhotoUrl(category, idx) {
   const key  = (category || "scenery").toLowerCase();
-  const tags = FLICKR_TAGS[key] || "nature,landscape";
+  const tag  = FLICKR_TAGS[key] || "nature";
   const h    = CARD_HEIGHTS[idx % CARD_HEIGHTS.length];
-  // seed: unique per category+slot so every card is different
-  const seed = Math.abs((key.split("").reduce((a,c)=>a+c.charCodeAt(0),0) * 97) + idx * 31) % 9973;
-  return `https://loremflickr.com/500/${h}/${encodeURIComponent(tags)}?lock=${seed}`;
+  const lock = (idx % 100) + 1;
+  if (window._imgSvc === "picsum") return getPicsumUrl(key, idx);
+  return `https://loremflickr.com/500/${h}/${encodeURIComponent(tag)}?lock=${lock}`;
 }
 
 // Picsum fallback (random but stable per seed — used only if Flickr fails)
