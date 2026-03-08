@@ -565,6 +565,9 @@ const CAT_CONFIG = {
   "flowers":           { q:"flowers+floral+botanical+bloom+garden",
     titles:["Peony Abundance","Single Red Rose","Wildflower Field","Orchid Elegance","Sunflower Field","Cherry Blossom","Tulip Season","Lavender Row","Dahlia Drama","Poppy Field"],
     descs:["Peonies in full bloom — a profusion of petals that lasts a week and is worth waiting for all year.","A single rose at peak: the most familiar flower still capable of stopping you completely.","A wildflower meadow in full summer — ecological complexity masquerading as aesthetic pleasure.","An orchid evolved into specific beauty through millions of years of pollinator communication.","Sunflowers tracking light across a field — heliotropism as agricultural and visual spectacle.","Cherry blossom in full flower — hanami celebrating beauty that lasts only days, perfectly.","A tulip field in spring colour — Dutch horticulture producing annual seasonal spectacle.","Lavender rows in Provence — the fragrance reaching you before the purple becomes visible.","A dahlia in full bloom: complex petal geometry in a flower rewarding close examination.","Poppies in a grain field — red flowers in green, the combination that defined a generation's mourning."] },
+  "cigarettes":        { q:"cigarette+smoke+tobacco+cigar",
+    titles:["Smoke Ritual","Hand-Rolled Cigar","Cigarette Aesthetic","Tobacco Leaf","Smoke Rings","Vintage Lighter","Rolling Tobacco","Cigar Lounge","Match Strike","Ash & Ember"],
+    descs:["The pause between tasks — a cigarette as punctuation in the day, slow and deliberate.","A hand-rolled cigar, the craft of it visible in every inch — patience compressed into a ritual object.","The aesthetics of smoke: light through haze, curling patterns, the visual poetry of combustion.","Cured tobacco leaf — the raw material before it becomes something carried, shared, and remembered.","Smoke rings expanding and dissolving — a casual trick that looks effortless and takes weeks to master.","A vintage lighter, worn smooth with use — the object that starts every ritual, reliable and tactile.","Rolling tobacco by hand — the slow preparation as part of the experience, not preamble to it.","A cigar lounge at evening — leather chairs, good company, conversation slowed by the pace of the smoke.","A match struck in low light — the brief flare as the moment before stillness, warmth before the exhale.","Ash at the tip, ember glowing — the consumable nature of the thing making the moment more present."] },
 };
 
 // Unsplash search queries (used when API key is available)
@@ -592,6 +595,7 @@ const UNSPLASH_QUERIES = {
   "superheroes":         "superhero comic book hero",
   "drinks":              "cocktail whisky bar drinks",
   "flowers":             "flowers floral botanical bloom",
+  "cigarettes":          "cigarette smoke tobacco cigar",
 };
 
 // ── Direct Unsplash API call from browser ────────────────────
@@ -633,29 +637,30 @@ const IMG_HEIGHTS = [700, 750, 680, 800, 720, 760, 650, 740];
 // Flickr search tags per category — these determine what photos show up
 // Multiple tags = AND search = more precise results
 const FLICKR_TAGS = {
-  "cars":               "sports-car,supercar,ferrari,lamborghini",
-  "bikes":              "motorcycle,motorbike,cafe-racer",
-  "anime":              "anime,manga,japan-anime",
-  "scenery":            "landscape,mountain,scenic",
-  "gaming":             "gaming,esports,battlestation",
-  "fashion":            "fashion,style,editorial",
-  "nature":             "wildlife,forest,animal",
-  "food":               "food,gourmet,restaurant",
-  "travel":             "travel,destination,landmark",
-  "tech":               "technology,computer,circuit",
-  "art":                "art,painting,creative",
-  "architecture":       "architecture,building,skyscraper",
-  "workspace":          "desk,workspace,office",
-  "interior design":    "interior,living-room,home-decor",
-  "ladies accessories": "jewelry,handbag,accessories",
-  "tattoos":            "tattoo,ink,body-art",
-  "plants":             "plants,botanical,garden",
-  "fitness":            "fitness,gym,workout",
-  "music":              "music,guitar,concert",
-  "pets":               "pets,cat,dog",
-  "superheroes":        "superhero,cosplay,comic",
-  "drinks":             "cocktail,coffee,bar",
-  "flowers":            "flowers,floral,bloom",
+  "cars":               "ferrari,lamborghini,supercar,racecar",
+  "bikes":              "motorcycle,harley,motorbike,scrambler",
+  "anime":              "anime,manga,otaku,akihabara",
+  "scenery":            "landscape,mountain,fjord,wilderness",
+  "gaming":             "videogames,playstation,xbox,nintendo",
+  "fashion":            "runway,couture,streetwear,lookbook",
+  "nature":             "tiger,eagle,wolf,wildlife",
+  "food":               "sushi,burger,pizza,ramen",
+  "travel":             "santorini,tokyo,paris,bali",
+  "tech":               "robotics,artificialintelligence,gadget,drone",
+  "art":                "painting,graffiti,sculpture,artwork",
+  "architecture":       "skyscraper,cathedral,bridge,modernarchitecture",
+  "workspace":          "homeoffice,desksetup,workstation,minimal",
+  "interior design":    "livingroom,bedroom,homedecor,scandinavian",
+  "ladies accessories": "necklace,bracelet,earrings,jewellery",
+  "tattoos":            "tattoo,bodyart,tattoosleeve,tattooed",
+  "plants":             "monstera,succulent,houseplants,botanical",
+  "fitness":            "weightlifting,crossfit,yoga,running",
+  "music":              "vinyl,guitarist,piano,concert",
+  "pets":               "kitten,puppy,goldenretriever,cat",
+  "superheroes":        "batman,ironman,spiderman,marvel",
+  "drinks":             "whiskey,cocktail,espresso,wine",
+  "flowers":            "rose,peony,sunflower,tulip",
+  "cigarettes":         "cigar,smoke,tobacco,cigarette",
 };
 
 const CARD_HEIGHTS = [680, 750, 700, 820, 660, 780, 720, 800, 640, 760, 710, 770];
@@ -673,7 +678,7 @@ function getPhotoUrl(category, idx) {
 
 // Picsum fallback (random but stable per seed — used only if Flickr fails)
 function getPicsumUrl(category, idx) {
-  const seeds = {"cars":10,"bikes":25,"anime":40,"scenery":55,"gaming":70,"fashion":85,"nature":100,"food":115,"travel":130,"tech":145,"art":160,"architecture":175,"workspace":190,"interior design":205,"ladies accessories":220,"tattoos":235,"plants":250,"fitness":265,"music":280,"pets":295,"superheroes":310,"drinks":325,"flowers":340};
+  const seeds = {"cars":10,"bikes":25,"anime":40,"scenery":55,"gaming":70,"fashion":85,"nature":100,"food":115,"travel":130,"tech":145,"art":160,"architecture":175,"workspace":190,"interior design":205,"ladies accessories":220,"tattoos":235,"plants":250,"fitness":265,"music":280,"pets":295,"superheroes":310,"drinks":325,"flowers":340,"cigarettes":355};
   const base = seeds[(category||"scenery").toLowerCase()] || 50;
   const h    = CARD_HEIGHTS[idx % CARD_HEIGHTS.length];
   return `https://picsum.photos/seed/${base + idx * 3}/500/${h}`;
@@ -681,8 +686,8 @@ function getPicsumUrl(category, idx) {
 
 // SVG gradient — shown only while image loads or as absolute last resort
 function makePlaceholder(category, idx, title) {
-  const ICON = {"cars":"🚗","bikes":"🏍","anime":"🎌","scenery":"🌄","gaming":"🎮","fashion":"👗","nature":"🌿","food":"🍜","travel":"✈️","tech":"⚡","art":"🎨","architecture":"🏛","workspace":"💻","interior design":"🏠","ladies accessories":"💎","tattoos":"🖊️","plants":"🪴","fitness":"💪","music":"🎵","pets":"🐾","superheroes":"🦸","drinks":"🥃","flowers":"🌸"};
-  const GRAD = {"cars":"#0f3460,#e94560","bikes":"#11998e,#38ef7d","anime":"#f093fb,#f5576c","scenery":"#4facfe,#43e97b","gaming":"#302b63,#7c3aed","fashion":"#f7971e,#ffd200","nature":"#134e5e,#71b280","food":"#f46b45,#eea849","travel":"#2980b9,#6dd5fa","tech":"#7c3aed,#06b6d4","art":"#ec008c,#fc6767","architecture":"#2c3e50,#4ca1af","workspace":"#3498db,#2c3e50","interior design":"#d4a574,#6b4c3b","ladies accessories":"#b8860b,#ffd700","tattoos":"#1a1a1a,#8b0000","plants":"#1a4731,#56ab2f","fitness":"#232526,#ff6b6b","music":"#6f0000,#df73ff","pets":"#614385,#516395","superheroes":"#b22222,#1a1a2e","drinks":"#c94b4b,#4b134f","flowers":"#f953c6,#b91d73"};
+  const ICON = {"cars":"🚗","bikes":"🏍","anime":"🎌","scenery":"🌄","gaming":"🎮","fashion":"👗","nature":"🌿","food":"🍜","travel":"✈️","tech":"⚡","art":"🎨","architecture":"🏛","workspace":"💻","interior design":"🏠","ladies accessories":"💎","tattoos":"🖊️","plants":"🪴","fitness":"💪","music":"🎵","pets":"🐾","superheroes":"🦸","drinks":"🥃","flowers":"🌸","cigarettes":"🚬"};
+  const GRAD = {"cars":"#0f3460,#e94560","bikes":"#11998e,#38ef7d","anime":"#f093fb,#f5576c","scenery":"#4facfe,#43e97b","gaming":"#302b63,#7c3aed","fashion":"#f7971e,#ffd200","nature":"#134e5e,#71b280","food":"#f46b45,#eea849","travel":"#2980b9,#6dd5fa","tech":"#7c3aed,#06b6d4","art":"#ec008c,#fc6767","architecture":"#2c3e50,#4ca1af","workspace":"#3498db,#2c3e50","interior design":"#d4a574,#6b4c3b","ladies accessories":"#b8860b,#ffd700","tattoos":"#1a1a1a,#8b0000","plants":"#1a4731,#56ab2f","fitness":"#232526,#ff6b6b","music":"#6f0000,#df73ff","pets":"#614385,#516395","superheroes":"#b22222,#1a1a2e","drinks":"#c94b4b,#4b134f","flowers":"#f953c6,#b91d73","cigarettes":"#2c2c2c,#8b8b8b"};
   const key  = (category||"scenery").toLowerCase();
   const icon = ICON[key]||"✦";
   const [c1,c2] = (GRAD[key]||"#7c3aed,#db2777").split(",");
