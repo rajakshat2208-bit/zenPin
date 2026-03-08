@@ -169,11 +169,11 @@ function cardHTML(idea, idx) {
   const saves = (idea.saves_count || idea.saves || 0);
   const catKey = (idea.category||"scenery").toLowerCase();
 
-  // Image strategy: show Picsum INSTANTLY, upgrade to Pollinations in bg
-  // This ensures users ALWAYS see a real photo with zero wait
-  const picsumUrl     = idea.thumb_url || getPicsumUrl(catKey, idx);
-  const pollinationsUrl = idea.image_url && idea.image_url.includes("pollinations") ? idea.image_url : null;
-  const svgFallback   = makePlaceholder(catKey, idx, idea.title);
+  // Image: Unsplash Source (category-matched, instant CDN)
+  // onerror → Picsum (random real photo) → SVG gradient (never fails)
+  const imgSrc     = idea.image_url || getUnsplashUrl(catKey, idx);
+  const picsumFb   = idea.thumb_url || getPicsumUrl(catKey, idx);
+  const svgFb      = makePlaceholder(catKey, idx, idea.title);
 
   const sourceBadge = idea.source === "creator"
     ? `<div class="card-source-badge creator">Creator</div>`
@@ -182,15 +182,15 @@ function cardHTML(idea, idx) {
     : "";
 
   return `
-<div class="idea-card" data-id="${idea.id}" style="--i:${idx}" data-ai-src="${pollinationsUrl||""}">
+<div class="idea-card" data-id="${idea.id}" style="--i:${idx}">
   <div class="card-img-wrap">
     <img class="card-img"
-      src="${picsumUrl}"
+      src="${imgSrc}"
       alt="${escHtml(idea.title)}"
       loading="lazy"
-      data-hq="${pollinationsUrl||""}"
-      data-fallback="${svgFallback}"
-      onerror="(function(el){const f=el.dataset.fallback;if(f&&el.src!==f){el.src=f;el.onerror=null;}})(this)"
+      data-fb1="${picsumFb}"
+      data-fb2="${svgFb}"
+      onerror="(function(el){if(!el._e1){el._e1=1;el.src=el.dataset.fb1;}else if(!el._e2){el._e2=1;el.src=el.dataset.fb2;el.onerror=null;}})(this)"
     />
     ${sourceBadge}
     <div class="card-static-cat">${idea.category}</div>
@@ -231,8 +231,6 @@ function cardHTML(idea, idx) {
 function renderGrid(container, ideas) {
   if (!container) return;
   container.innerHTML = ideas.map((idea, i) => cardHTML(idea, i)).join("");
-  // Upgrade cards to Pollinations AI images in background after Picsum loads
-  requestAnimationFrame(() => upgradeImagesToAI(container));
 }
 
 function appendGrid(container, ideas, startIdx) {
@@ -240,32 +238,6 @@ function appendGrid(container, ideas, startIdx) {
   const tmp = document.createElement("div");
   tmp.innerHTML = ideas.map((idea, i) => cardHTML(idea, startIdx + i)).join("");
   while (tmp.firstChild) container.appendChild(tmp.firstChild);
-  requestAnimationFrame(() => upgradeImagesToAI(container));
-}
-
-// Lazy-upgrade: swap Picsum → Pollinations AI once Pollinations loads
-// Users see real photos instantly, then get upgraded to AI-matched images
-function upgradeImagesToAI(container) {
-  if (!container) return;
-  const imgs = container.querySelectorAll("img.card-img[data-hq]");
-  imgs.forEach(img => {
-    const hq = img.dataset.hq;
-    if (!hq || hq === img.src) return;
-    const loader = new Image();
-    loader.onload = () => {
-      // Only swap if the card is still in the DOM
-      if (img.isConnected) {
-        img.style.transition = "opacity 0.4s";
-        img.style.opacity = "0.5";
-        setTimeout(() => {
-          img.src = hq;
-          img.style.opacity = "1";
-        }, 100);
-      }
-    };
-    loader.onerror = null; // don't swap if Pollinations fails
-    loader.src = hq;
-  });
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -653,66 +625,69 @@ async function fetchUnsplash(category, page = 1) {
 const IMG_HEIGHTS = [700, 750, 680, 800, 720, 760, 650, 740];
 
 // ─────────────────────────────────────────────────────────────
-// IMAGE SYSTEM — Real photos via Pollinations.AI (free, no key)
-// Fallback: Picsum (seeded real photos, always loads)
+// IMAGE SYSTEM — Category-matched real photos, zero API key needed
+// Primary: Unsplash Source (instant, correct category, CDN fast)
+// Fallback: Picsum (always loads, seeded per slot)
+// Last resort: SVG gradient (never fails)
 // ─────────────────────────────────────────────────────────────
 
-// 15 unique hand-crafted prompts per category → 15 unique AI images each
-const POLLINATIONS_PROMPTS = {
-  "cars":["red ferrari mountain road golden sunset","black lamborghini city night neon rain","vintage american muscle car highway chrome","jdm nissan supra track modified racing","porsche 911 countryside moody rain road","mclaren supercar studio dramatic light","rolls royce luxury interior elegant detail","bmw m3 drift smoke racetrack action","ford mustang classic 1960s chrome retro","bugatti chiron hypercar side view studio","rally car mud dirt track action splash","tesla electric cyberpunk city night glow","aston martin classic british elegant road","lamborghini aventador orange desert highway","formula 1 race car speed blur track"],
-  "bikes":["cafe racer motorcycle coastal sunset road","harley davidson chopper chrome black custom","scrambler motorcycle adventure mountain trail","vintage triumph motorcycle classic garage","ducati red racing motorcycle track speed","custom bobber motorcycle dark matte build","kawasaki ninja sport bike action blur","honda motorcycle minimalist urban street","royal enfield classic india mountain road","adventure motorcycle dramatic alpine pass","dirt bike motocross jump action dust","electric motorcycle futuristic city street","cafe racer retro leather seat bokeh","vintage motorcycle workshop detail close","cruiser motorcycle sunset beach highway"],
-  "anime":["anime girl neon tokyo night rain aesthetic","studio ghibli magical forest spirit light","demon slayer sword cherry blossom samurai","attack on titan titan battle dramatic sky","naruto hokage sunset mountain village","one piece pirate ship ocean adventure","my hero academia heroes city rooftop","jujutsu kaisen dark curse spiritual power","spirited away bathhouse warm golden magic","akira cyberpunk tokyo motorcycle neon","violet evergarden letter emotion autumn","your name comet sky beautiful dramatic","chainsaw man dark urban gritty powerful","fullmetal alchemist alchemy circle golden","sword art online virtual reality fantasy"],
-  "scenery":["norwegian fjord sunrise dramatic reflection calm","patagonia mountain lake turquoise mirror","sahara desert sand dunes golden hour camel","iceland northern lights aurora green purple","tuscany rolling hills vineyard sunset warm","kyoto bamboo forest zen morning mist","swiss alps snow peak dramatic blue sky","amazon river rainforest aerial green vast","grand canyon red rock layers sunrise","scottish highland purple heather misty fog","maldives crystal lagoon tropical paradise","cherry blossom sakura park path japan","canadian rockies turquoise lake emerald","new zealand fiordland dramatic waterfall","mongolia steppe wild horses freedom vast"],
-  "gaming":["rgb gaming battlestation neon dark aesthetic","minimal white dual monitor desk setup","retro gaming room crt television collection","streaming setup ring light microphone professional","ps5 white console modern minimal shelf","custom mechanical keyboard rgb colorful keys","esports arena neon stage championship","vr headset player immersive dark room","gaming controller neon purple aesthetic","cozy gaming room warm plants evening","esports desk setup professional clean","cyberpunk game neon rain city night","fantasy rpg landscape epic dramatic art","gaming pc build rgb transparent case","arcade retro machine neon classic"],
-  "fashion":["high fashion editorial luxury magazine shoot","streetwear urban minimal stylish outfit","vintage thrift fashion aesthetic retro","haute couture paris runway dramatic","sustainable linen natural earth tones fashion","monochrome black outfit minimal editorial","luxury tailored suit sharp professional","y2k colorful bold fashion aesthetic","dark academia library fashion books","cottagecore wildflower field dress feminine","cyber neon futuristic fashion bold","trench coat rainy paris street classic","luxury designer flat lay minimal gold","bohemian jewelry layered festival fashion","avant garde editorial artistic fashion"],
-  "nature":["macro butterfly dewdrop flower detail bokeh","wolf pack snow winter forest dramatic","bald eagle soaring mountain dramatic sky","coral reef tropical colorful fish ocean","bengal tiger grass golden grass hunting","humpback whale ocean surface breach dramatic","red fox autumn forest leaves curious","giant sequoia forest sunbeam god rays","polar bear arctic ice blue serene","bioluminescent ocean beach night magic blue","elephant herd africa savanna golden dust","snow leopard rocky mountain majestic rare","peacock feathers iridescent colorful spread","monarch butterfly migration orange wings","fireflies magical forest night bokeh stars"],
-  "food":["artisan sourdough bread bakery rustic warm","wagyu beef steak restaurant plate elegant","sushi omakase japanese minimal wooden counter","pasta carbonara italian restaurant plate","french croissant pastry morning light cafe","ramen bowl steam neon sign japanese night","chocolate dessert fine dining art plating","colorful fruit flat lay tropical minimal","wood fired neapolitan pizza perfect char","korean bbq grill smoke sizzle feast table","avocado toast poached egg brunch minimal","thai street food wok fire flame dramatic","gelato colorful scoops italian shop","champagne coupe pour celebration bubbles","japanese bento box minimal colorful art"],
-  "travel":["santorini white buildings sunset greece dramatic","bali rice terraces green aerial morning","tokyo shibuya crossing rain neon night","rome colosseum golden hour warm dramatic","marrakech morocco medina market colorful","paris eiffel tower sunset romantic warm","new york manhattan skyline night aerial","iceland black sand beach waves dramatic","machu picchu peru mountain mist morning","dubai skyline burj khalifa golden sunset","istanbul mosque blue architecture dramatic","florence tuscany aerial hills vineyard","thai temple golden sunset dramatic sky","havana cuba colorful colonial streets","rio christ redeemer mountain dramatic clouds"],
-  "tech":["circuit board macro neon purple detail","ai neural network visualization blue purple","server room data center blue lights rows","robot hand human handshake futuristic","holographic display dark room projection","space station earth orbit nasa dramatic","quantum computer laboratory cryogenic cold","drone aerial sky technology future","electric vehicle charging neon station","vr augmented reality headset futuristic","smartwatch minimal health display wrist","3d printer creating layering object","solar panel field aerial golden sunset","microchip silicon wafer macro detail","fiber optic cables light blue technology"],
-  "art":["abstract painting bold brushstroke colorful canvas","classical oil portrait renaissance dramatic light","urban street mural colorful large scale wall","watercolor botanical flowers delicate paper","digital concept art fantasy epic landscape","marble sculpture museum classical white light","japanese ink brush calligraphy elegant","pop art bold graphic colorful statement","impressionist garden monet soft light","graffiti wall urban colorful expressive bold","ceramics pottery hands clay spinning","linocut printmaking black white bold graphic","vintage collage magazine artistic surreal","neon light installation art dark dramatic","charcoal portrait dramatic black white bold"],
-  "architecture":["zaha hadid futuristic building curved dramatic","japanese minimalist house wood interior calm","gothic cathedral stained glass light interior","brutalist concrete dramatic sky bold","glass tower skyscraper clouds reflection","ancient roman colosseum sunset ruins","bamboo sustainable tropical architecture organic","grand library interior books natural light","golden gate bridge fog morning dramatic","mosque interior geometric light pattern","treehouse forest luxury elevated natural","metro station arch dramatic ceiling light","stadium aerial architecture bold geometric","rooftop garden urban green modern","floating house lake water reflection calm"],
-  "workspace":["minimal white desk plant morning light aesthetic","industrial loft exposed brick desk setup","home library office books warm cozy","standing desk city view professional","creative studio supplies colorful artistic","coffee shop laptop morning warm light","japanese zen desk minimal peaceful clean","developer dark mode rgb night setup","vintage wooden desk typewriter leather","rooftop office skyline dramatic view","photography studio equipment backdrop","greenhouse garden studio glass natural","van life mobile workspace sunset","coworking modern social bright airy","focused desk lamp night warm glow"],
-  "interior design":["japandi living room wood minimal warm calm","scandinavian bedroom white linen natural","maximalist colorful eclectic bold personality","industrial loft brick steel warm conversion","boho bedroom rattan macrame plants warm","mediterranean villa white blue sea tiles","dark moody library dramatic books leather","mid century modern living room vintage","wabi sabi imperfect beauty calm interior","art deco gold geometric luxury bedroom","biophilic plants green living room lush","coastal blue white serene light interior","cottagecore kitchen rustic warm flowers","luxury hotel marble gold suite elegant","zen bathroom stone minimal spa peaceful"],
-  "ladies accessories":["gold jewelry minimal flat lay elegant","designer leather handbag luxury editorial","pearl earrings elegant woman portrait bokeh","luxury watch collection flat lay minimal","sunglasses summer fashion editorial beach","diamond ring sparkle macro bokeh close","silk scarf colorful fashion editorial wrap","gold bracelet stack minimal wrist light","luxury perfume bottle golden bokeh","statement necklace editorial bold fashion","headband accessories editorial shoot styled","leather belt fashion minimal detail close","vintage brooch elegant collection light","crystal hair clip glamour editorial shoot","heels luxury shoes fashion flat lay"],
-  "tattoos":["fine line botanical arm tattoo elegant","japanese full sleeve dragon koi traditional","blackwork geometric tattoo minimal dark","watercolor butterfly colorful tattoo skin","minimalist single needle wrist tattoo","sailor traditional anchor bold tattoo","portrait realism tattoo black grey detail","neo traditional colorful illustrative bold","mandala back tattoo intricate detailed","dotwork geometric stipple pattern tattoo","script lettering forearm elegant ink","realistic wolf animal arm tattoo dark","abstract brushstroke artistic tattoo","floral shoulder feminine tattoo bloom","sacred geometry spine intricate tattoo"],
-  "plants":["monstera leaves sunlight dappled indoor","succulent terracotta collection morning light","trailing pothos hanging shelf warm light","fiddle leaf fig corner living room","tropical jungle indoor plants lush green","bonsai tree minimalist wooden table zen","cactus desert collection sunny minimal","white orchid elegant minimal light window","propagation glass jars roots water light","terrarium glass miniature garden detail","macrame hanging plants indoor warm","forest fern lush green natural light","air plant wall display modern minimal","snake plant bedroom clean minimal green","dried flowers pastel flat lay aesthetic"],
-  "fitness":["crossfit athlete gym intensity dramatic light","yoga sunrise beach serene peaceful woman","bodybuilder gym iron intense serious","marathon city morning sunrise running","swimmer pool professional athlete training","rock climbing wall determination focus","boxing gloves heavy bag training gym","cycling mountain scenic dramatic road","calisthenics outdoor bar strength park","weightlifting barbell squat powerful gym","pilates studio elegant natural light","surfing ocean wave sunset action","martial arts dojo focus discipline","gymnastics flexibility grace elegant","hiit workout women gym empowered motivated"],
-  "music":["vinyl record player warm golden light bokeh","acoustic guitar wood bokeh warm light","recording studio setup professional night","concert crowd energy hands raised festival","grand piano concert hall dramatic light","dj neon club dark atmosphere mixing","orchestra symphony hall dramatic performance","street musician city acoustic emotional","drum kit studio recording session","saxophone jazz club smoky atmospheric","music producer desk night creative glow","electric guitar neon stage performance","choir cathedral dramatic light voices","synthesizer analog modular cables studio","rock concert stage pyrotechnics fire epic"],
-  "pets":["golden retriever puppy portrait warm bokeh","cat window sunlight dreamy bokeh afternoon","border collie outdoor joyful action grass","white fluffy kitten playful cute","husky blue eyes portrait stunning close","rabbit garden flowers soft bokeh cute","colorful parrot portrait tropical bokeh","dog sunset beach golden running happy","cat cozy blanket sleeping warm afternoon","puppy snow joyful first time playing","maine coon fluffy majestic cat portrait","german shepherd loyal portrait outdoor","corgi smile happy portrait grass sunny","persian cat elegant regal portrait light","dachshund funny cute portrait bokeh"],
-  "superheroes":["iron man suit glowing reactor dark dramatic","batman dark knight rooftop city dramatic","spiderman swinging skyscraper city dramatic","wonder woman warrior battle armor heroic","captain america shield action patriotic","thor lightning hammer dramatic power","black panther wakanda suit vibranium","superman cape city flying heroic dramatic","hulk smash green power rage dramatic","black widow acrobatic action fierce","doctor strange magic portals swirling","wolverine adamantium claws intense dark","flash lightning speed motion blur","aquaman underwater ocean dramatic power","green lantern ring willpower space stars"],
-  "drinks":["whisky glass ice amber bar counter dark","negroni cocktail orange peel elegant bar","espresso pour crema cafe morning light","red wine glass vineyard golden sunset","craft beer foam glass golden light","matcha ceremony bowl zen japanese","cold brew coffee glass ice morning aesthetic","champagne pour bubbles celebration luxury","gin tonic botanical cucumber fresh minimal","japanese whisky glass elegant dark bar","bourbon amber glass warm dark bar","mojito mint lime fresh tropical summer","mezcal smoky glass mexican rustic bar","sake japanese cup traditional wooden","specialty coffee latte art minimal morning"],
-  "flowers":["pink peony full bloom elegant macro bokeh","red rose romantic soft bokeh classic","wildflower meadow colorful summer light","cherry blossom sakura path japan spring","sunflower field yellow sky golden","lavender provence purple field aerial","pink dahlia intricate petals macro detail","tulip field netherlands aerial colorful","white orchid exotic elegant minimal","lotus flower morning pond water calm","red poppy field green moody dramatic","magnolia branch spring white bokeh soft","ranunculus pastel bouquet romantic soft","white calla lily minimal elegant light","hydrangea blue purple garden soft bokeh"]
+// Unsplash Source keywords — each gives category-correct real photos instantly
+// URL: https://source.unsplash.com/WxH/?keyword&sig=N
+// &sig=N gives different photo each call (infinite variety, same slot = same photo)
+const UNSPLASH_KW = {
+  "cars":               "sports-car,supercar,automobile,racing-car",
+  "bikes":              "motorcycle,motorbike,cafe-racer,harley",
+  "anime":              "japan,tokyo,anime,manga,neon-japan",
+  "scenery":            "landscape,mountain,nature,scenic,panorama",
+  "gaming":             "gaming,gamer,rgb,esports,battlestation",
+  "fashion":            "fashion,style,outfit,clothing,editorial",
+  "nature":             "wildlife,forest,animal,wilderness,nature",
+  "food":               "food,restaurant,gourmet,meal,cuisine",
+  "travel":             "travel,city,adventure,destination,explore",
+  "tech":               "technology,computer,digital,circuit,innovation",
+  "art":                "art,painting,gallery,creative,artwork",
+  "architecture":       "architecture,building,design,structure,urban",
+  "workspace":          "desk,workspace,office,minimal,setup",
+  "interior design":    "interior,living-room,home-decor,design,room",
+  "ladies accessories": "jewelry,accessories,handbag,luxury,fashion",
+  "tattoos":            "tattoo,ink,body-art,tattoo-art",
+  "plants":             "plants,botanical,garden,greenery,flowers",
+  "fitness":            "fitness,gym,workout,sport,training",
+  "music":              "music,guitar,concert,studio,vinyl",
+  "pets":               "cat,dog,pet,puppy,kitten",
+  "superheroes":        "superhero,comic,hero,marvel,action",
+  "drinks":             "coffee,cocktail,drink,bar,bartender",
+  "flowers":            "flowers,floral,bloom,rose,botanical",
 };
 
-// Picsum seeds per category for instant reliable fallback
-const PICSUM_SEEDS = {
-  "cars":10,"bikes":20,"anime":30,"scenery":40,"gaming":50,"fashion":60,
-  "nature":70,"food":80,"travel":90,"tech":100,"art":110,"architecture":120,
-  "workspace":130,"interior design":140,"ladies accessories":150,
-  "tattoos":160,"plants":170,"fitness":180,"music":190,"pets":200,
-  "superheroes":210,"drinks":220,"flowers":230
-};
+// Heights cycle so grid looks like Pinterest masonry
+const CARD_HEIGHTS = [680, 750, 700, 820, 660, 780, 720, 800, 640, 760];
 
-// Build a Pollinations.AI URL — real AI image, completely free, no key
-function getPollinationsUrl(category, idx) {
-  const key = category.toLowerCase();
-  const prompts = POLLINATIONS_PROMPTS[key] || POLLINATIONS_PROMPTS["scenery"];
-  const prompt  = prompts[idx % prompts.length];
-  const seed    = ((PICSUM_SEEDS[key] || 50) * 100) + idx;
-  const h       = [700,750,680,800,720,760,650,740,710,770][idx % 10];
-  const encoded = encodeURIComponent(prompt);
-  return `https://image.pollinations.ai/prompt/${encoded}?width=500&height=${h}&seed=${seed}&nologo=true&model=flux&enhance=true`;
+// Get a category-correct Unsplash Source photo — fast CDN, no API key
+// sig=seed ensures same slot always returns same photo (stable layout)
+function getUnsplashUrl(category, idx) {
+  const key = (category || "scenery").toLowerCase();
+  const kw  = UNSPLASH_KW[key] || "nature,landscape";
+  const h   = CARD_HEIGHTS[idx % CARD_HEIGHTS.length];
+  const sig = (idx + 1) * 17 + (key.charCodeAt(0) || 0); // stable unique seed
+  return `https://source.unsplash.com/500x${h}/?${encodeURIComponent(kw)}&sig=${sig}`;
 }
 
-// Picsum fallback — always works instantly, seeded so same image per slot
+// Picsum fallback — always loads, seeded so stable per slot
 function getPicsumUrl(category, idx) {
-  const base = PICSUM_SEEDS[category.toLowerCase()] || 50;
-  const seed  = base + idx;
-  const h     = [700,750,680,800,720,760,650,740][idx % 8];
-  return `https://picsum.photos/seed/${seed}/500/${h}`;
+  const catSeeds = {
+    "cars":10,"bikes":25,"anime":40,"scenery":55,"gaming":70,
+    "fashion":85,"nature":100,"food":115,"travel":130,"tech":145,
+    "art":160,"architecture":175,"workspace":190,"interior design":205,
+    "ladies accessories":220,"tattoos":235,"plants":250,"fitness":265,
+    "music":280,"pets":295,"superheroes":310,"drinks":325,"flowers":340,
+  };
+  const base = catSeeds[(category||"scenery").toLowerCase()] || 50;
+  const h    = CARD_HEIGHTS[idx % CARD_HEIGHTS.length];
+  return `https://picsum.photos/seed/${base + idx}/500/${h}`;
 }
 
-// Build placeholder SVG — used only if both Pollinations and Picsum fail
+// SVG gradient — absolute last resort, never fails, looks decent
 function makePlaceholder(category, idx, title) {
   const ICON = {
     "cars":"🚗","bikes":"🏍","anime":"🎌","scenery":"🌄","gaming":"🎮",
@@ -723,45 +698,49 @@ function makePlaceholder(category, idx, title) {
   };
   const GRAD = {
     "cars":"#0f3460,#e94560","bikes":"#11998e,#38ef7d","anime":"#f093fb,#f5576c",
-    "scenery":"#4facfe,#43e97b","gaming":"#302b63,#0f0c29","fashion":"#f7971e,#ffd200",
+    "scenery":"#4facfe,#43e97b","gaming":"#302b63,#7c3aed","fashion":"#f7971e,#ffd200",
     "nature":"#134e5e,#71b280","food":"#f46b45,#eea849","travel":"#2980b9,#6dd5fa",
     "tech":"#7c3aed,#06b6d4","art":"#ec008c,#fc6767","architecture":"#2c3e50,#4ca1af",
     "workspace":"#3498db,#2c3e50","interior design":"#d4a574,#6b4c3b",
     "ladies accessories":"#b8860b,#ffd700","tattoos":"#1a1a1a,#8b0000",
-    "plants":"#1a4731,#56ab2f","fitness":"#232526,#ff6b6b","music":"#6f0000,#200122",
-    "pets":"#614385,#516395","superheroes":"#b22222,#0d0d0d","drinks":"#c94b4b,#4b134f",
-    "flowers":"#f953c6,#b91d73"
+    "plants":"#1a4731,#56ab2f","fitness":"#232526,#ff6b6b","music":"#6f0000,#df73ff",
+    "pets":"#614385,#516395","superheroes":"#b22222,#1a1a2e","drinks":"#c94b4b,#4b134f",
+    "flowers":"#f953c6,#b91d73",
   };
-  const key   = (category||"").toLowerCase();
+  const key   = (category || "scenery").toLowerCase();
   const icon  = ICON[key] || "✦";
-  const cols  = (GRAD[key] || "7c3aed,db2777").split(",");
-  const c1    = cols[0].startsWith("#") ? cols[0] : "#" + cols[0];
-  const c2    = cols[1].startsWith("#") ? cols[1] : "#" + cols[1];
-  const h     = [700,750,680,800,720,760,650,740][idx % 8];
-  const label = (title||"").slice(0,20).replace(/[<>&]/g,"");
-  const gid   = "g" + (Math.abs(idx) % 9999);
-  const svg   = `<svg xmlns="http://www.w3.org/2000/svg" width="500" height="${h}"><defs><linearGradient id="${gid}" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="${c1}"/><stop offset="100%" stop-color="${c2}"/></linearGradient></defs><rect width="500" height="${h}" fill="url(#${gid})"/><text x="250" y="${Math.floor(h*0.43)}" font-size="90" text-anchor="middle" dominant-baseline="middle">${icon}</text><text x="250" y="${Math.floor(h*0.61)}" font-size="20" fill="rgba(255,255,255,0.9)" text-anchor="middle" dominant-baseline="middle" font-family="system-ui,sans-serif">${label}</text></svg>`;
+  const pair  = (GRAD[key] || "#7c3aed,#db2777").split(",");
+  const c1    = pair[0]; const c2 = pair[1] || pair[0];
+  const h     = CARD_HEIGHTS[idx % CARD_HEIGHTS.length];
+  const label = (title || "").slice(0, 22).replace(/[<>&]/g, "");
+  const gid   = "g" + ((idx * 31 + key.charCodeAt(0)) % 9999);
+  const svg   = `<svg xmlns="http://www.w3.org/2000/svg" width="500" height="${h}"><defs><linearGradient id="${gid}" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="${c1}"/><stop offset="100%" stop-color="${c2}"/></linearGradient></defs><rect width="500" height="${h}" fill="url(#${gid})"/><text x="250" y="${Math.floor(h * 0.43)}" font-size="88" text-anchor="middle" dominant-baseline="middle">${icon}</text><text x="250" y="${Math.floor(h * 0.61)}" font-size="18" fill="rgba(255,255,255,0.85)" text-anchor="middle" dominant-baseline="middle" font-family="system-ui,sans-serif">${label}</text></svg>`;
   return "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svg)));
 }
 
+// Build discovery cards — Unsplash primary, Picsum fallback baked in via onerror
 function getLocalDiscovery(category, page = 1) {
-  const key = category.toLowerCase();
-  const cfg = CAT_CONFIG[key] || CAT_CONFIG["scenery"];
-  const PER = 10;
+  const key     = (category || "scenery").toLowerCase();
+  const cfg     = CAT_CONFIG[key] || CAT_CONFIG["scenery"];
+  const PER     = 12; // cards per page
+  const catLabel = key.split(" ").map(w => w[0].toUpperCase() + w.slice(1)).join(" ");
+
   return Array.from({ length: PER }, (_, i) => {
     const gIdx  = (page - 1) * PER + i;
-    const title = cfg.titles[gIdx % cfg.titles.length];
-    const desc  = cfg.descs[gIdx  % cfg.descs.length];
-    const catLabel = key.split(" ").map(w => w[0].toUpperCase() + w.slice(1)).join(" ");
+    const tIdx  = gIdx % cfg.titles.length;  // same index for title+desc = always matched
+    const title = cfg.titles[tIdx];
+    const desc  = cfg.descs[tIdx];           // guaranteed same index as title
     return {
-      id:          -(1000000 + (PICSUM_SEEDS[key]||50) * 10000 + gIdx + page * 500),
+      id:          -(900000 + key.charCodeAt(0) * 10000 + gIdx * 7 + page * 300),
       title,
-      image_url:   getPollinationsUrl(key, gIdx),
-      thumb_url:   getPicsumUrl(key, gIdx),
+      image_url:   getUnsplashUrl(key, gIdx),  // PRIMARY: category-matched real photo
+      thumb_url:   getPicsumUrl(key, gIdx),    // FALLBACK: stable random real photo
       category:    catLabel,
       source:      "discovery",
       saves_count: 0, likes_count: 0,
-      difficulty:  2, creativity: 4, usefulness: 3,
+      difficulty:  Math.floor(Math.random() * 3) + 1,
+      creativity:  Math.floor(Math.random() * 3) + 3,
+      usefulness:  Math.floor(Math.random() * 3) + 2,
       description: desc,
     };
   });
@@ -820,12 +799,7 @@ async function initHome() {
   // Show skeleton while loading
   grid.innerHTML = skeletonHTML(10);
 
-  const ALL_CATEGORIES = [
-    "anime","cars","bikes","scenery","gaming","ladies accessories",
-    "interior design","workspace","architecture","art",
-    "nature","food","fashion","travel","tech",
-    "tattoos","plants","fitness","music","pets"
-  ];
+  const ALL_CATEGORIES = Object.keys(CAT_CONFIG);
   const cat = S.filter && S.filter !== "all" ? S.filter.toLowerCase() : null;
 
   // ── Step 1: Show local discovery images IMMEDIATELY (no backend needed) ──
@@ -833,7 +807,8 @@ async function initHome() {
   if (cat) {
     discoveryIdeas = getLocalDiscovery(cat);
   } else {
-    const shuffled = [...ALL_CATEGORIES].sort(() => Math.random() - 0.5).slice(0, 4);
+    // Show 3 categories × 12 cards = 36 cards initially (fast load)
+    const shuffled = [...ALL_CATEGORIES].sort(() => Math.random() - 0.5).slice(0, 3);
     discoveryIdeas = shuffled.flatMap(c => getLocalDiscovery(c)).sort(() => Math.random() - 0.5);
   }
   // Show discovery images right away so grid is never empty
@@ -908,15 +883,16 @@ async function initExplore() {
   const grid = $("exploreGrid");
   if (!grid) return;
 
-  // Show local images immediately — no wait, no skeleton freeze
+  // Show local images immediately — no wait
   const cat = S.filter && S.filter !== "all" ? S.filter.toLowerCase() : null;
   const ALL_CATS = Object.keys(CAT_CONFIG);
   let localIdeas = [];
   if (cat) {
-    localIdeas = getLocalDiscovery(cat);
+    // Single category selected: show 24 cards for that category in order
+    localIdeas = getLocalDiscovery(cat, 1).concat(getLocalDiscovery(cat, 2));
   } else {
-    const shuffled = [...ALL_CATS].sort(() => Math.random() - 0.5).slice(0, 6);
-    localIdeas = shuffled.flatMap(c => getLocalDiscovery(c)).sort(() => Math.random() - 0.5);
+    // All categories: show 4 cards from each for variety (ordered per category)
+    localIdeas = ALL_CATS.flatMap(c => getLocalDiscovery(c).slice(0, 4));
   }
   renderGrid(grid, localIdeas);
 
@@ -1524,15 +1500,17 @@ async function openModal(id) {
   const saved = S.savedIds.has(id);
 
   const mImg = $("modalImg");
-  const mPicsum2 = idea.thumb_url || getPicsumUrl((idea.category||"scenery").toLowerCase(), 0);
-  const mFallback2 = makePlaceholder(idea.category||"scenery", 0, idea.title);
-  mImg.src = idea.image_url || idea.img || "";
-  mImg.alt = idea.title;
+  const mCat2 = (idea.category || "scenery").toLowerCase();
+  const mSrc2 = idea.image_url || getUnsplashUrl(mCat2, 0);
+  const mFb12 = idea.thumb_url || getPicsumUrl(mCat2, 0);
+  const mFb22 = makePlaceholder(mCat2, 0, idea.title);
+  mImg.alt    = idea.title;
+  mImg._e1 = 0; mImg._e2 = 0;
   mImg.onerror = function() {
-    if (mImg.src !== mPicsum2) { mImg.src = mPicsum2; return; }
-    if (mImg.src !== mFallback2) { mImg.src = mFallback2; }
-    mImg.onerror = null;
+    if (!mImg._e1) { mImg._e1=1; mImg.src=mFb12; return; }
+    if (!mImg._e2) { mImg._e2=1; mImg.src=mFb22; mImg.onerror=null; }
   };
+  mImg.src = mSrc2;
   $("modalCatTag").textContent = idea.category;
   $("modalTitle").textContent  = idea.title;
   // Always use the card's own description — never override with generic category text
