@@ -49,6 +49,19 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         Create
       </button>
+
+      <!-- Logged-OUT state -->
+      <button class="nav-btn-login" id="navLoginBtn">Sign In</button>
+
+      <!-- Logged-IN state (hidden until JS reveals it) -->
+      <div class="nav-user-menu" id="navUserMenu" style="display:none">
+        <div class="nav-avatar" id="navAvatar" data-page="profile" title="My Profile">Y</div>
+        <span class="nav-username" id="navUsername"></span>
+        <button class="nav-btn-logout" id="navLogoutBtn" title="Sign out">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+      </div>
+
       <button class="nav-btn-profile" id="navProfileBtn" data-page="profile">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       </button>
@@ -133,6 +146,9 @@
 
   <!-- Feed controls -->
   <div class="controls-bar">
+    <button class="chips-scroll-btn chips-scroll-left" data-target="homeFilters" aria-label="Scroll left">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
     <div class="filter-chips" id="homeFilters">
       <button class="chip active" data-filter="all">✦ All</button>
       <button class="chip" data-filter="Anime">🎌 Anime</button>
@@ -158,7 +174,11 @@
       <button class="chip" data-filter="Superheroes">🦸 Superheroes</button>
       <button class="chip" data-filter="Drinks">🥃 Drinks</button>
       <button class="chip" data-filter="Flowers">🌸 Flowers</button>
+      <button class="chip" data-filter="Cigarettes">🚬 Cigarettes</button>
     </div>
+    <button class="chips-scroll-btn chips-scroll-right" data-target="homeFilters" aria-label="Scroll right">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
     <select class="sort-sel" id="homeSort">
       <option value="trending">Trending</option>
       <option value="newest">Newest</option>
@@ -196,6 +216,9 @@
     </div>
   </div>
   <div class="controls-bar">
+    <button class="chips-scroll-btn chips-scroll-left" data-target="exploreFilters" aria-label="Scroll left">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
     <div class="filter-chips" id="exploreFilters">
       <button class="chip active" data-filter="all">✦ All</button>
       <button class="chip" data-filter="Anime">🎌 Anime</button>
@@ -221,7 +244,11 @@
       <button class="chip" data-filter="Superheroes">🦸 Superheroes</button>
       <button class="chip" data-filter="Drinks">🥃 Drinks</button>
       <button class="chip" data-filter="Flowers">🌸 Flowers</button>
+      <button class="chip" data-filter="Cigarettes">🚬 Cigarettes</button>
     </div>
+    <button class="chips-scroll-btn chips-scroll-right" data-target="exploreFilters" aria-label="Scroll right">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
   </div>
   <div class="feed-wrap">
     <div class="masonry" id="exploreGrid"></div>
@@ -303,6 +330,9 @@
   <div class="boards-grid-wrap">
     <div class="boards-grid" id="boardsGrid"></div>
   </div>
+
+  <!-- Projects panel populated by project.js -->
+  <div id="projectsPanel"></div>
 
   <div class="section-rule"><span>Collaboration Boards</span></div>
 
@@ -439,6 +469,7 @@
       <div class="ai-output-header">
         <h3 class="ai-output-title" id="aiOutputTitle">Generated Board</h3>
         <div class="ai-output-btns">
+          <span id="aiPoweredBadge" style="display:none;align-items:center;gap:4px;font-size:0.72rem;padding:3px 10px;border-radius:20px;background:rgba(124,58,237,0.1);color:#7c3aed;border:1px solid rgba(124,58,237,0.2)"></span>
           <button class="btn-ghost btn-sm" id="aiSaveBtn">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
             Save Board
@@ -446,6 +477,8 @@
           <button class="btn-primary btn-sm" id="aiShareBtn">Share</button>
         </div>
       </div>
+      <div id="aiStyleCard" style="display:none;margin-bottom:12px"></div>
+      <div id="aiPaletteWrap" style="margin-bottom:16px"></div>
       <div class="masonry ai-masonry" id="aiGrid"></div>
     </div>
 
@@ -670,6 +703,11 @@
         <h4 class="modal-section-head">Tools Required</h4>
         <div class="tools-row" id="modalTools"></div>
       </div>
+
+      <!-- execution meta (time/cost) — populated by project.js if loaded -->
+      <div id="modalMeta"></div>
+      <!-- execution guide — populated by project.js if loaded -->
+      <div id="modalExecGuide"></div>
 
       <div class="modal-action-row">
         <button class="btn-primary" id="modalSaveBtn">
