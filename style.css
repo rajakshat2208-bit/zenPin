@@ -1744,16 +1744,9 @@ body  { font-family: var(--font-body); }
   .chips-scroll-btn { display: flex; }
 }
 
-/* ── Image loading shimmer ── */
+/* ── Image loading: clean background while loading ── */
 .card-img {
-  background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 50%, var(--surface-2) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
+  background: var(--surface-2);
+  transition: opacity 0.3s ease;
 }
-.card-img[src] { animation: none; background: none; }
-@keyframes shimmer {
-  0%   { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
-/* Smooth AI image upgrade transition */
-.card-img { transition: opacity 0.4s ease; }
+.card-img.loaded { opacity: 1; }
