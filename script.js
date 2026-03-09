@@ -30,6 +30,12 @@ const S = {
 const $ = id => document.getElementById(id);
 const fmt = n => n >= 1000 ? (n/1000).toFixed(1).replace(".0","")+"k" : String(n||0);
 
+// Debounce — prevent search/filter firing on every keystroke
+function debounce(fn, ms = 300) {
+  let timer;
+  return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), ms); };
+}
+
 function escHtml(s) { return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 function escAttr(s) { return String(s||"").replace(/'/g,"\'").replace(/"/g,"\&quot;"); }
 
@@ -233,6 +239,8 @@ function cardHTML(idea, idx) {
 function renderGrid(container, ideas) {
   if (!container) return;
   container.innerHTML = ideas.map((idea, i) => cardHTML(idea, i)).join("");
+  // Signal lazy-load + progressive fade observers to pick up new images
+  window.dispatchEvent(new CustomEvent("zenpin:gridupdate"));
 }
 
 function appendGrid(container, ideas, startIdx) {
@@ -627,80 +635,94 @@ async function fetchUnsplash(category, page = 1) {
 
 const IMG_HEIGHTS = [700, 750, 680, 800, 720, 760, 650, 740];
 
-// ─────────────────────────────────────────────────────────────
-// IMAGE SYSTEM — LoremFlickr (free, no key, category-correct)
-// URL structure: loremflickr.com/W/H/tag1,tag2?lock=N
-// ?lock=N → same N = same photo (stable layout), different N = different photo
-// Tags are Flickr search terms → real photos matching the subject exactly
+// ═══════════════════════════════════════════════════════════════
+// IMAGE SYSTEM v4 — Backend-filtered + LoremFlickr fallback
+// Flow: /images/category (filtered, cached 24h) → LoremFlickr → SVG
 // ─────────────────────────────────────────────────────────────
 
-// Flickr tag per category — single well-known tag with huge photo pool
-// Single tag = reliable match, large pool = lock=N always finds a photo
-const FLICKR_TAGS = {
-  "cars":               "car",
-  "bikes":              "motorcycle",
-  "anime":              "anime",
-  "scenery":            "landscape",
-  "gaming":             "gaming",
-  "fashion":            "fashion",
-  "nature":             "wildlife",
-  "food":               "food",
-  "travel":             "travel",
-  "tech":               "technology",
-  "art":                "art",
-  "architecture":       "architecture",
-  "workspace":          "workspace",
-  "interior design":    "interior",
-  "ladies accessories": "jewelry",
-  "tattoos":            "tattoo",
-  "plants":             "plants",
-  "fitness":            "fitness",
-  "music":              "music",
-  "pets":               "pets",
-  "superheroes":        "superhero",
-  "drinks":             "cocktail",
-  "flowers":            "flowers",
-  "cigarettes":         "cigarette",
+// Single-tag LoremFlickr map — large Flickr pools = reliable category match
+const FLICKR_TAG = {
+  "cars":"car","bikes":"motorcycle","anime":"anime","scenery":"landscape",
+  "gaming":"gaming","fashion":"fashion","nature":"wildlife","food":"food",
+  "travel":"travel","tech":"technology","art":"art","architecture":"architecture",
+  "workspace":"workspace","interior design":"interior","ladies accessories":"jewelry",
+  "tattoos":"tattoo","plants":"plants","fitness":"fitness","music":"music",
+  "pets":"pets","superheroes":"superhero","drinks":"cocktail","flowers":"flowers",
+  "cigarettes":"cigar",
 };
 
-const CARD_HEIGHTS = [680, 750, 700, 820, 660, 780, 720, 800, 640, 760, 710, 770];
+const CARD_HEIGHTS = [680,750,700,820,660,780,720,800,640,760,710,770];
 
-// Service state — detected at first load
-window._imgSvc = "flickr"; // "flickr" or "picsum"
+// Cache: category → array of backend-fetched image objects
+// Avoids re-fetching same category on filter change
+const _imgCache = {};
 
-// Test LoremFlickr at startup — if it doesn't load, switch all images to Picsum
-(function testFlickr() {
-  const test = new Image();
-  const t = Date.now();
-  test.onload  = () => { window._imgSvc = "flickr"; };
-  test.onerror = () => { window._imgSvc = "picsum"; console.warn("LoremFlickr unreachable, using Picsum"); };
-  // 5 second timeout
-  setTimeout(() => { if (Date.now() - t < 4900) return; window._imgSvc = "picsum"; }, 5000);
-  test.src = "https://loremflickr.com/50/50/car?lock=1";
-})();
+// Fetch filtered images from backend for a category+page
+// Backend has Unsplash/Pexels/Pixabay keys — gives real category-matched photos
+// Render free tier sleeps → first request takes up to 30s to wake up
+async function fetchCategoryImages(category, page = 1) {
+  const key = `${category}:${page}`;
+  if (_imgCache[key]) return _imgCache[key];
 
-// Build URL — LoremFlickr if reachable, Picsum otherwise
+  try {
+    // 25s timeout: Render free tier takes up to 30s to wake from sleep
+    const ctrl = new AbortController();
+    const tid  = setTimeout(() => ctrl.abort(), 25000);
+    const res  = await fetch(
+      `${API_URL}/images/category?name=${encodeURIComponent(category)}&page=${page}&limit=12`,
+      { signal: ctrl.signal }
+    );
+    clearTimeout(tid);
+    if (!res.ok) throw new Error("backend error");
+    const data = await res.json();
+    if (data.images?.length) {
+      _imgCache[key] = data.images;
+      return data.images;
+    }
+  } catch (e) {
+    // Timeout or network failure — use local fallback
+    console.warn("Backend unavailable, using local images:", e.message);
+  }
+  return null;
+}
+
+// Build LoremFlickr URL — single tag = reliable category match, lock=N = stable
 function getPhotoUrl(category, idx) {
   const key  = (category || "scenery").toLowerCase();
-  const tag  = FLICKR_TAGS[key] || "nature";
+  const tag  = FLICKR_TAG[key] || "nature";
   const h    = CARD_HEIGHTS[idx % CARD_HEIGHTS.length];
   const lock = (idx % 100) + 1;
-  if (window._imgSvc === "picsum") return getPicsumUrl(key, idx);
   return `https://loremflickr.com/500/${h}/${encodeURIComponent(tag)}?lock=${lock}`;
 }
 
-// Picsum fallback (random but stable per seed — used only if Flickr fails)
+// Picsum — only used as last resort onerror fallback
 function getPicsumUrl(category, idx) {
-  const seeds = {"cars":10,"bikes":25,"anime":40,"scenery":55,"gaming":70,"fashion":85,"nature":100,"food":115,"travel":130,"tech":145,"art":160,"architecture":175,"workspace":190,"interior design":205,"ladies accessories":220,"tattoos":235,"plants":250,"fitness":265,"music":280,"pets":295,"superheroes":310,"drinks":325,"flowers":340,"cigarettes":355};
+  const seeds = {"cars":10,"bikes":25,"anime":40,"scenery":55,"gaming":70,"fashion":85,
+    "nature":100,"food":115,"travel":130,"tech":145,"art":160,"architecture":175,
+    "workspace":190,"interior design":205,"ladies accessories":220,"tattoos":235,
+    "plants":250,"fitness":265,"music":280,"pets":295,"superheroes":310,
+    "drinks":325,"flowers":340,"cigarettes":355};
   const base = seeds[(category||"scenery").toLowerCase()] || 50;
   const h    = CARD_HEIGHTS[idx % CARD_HEIGHTS.length];
   return `https://picsum.photos/seed/${base + idx * 3}/500/${h}`;
 }
 
-// SVG gradient — shown only while image loads or as absolute last resort
+// SVG gradient — absolute last resort, never fails
 function makePlaceholder(category, idx, title) {
-  const ICON = {"cars":"🚗","bikes":"🏍","anime":"🎌","scenery":"🌄","gaming":"🎮","fashion":"👗","nature":"🌿","food":"🍜","travel":"✈️","tech":"⚡","art":"🎨","architecture":"🏛","workspace":"💻","interior design":"🏠","ladies accessories":"💎","tattoos":"🖊️","plants":"🪴","fitness":"💪","music":"🎵","pets":"🐾","superheroes":"🦸","drinks":"🥃","flowers":"🌸","cigarettes":"🚬"};
-  const GRAD = {"cars":"#0f3460,#e94560","bikes":"#11998e,#38ef7d","anime":"#f093fb,#f5576c","scenery":"#4facfe,#43e97b","gaming":"#302b63,#7c3aed","fashion":"#f7971e,#ffd200","nature":"#134e5e,#71b280","food":"#f46b45,#eea849","travel":"#2980b9,#6dd5fa","tech":"#7c3aed,#06b6d4","art":"#ec008c,#fc6767","architecture":"#2c3e50,#4ca1af","workspace":"#3498db,#2c3e50","interior design":"#d4a574,#6b4c3b","ladies accessories":"#b8860b,#ffd700","tattoos":"#1a1a1a,#8b0000","plants":"#1a4731,#56ab2f","fitness":"#232526,#ff6b6b","music":"#6f0000,#df73ff","pets":"#614385,#516395","superheroes":"#b22222,#1a1a2e","drinks":"#c94b4b,#4b134f","flowers":"#f953c6,#b91d73","cigarettes":"#2c2c2c,#8b8b8b"};
+  const ICON = {"cars":"🚗","bikes":"🏍","anime":"🎌","scenery":"🌄","gaming":"🎮",
+    "fashion":"👗","nature":"🌿","food":"🍜","travel":"✈️","tech":"⚡","art":"🎨",
+    "architecture":"🏛","workspace":"💻","interior design":"🏠","ladies accessories":"💎",
+    "tattoos":"🖊️","plants":"🪴","fitness":"💪","music":"🎵","pets":"🐾",
+    "superheroes":"🦸","drinks":"🥃","flowers":"🌸","cigarettes":"🚬"};
+  const GRAD = {"cars":"#0f3460,#e94560","bikes":"#11998e,#38ef7d","anime":"#f093fb,#f5576c",
+    "scenery":"#4facfe,#43e97b","gaming":"#302b63,#7c3aed","fashion":"#f7971e,#ffd200",
+    "nature":"#134e5e,#71b280","food":"#f46b45,#eea849","travel":"#2980b9,#6dd5fa",
+    "tech":"#7c3aed,#06b6d4","art":"#ec008c,#fc6767","architecture":"#2c3e50,#4ca1af",
+    "workspace":"#3498db,#2c3e50","interior design":"#d4a574,#6b4c3b",
+    "ladies accessories":"#b8860b,#ffd700","tattoos":"#1a1a1a,#8b0000",
+    "plants":"#1a4731,#56ab2f","fitness":"#232526,#ff6b6b","music":"#6f0000,#df73ff",
+    "pets":"#614385,#516395","superheroes":"#b22222,#1a1a2e","drinks":"#c94b4b,#4b134f",
+    "flowers":"#f953c6,#b91d73","cigarettes":"#2c2c2c,#8b8b8b"};
   const key  = (category||"scenery").toLowerCase();
   const icon = ICON[key]||"✦";
   const [c1,c2] = (GRAD[key]||"#7c3aed,#db2777").split(",");
@@ -711,7 +733,8 @@ function makePlaceholder(category, idx, title) {
   return "data:image/svg+xml;base64,"+btoa(unescape(encodeURIComponent(svg)));
 }
 
-// Build discovery cards — category-correct photos in stable order
+// Build local discovery cards using LoremFlickr
+// Each card gets image_url stamped at creation (stable slot = stableSlot from id)
 function getLocalDiscovery(category, page = 1) {
   const key      = (category || "scenery").toLowerCase();
   const cfg      = CAT_CONFIG[key] || CAT_CONFIG["scenery"];
@@ -720,10 +743,11 @@ function getLocalDiscovery(category, page = 1) {
   return Array.from({length:PER}, (_,i) => {
     const gIdx = (page-1)*PER + i;
     const tIdx = gIdx % cfg.titles.length;
+    const id   = -(700000+(key.charCodeAt(0)||65)*10000+gIdx*7+page*300);
     return {
-      id:          -(700000+(key.charCodeAt(0)||65)*10000+gIdx*7+page*300),
+      id,
       title:       cfg.titles[tIdx],
-      image_url:   getPhotoUrl(key, gIdx),
+      image_url:   getPhotoUrl(key, gIdx),   // baked at creation — never re-derived from render idx
       thumb_url:   getPicsumUrl(key, gIdx),
       category:    catLabel,
       source:      "discovery",
@@ -734,47 +758,54 @@ function getLocalDiscovery(category, page = 1) {
   });
 }
 
-// Try backend first (for Unsplash images if key set), fall back to local instantly
+
+
+
+// ═══════════════════════════════════════════════════════════════
+// PAGE FUNCTIONS — init, events, modals, DOMContentLoaded
+// ═══════════════════════════════════════════════════════════════
+
+// Map backend discovery images into idea-like card objects
+function discoveryToIdeas(images, category) {
+  return images.map((img, i) => ({
+    id:          -(Date.now() + i),
+    title:       img.title || category + " Inspiration",
+    image_url:   img.image_url,
+    thumb_url:   img.thumb_url || img.image_url,
+    category:    category.charAt(0).toUpperCase() + category.slice(1),
+    source:      "discovery",
+    saves_count: 0,
+    likes_count: 0,
+    difficulty:  2,
+    creativity:  4,
+    usefulness:  3,
+    description: img.author ? `Photo by ${img.author}` : (img.description || ""),
+  }));
+}
+
 async function loadDiscoveryImages(category, page = 1) {
-  // Priority:
-  // 1. Unsplash direct (best quality, correct categories, 50 req/hr free)
-  // 2. Pixabay direct (100 req/min, huge library)
-  // 3. Render backend (if keys set there)
-  // 4. Verified local photos (always correct, no key needed)
+  // Step 1: Always return local discovery first (instant — no network)
+  const local = getLocalDiscovery(category, page);
 
-  // 1. Unsplash direct from browser — best algorithm, perfect category match
-  const unsplashResult = await fetchUnsplash(category, page);
-  if (unsplashResult?.length) return unsplashResult;
-
-  // 2. Pixabay — skipped (fetchPixabay requires a user key; handled in backend tier 3)
-
-  // 3. Render backend (tries Unsplash/Pexels server-side if keys set)
+  // Step 2: Try backend (filtered, category-correct photos from Unsplash/Pexels/Pixabay)
   try {
-    const controller = new AbortController();
-    setTimeout(() => controller.abort(), 1500); // fast timeout — backend sleeping is common
-    const res = await fetch(
+    const ctrl = new AbortController();
+    const tid  = setTimeout(() => ctrl.abort(), 20000);
+    const res  = await fetch(
       `${API_URL}/images/category?name=${encodeURIComponent(category)}&page=${page}&limit=12`,
-      { mode: "cors", credentials: "omit", signal: controller.signal }
+      { signal: ctrl.signal }
     );
-    if (res.ok) {
-      const data = await res.json();
-      if (data.images?.length) {
-        return data.images.map((img, i) => ({
-          id:          -(Date.now() + i + 1000),
-          title:       img.title || category + " Inspiration",
-          image_url:   img.image_url,
-          category:    category.charAt(0).toUpperCase() + category.slice(1),
-          source:      "discovery",
-          saves_count: 0, likes_count: 0,
-          difficulty:  2, creativity: 4, usefulness: 3,
-          description: img.author ? `Photo by ${img.author}` : "",
-        }));
-      }
+    clearTimeout(tid);
+    if (!res.ok) return local;
+    const data = await res.json();
+    if (data.images?.length) {
+      return discoveryToIdeas(data.images, category);
     }
-  } catch (_) {}
-
-  // 4. Verified local photos — always correct category, no key needed
-  return getLocalDiscovery(category, page);
+  } catch (e) {
+    // Render sleeping or network error — local fallback serves the grid
+    console.warn("Backend discovery failed, using local:", e.message);
+  }
+  return local;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -784,63 +815,71 @@ async function initHome() {
   const grid = $("homeGrid");
   if (!grid) return;
 
-  // Show skeleton while loading
-  grid.innerHTML = skeletonHTML(10);
-
   const ALL_CATEGORIES = Object.keys(CAT_CONFIG);
   const cat = S.filter && S.filter !== "all" ? S.filter.toLowerCase() : null;
 
-  // ── Step 1: Show local discovery images IMMEDIATELY (no backend needed) ──
+  // ── Step 1: Show local LoremFlickr discovery immediately (no backend wait) ──
   let discoveryIdeas = [];
   if (cat) {
     discoveryIdeas = getLocalDiscovery(cat);
   } else {
-    // Show 4 cards from EVERY category, grouped by category (no shuffle)
-    // This ensures each category's photos stay with their own category's URL logic
-    discoveryIdeas = ALL_CATEGORIES.flatMap(c => getLocalDiscovery(c).slice(0, 4));
+    const shuffled = [...ALL_CATEGORIES].sort(() => Math.random() - 0.5).slice(0, 3);
+    discoveryIdeas = shuffled.flatMap(c => getLocalDiscovery(c)).sort(() => Math.random() - 0.5);
   }
-  // Show discovery images right away so grid is never empty
   S.ideas = discoveryIdeas;
   S.allIdeas = discoveryIdeas;
   renderGrid(grid, S.ideas);
 
-  // ── Step 2: Load DB ideas from backend (async, enhances the grid) ──
+  // ── Step 2: Fetch DB ideas + backend-filtered photos (upgrades the grid) ──
+  const _cancelWakeup = maybeShowWakeupToast(4000);
   try {
     const params = buildParams();
     const { ideas: dbIdeas } = await apiFetch("GET", `/ideas?${params}`);
-    if (dbIdeas?.length) {
-      // Stamp every DB idea with a stable image_url if it lacks one
-      dbIdeas.forEach(idea => {
-        if (!idea.image_url) {
-          const catK = (idea.category||"scenery").toLowerCase();
-          const slot = Math.abs(idea.id||0) % 50;
-          idea.image_url = getPhotoUrl(catK, slot);
-          idea.thumb_url = getPicsumUrl(catK, slot);
-        }
-      });
-      // Merge DB ideas with discovery — interleave every 4th
-      const merged = [];
-      let di = 0;
-      for (let i = 0; i < dbIdeas.length; i++) {
-        merged.push(dbIdeas[i]);
-        if ((i + 1) % 4 === 0 && di < discoveryIdeas.length) {
-          merged.push(discoveryIdeas[di++]);
-        }
+    if (typeof _cancelWakeup === "function") _cancelWakeup();
+
+    // Load backend-filtered discovery images in parallel
+    let backendIdeas = [];
+    if (cat) {
+      backendIdeas = await loadDiscoveryImages(cat);
+    } else {
+      const shuffled = [...ALL_CATEGORIES].sort(() => Math.random() - 0.5).slice(0, 3);
+      const results  = await Promise.all(shuffled.map(c => loadDiscoveryImages(c)));
+      backendIdeas = results.flat().sort(() => Math.random() - 0.5);
+    }
+
+    // Stamp DB ideas with a stable image_url if missing
+    for (const idea of dbIdeas) {
+      if (!idea.image_url) {
+        const k = (idea.category || "scenery").toLowerCase();
+        const slot = Math.abs(idea.id) % 50;
+        idea.image_url = getPhotoUrl(k, slot);
       }
-      while (di < discoveryIdeas.length) merged.push(discoveryIdeas[di++]);
-      S.ideas    = merged;
+    }
+
+    // Merge: DB ideas with discovery interleaved every 4th card
+    const finalDiscovery = backendIdeas.length ? backendIdeas : discoveryIdeas;
+    const merged = [];
+    let di = 0;
+    for (let i = 0; i < dbIdeas.length; i++) {
+      merged.push(dbIdeas[i]);
+      if ((i + 1) % 4 === 0 && di < finalDiscovery.length) {
+        merged.push(finalDiscovery[di++]);
+      }
+    }
+    while (di < finalDiscovery.length) merged.push(finalDiscovery[di++]);
+
+    if (merged.length) {
+      S.ideas = merged;
       S.allIdeas = merged;
       applySkillFilter();
       renderGrid(grid, S.ideas);
     }
   } catch (e) {
-    // Backend sleeping — that's fine, discovery images already showing
-    console.warn("Backend not ready yet, showing discovery images:", e.message);
+    // Backend sleeping — local discovery images already showing, that's fine
+    console.warn("initHome backend fetch failed:", e.message);
   }
 
-  // Trending strip
   if (window.Trends) Trends.renderTrendingStrip("trendingStrip");
-  // Skill selector
   if (window.SkillLevel) SkillLevel.renderSelector("skillLevelWrap");
 }
 
@@ -862,15 +901,39 @@ function applySkillFilter() {
   }
 }
 
+// Heights for skeleton cards — mirrors CARD_HEIGHTS for authentic masonry feel
+const SKEL_HEIGHTS = [680, 750, 700, 820, 660, 780, 720, 800, 640, 760, 710, 770];
+
 function skeletonHTML(n) {
-  return Array.from({length:n}, (_, i) => `
-    <div class="idea-card skeleton-card" style="--i:${i}">
-      <div class="skeleton-img"></div>
+  return Array.from({length: n}, (_, i) => {
+    const h = SKEL_HEIGHTS[i % SKEL_HEIGHTS.length];
+    return `
+    <div class="idea-card skeleton-card" style="--i:${i}; --h:${h}px">
+      <div class="skeleton-img" style="height:${h}px"></div>
       <div class="skeleton-footer">
+        <div class="skeleton-badge"></div>
         <div class="skeleton-line short"></div>
         <div class="skeleton-line long"></div>
       </div>
-    </div>`).join("");
+    </div>`;
+  }).join("");
+}
+
+// Show backend wake-up toast (only once per session, only when backend is slow)
+let _wakeupToasted = false;
+function maybeShowWakeupToast(delayMs = 5000) {
+  if (_wakeupToasted) return;
+  const timer = setTimeout(() => {
+    _wakeupToasted = true;
+    const bar = document.createElement("div");
+    bar.className = "toast-bar";
+    bar.style.cssText = "background:linear-gradient(135deg,#7c3aed,#06b6d4)";
+    bar.innerHTML = "⚡ Waking up server… showing local previews for now";
+    document.body.appendChild(bar);
+    requestAnimationFrame(() => bar.classList.add("show"));
+    setTimeout(() => { bar.classList.remove("show"); setTimeout(() => bar.remove(), 400); }, 5000);
+  }, delayMs);
+  return () => clearTimeout(timer); // call to cancel if backend responds quickly
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -880,26 +943,50 @@ async function initExplore() {
   const grid = $("exploreGrid");
   if (!grid) return;
 
-  // Show local images immediately — no wait
+  const ALL_CATEGORIES = Object.keys(CAT_CONFIG);
   const cat = S.filter && S.filter !== "all" ? S.filter.toLowerCase() : null;
-  const ALL_CATS = Object.keys(CAT_CONFIG);
-  let localIdeas = [];
+
+  // ── Step 1: Show local discovery instantly ─────────────────
+  let localIdeas;
   if (cat) {
-    localIdeas = getLocalDiscovery(cat, 1).concat(getLocalDiscovery(cat, 2));
+    localIdeas = getLocalDiscovery(cat);
   } else {
-    localIdeas = ALL_CATS.flatMap(c => getLocalDiscovery(c).slice(0, 4));
+    // All-feed: show 4 random categories = 48 cards
+    const shuffled = [...ALL_CATEGORIES].sort(() => Math.random() - 0.5).slice(0, 4);
+    localIdeas = shuffled.flatMap(c => getLocalDiscovery(c)).sort(() => Math.random() - 0.5);
   }
   renderGrid(grid, localIdeas);
 
-  // Then enhance with backend content silently
+  // ── Step 2: Upgrade with backend discovery images ───────────
   try {
-    const p = new URLSearchParams({ limit:40, sort:"trending" });
-    if (S.filter !== "all") p.set("category", S.filter);
+    const p = new URLSearchParams({ limit: 40, sort: "trending" });
+    if (cat) p.set("category", cat);
     if (S.search) p.set("search", S.search);
-    const { ideas } = await apiFetch("GET", `/ideas?${p}`);
-    if (ideas?.length) renderGrid(grid, ideas);
-  } catch {
-    // Backend asleep — local images already showing, nothing to do
+    const { ideas: dbIdeas } = await apiFetch("GET", `/ideas?${p}`);
+
+    let backendDisc = [];
+    if (cat) {
+      backendDisc = await loadDiscoveryImages(cat);
+    } else {
+      const shuffled = [...ALL_CATEGORIES].sort(() => Math.random() - 0.5).slice(0, 4);
+      const results  = await Promise.all(shuffled.map(c => loadDiscoveryImages(c)));
+      backendDisc = results.flat().sort(() => Math.random() - 0.5);
+    }
+
+    const final = backendDisc.length ? backendDisc : localIdeas;
+    // Interleave DB and discovery
+    const merged = [];
+    let di = 0;
+    for (const idea of dbIdeas) {
+      merged.push(idea);
+      if (merged.length % 5 === 0 && di < final.length) merged.push(final[di++]);
+    }
+    while (di < final.length) merged.push(final[di++]);
+
+    if (merged.length) renderGrid(grid, merged);
+  } catch (e) {
+    // Local images already showing — that's a fine fallback
+    console.warn("Explore backend failed:", e.message);
   }
 }
 
@@ -1415,29 +1502,15 @@ const TOOLS_MAP = {
 };
 
 const DESC_MAP = {
-  "Cars":               "Pure automotive passion — every curve, line and detail designed to move you before the engine even starts. Whether it's a track weapon or a grand tourer, great cars stir something that nothing else can.",
-  "Bikes":              "Two wheels, open road, complete freedom. Motorcycling strips away every unnecessary layer between rider and world — the most direct and honest form of motorised travel ever invented.",
-  "Anime":              "A visual world where imagination has no limits — vibrant colours, expressive characters, and emotional storytelling that resonates far beyond any age or border.",
-  "Scenery":            "The natural world photographed at its most extraordinary — a reminder that Earth's best work requires no filter, no edit, and no improvement.",
-  "Gaming":             "A space built around play, performance, and the joy of being completely absorbed in another world. The modern gaming setup is part workstation, part personal statement.",
-  "Fashion":            "Clothing as self-expression — where fabric, cut, and colour become the language through which we tell the world who we are before we've said a word.",
-  "Nature":             "An intimate encounter with the natural world at an unfamiliar scale — extraordinary beauty hiding in plain sight, available to anyone who slows down enough to notice.",
-  "Food":               "A culinary moment captured — where ingredients, technique, light and composition combine into something that makes you hungry just looking at it.",
-  "Travel":             "A place documented at a specific moment — capturing not just light and geography, but the atmosphere and feeling of being somewhere that changes how you see things.",
-  "Tech":               "Engineering and design working together — where solving hard problems produces objects and systems of unexpected beauty.",
-  "Art":                "An exploration of texture, form, and conceptual depth where every mark carries deliberate intention, inviting a personal dialogue between you and the work.",
-  "Architecture":       "Space, light, material and structure combined into something that changes how you feel the moment you enter it. The best architecture improves every life it touches.",
-  "Workspace":          "A space designed around how you actually think and work — where every object earns its place and the environment itself becomes a tool for clearer thinking.",
-  "Interior Design":    "A room where every decision — material, proportion, light, texture — works together to create an atmosphere that's both beautiful and deeply liveable.",
-  "Ladies Accessories": "The finishing details that complete an outfit and express personality — jewellery, bags, and accessories chosen with intention, worn with confidence.",
-  "Tattoos":  "Permanent marks made with intention — each one a decision that carries the weight of knowing it will outlast every passing trend.",
-  "Plants":   "Living things that ask very little and give a lot back — greenery that makes every space feel more alive and more human.",
-  "Fitness":  "The daily practice of showing up for yourself — not for an aesthetic but for the way it makes everything else in life feel more manageable.",
-  "Music":    "Sound arranged deliberately to produce feeling — the art form that bypasses every rational defence and gets directly to something essential.",
-  "Pets":     "Companionship without agenda — the daily reminder that unconditional presence is among the most valuable things one living thing can offer another.",
-  "Superheroes": "Icons of power, justice, and human potential — the myths of our age rendered in colour, action, and conviction.",
-  "Drinks":      "The craft of the glass — spirits, technique, and presentation elevated into ritual and genuine sensory pleasure.",
-  "Flowers":     "Nature's most concentrated beauty — petals and colour arranged by evolution and human intention in equal measure.",
+  "Interior Design": "A thoughtfully curated space that balances aesthetics with function. Natural materials, intentional layering, and a restrained palette create an environment that feels calm and inspiring.",
+  "Workspace":       "An optimised workspace designed for focus and creative output. Every element considered — from cable management to lighting temperature — creating conditions for deep work.",
+  "Architecture":    "A bold architectural statement challenging conventional form. The interplay of light, material, and structure creates a space that rewards close observation.",
+  "Art":             "An exploration of texture, form, and conceptual depth. Each mark carries deliberate intention, inviting dialogue between process and finished work.",
+  "Fashion":         "A study in material consciousness and silhouette — exploring the tension between structure and flow, comfort and presence.",
+  "Food":            "A culinary exploration rooted in seasonal ingredients and classical technique. Each element present for a clear reason, nothing superfluous.",
+  "Travel":          "A visual document of a place at a specific moment — capturing not just light and geometry, but atmosphere and presence.",
+  "Nature":          "An intimate encounter with the natural world at an unfamiliar scale — extraordinary beauty hiding in plain sight.",
+  "Tech":            "A project where engineering constraints become design opportunities. The build process is part of the art.",
 };
 
 function modalStars(val) {
@@ -1471,20 +1544,13 @@ function downloadImage(url, title = "zenpin-image") {
     });
 }
 
-async function navigateModal(dir) {
-  const allCards = [...S.allIdeas, ...S.ideas].filter((v,i,a) => a.findIndex(x=>x.id===v.id)===i);
-  const idx = allCards.findIndex(x => x.id === S.modalId);
-  if (idx < 0) return;
-  const next = allCards[idx + dir];
-  if (next) openModal(next.id);
-}
-
 async function openModal(id) {
-  // First try local cache (instant)
-  let idea = S.allIdeas.find(x => x.id === id) || S.ideas.find(x => x.id === id) || null;
-  // If not in cache and positive id, try backend
-  if (!idea && id > 0) {
-    try { idea = await apiFetch("GET", `/ideas/${id}`); } catch {}
+  let idea;
+  try {
+    idea = await apiFetch("GET", `/ideas/${id}`);
+  } catch {
+    // Fallback to cached
+    idea = S.allIdeas.find(i => i.id === id) || null;
   }
   if (!idea) return;
   S.modalId = id;
@@ -1494,24 +1560,11 @@ async function openModal(id) {
   const use   = idea.usefulness  || idea.use   || 3;
   const saved = S.savedIds.has(id);
 
-  const mImg = $("modalImg");
-  const mCat2 = (idea.category || "scenery").toLowerCase();
-  const mSrc2 = idea.image_url || getPhotoUrl(mCat2, 0);
-  const mFb12 = idea.thumb_url || getPicsumUrl(mCat2, 0);
-  const mFb22 = makePlaceholder(mCat2, 0, idea.title);
-  mImg.alt    = idea.title;
-  mImg._e1 = 0; mImg._e2 = 0;
-  mImg.onerror = function() {
-    if (!mImg._e1) { mImg._e1=1; mImg.src=mFb12; return; }
-    if (!mImg._e2) { mImg._e2=1; mImg.src=mFb22; mImg.onerror=null; }
-  };
-  mImg.src = mSrc2;
+  $("modalImg").src           = idea.image_url || idea.img;
+  $("modalImg").alt           = idea.title;
   $("modalCatTag").textContent = idea.category;
   $("modalTitle").textContent  = idea.title;
-  // Always use the card's own description — never override with generic category text
-  const catKey2 = (idea.category||"").trim();
-  const ideaDesc = (idea.description || "").trim();
-  $("modalDesc").textContent = ideaDesc || DESC_MAP[catKey2] || DESC_MAP[catKey2.toLowerCase()] || "";
+  $("modalDesc").textContent   = idea.description || DESC_MAP[idea.category] || "";
 
   $("modalRatings").innerHTML = [
     { label:"Difficulty", val:diff  },
@@ -1647,7 +1700,6 @@ function handleFilter(e, page) {
   btn.closest(".filter-chips").querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
   btn.classList.add("active");
   S.filter = btn.dataset.filter;
-  S.discoveryPage = {}; // reset page counter on filter change
   if (page === "home")    initHome();
   if (page === "explore") initExplore();
 }
@@ -1656,30 +1708,19 @@ function handleFilter(e, page) {
 // EVENT LISTENERS — single delegation root
 // ─────────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", async () => {
+  // ── Warm up Render backend (free tier sleeps) ──────────────
+  // Ping silently so by the time user requests data, it's awake
+  (async () => {
+    try {
+      await fetch(`${API_URL}/`, { method: "GET", mode: "cors",
+        signal: AbortSignal.timeout ? AbortSignal.timeout(30000) : undefined });
+    } catch {}
+  })();
 
+  
   // Init auth
   updateNavbar();
   await loadUserState();
-
-  // ── Filter chip scroll arrow buttons ──────────────────────
-  document.addEventListener("click", e => {
-    const btn = e.target.closest(".chips-scroll-btn");
-    if (!btn) return;
-    const chips = document.getElementById(btn.dataset.target);
-    if (!chips) return;
-    chips.scrollBy({ left: btn.classList.contains("chips-scroll-left") ? -240 : 240, behavior:"smooth" });
-  });
-
-  // Drag-to-scroll on filter chips (mouse + touch)
-  document.querySelectorAll(".filter-chips").forEach(el => {
-    let sx = 0, ss = 0, drag = false;
-    el.addEventListener("mousedown",  e => { drag=true; sx=e.pageX; ss=el.scrollLeft; el.style.cursor="grabbing"; e.preventDefault(); });
-    el.addEventListener("mouseleave", ()  => { drag=false; el.style.cursor=""; });
-    el.addEventListener("mouseup",    ()  => { drag=false; el.style.cursor=""; });
-    el.addEventListener("mousemove",  e  => { if (!drag) return; el.scrollLeft = ss - (e.pageX - sx); });
-    el.addEventListener("touchstart", e  => { sx=e.touches[0].pageX; ss=el.scrollLeft; }, { passive:true });
-    el.addEventListener("touchmove",  e  => { el.scrollLeft = ss - (e.touches[0].pageX - sx); }, { passive:true });
-  });
 
   // ── Navigation clicks ──────────────────────────────────────
   document.addEventListener("click", e => {
@@ -1719,10 +1760,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("modalBackdrop")?.addEventListener("click", e => {
     if (e.target === $("modalBackdrop")) closeModal();
   });
-
-  // ── Modal prev/next navigation ─────────────────────────────
-  $("modalPrevBtn")?.addEventListener("click", () => navigateModal(-1));
-  $("modalNextBtn")?.addEventListener("click", () => navigateModal(+1));
   $("modalSaveBtn")?.addEventListener("click", () => {
     if (S.modalId) handleSave(S.modalId);
   });
@@ -1744,117 +1781,103 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // ── Search ─────────────────────────────────────────────────
   let _st;
-  $("globalSearch")?.addEventListener("input", e => {
-    clearTimeout(_st);
-    _st = setTimeout(() => {
-      S.search = e.target.value.trim();
-      S.filter = "all";
-      document.querySelectorAll(".chip").forEach(c =>
-        c.classList.toggle("active", c.dataset.filter === "all")
-      );
-      if (S.page === "home")    initHome();
-      if (S.page === "explore") initExplore();
-    }, 260);
-  });
+  $("globalSearch")?.addEventListener("input", debounce(e => {
+    S.search = e.target.value.trim();
+    S.filter = "all";
+    document.querySelectorAll(".chip").forEach(c =>
+      c.classList.toggle("active", c.dataset.filter === "all")
+    );
+    if (S.page === "home")    initHome();
+    if (S.page === "explore") initExplore();
+  }, 400));
 
   // ── Keyboard shortcuts ─────────────────────────────────────
   document.addEventListener("keydown", e => {
-    if (e.key === "Escape")      closeModal();
-    if (e.key === "ArrowLeft"  && S.modalId) navigateModal(-1);
-    if (e.key === "ArrowRight" && S.modalId) navigateModal(+1);
+    if (e.key === "Escape") closeModal();
     if (e.key === "/" && document.activeElement !== $("globalSearch")) {
       e.preventDefault();
       $("globalSearch")?.focus();
     }
   });
 
-  // ── Scroll shadow on navbar + back-to-top visibility ────────
-  window.addEventListener("scroll", () => {
-    $("navbar")?.classList.toggle("scrolled", window.scrollY > 10);
-    $("backToTop")?.classList.toggle("visible", window.scrollY > 500);
-  }, { passive: true });
+  // ── Scroll shadow on navbar ────────────────────────────────
+  window.addEventListener("scroll", () =>
+    $("navbar")?.classList.toggle("scrolled", window.scrollY > 10),
+    { passive: true }
+  );
 
-  // ── Load more — infinite discovery pages ──────────────────
-  // ── INFINITE SCROLL — loads more images forever as you scroll ──
-  let _loadingMore = false;
-
+  // ── Load more (manual + infinite scroll) ──────────────────
   async function loadMoreIdeas() {
-    if (_loadingMore) return;
-    _loadingMore = true;
-
-    const spinner = $("loadingSpinner");
-    if (spinner) spinner.style.display = "block";
-
+    const btn = $("loadMoreBtn");
+    if (btn) { btn.classList.add("busy"); btn.querySelector("span").textContent = "Loading…"; }
     try {
-      const ALL_CATS = Object.keys(CAT_CONFIG);
-
-      const cat    = S.filter && S.filter !== "all" ? S.filter.toLowerCase() : null;
-      const catKey = cat || "all";
-
-      // Advance the discovery page for this category
-      const discPage = (S.discoveryPage[catKey] || 1) + 1;
-      S.discoveryPage[catKey] = discPage;
-
-      // Get next batch of images — always works, no backend needed
-      let newImages = [];
+      const p = buildParams({ offset: S.loaded });
+      const { ideas: newIdeas } = await apiFetch("GET", `/ideas?${p}`);
+      // Also fetch next page of discovery images for current category
+      let discoveryNew = [];
+      const cat = S.filter && S.filter !== "all" ? S.filter : null;
       if (cat) {
-        // Single category — load next page of that category
-        newImages = getLocalDiscovery(cat, discPage);
-      } else {
-        // All feed — round-robin through categories so every scroll = different category
-        const catIndex = (discPage - 2) % ALL_CATS.length;
-        const thisCat  = ALL_CATS[catIndex];
-        const thisPage = Math.floor((discPage - 2) / ALL_CATS.length) + 2;
-        newImages = getLocalDiscovery(thisCat, thisPage);
+        const nextPage = Math.floor(S.loaded / 12) + 2;
+        discoveryNew = await loadDiscoveryImages(cat, nextPage);
       }
-
-      // Append straight to grid — no merging needed, images load instantly
-      const grid = $("homeGrid");
-      if (grid && newImages.length) {
-        appendGrid(grid, newImages, S.allIdeas.length);
-        S.allIdeas = [...S.allIdeas, ...newImages];
+      const merged = [];
+      let di = 0;
+      for (let i = 0; i < newIdeas.length; i++) {
+        merged.push(newIdeas[i]);
+        if ((i + 1) % 4 === 0 && di < discoveryNew.length) merged.push(discoveryNew[di++]);
       }
+      while (di < discoveryNew.length) merged.push(discoveryNew[di++]);
 
-      // Note: we don't call backend on scroll — it causes lag when sleeping
-      // Local images load instantly and provide infinite variety
-
+      if (!merged.length) { if (btn) btn.style.display = "none"; return; }
+      appendGrid($("homeGrid"), merged, S.loaded);
+      S.allIdeas = [...S.allIdeas, ...merged];
+      S.loaded  += merged.length;
+      if (newIdeas.length < 20 && !discoveryNew.length) { if (btn) btn.style.display = "none"; }
     } catch (e) {
-      console.warn("loadMore error:", e);
+      toast(e.message, true);
     } finally {
-      _loadingMore = false;
-      const spinner = $("loadingSpinner");
-      if (spinner) spinner.style.display = "none";
+      if (btn) { btn.classList.remove("busy"); btn.querySelector("span").textContent = "Load more ideas"; }
     }
   }
 
-  // ── Sentinel observer — fires when bottom of grid is reached ──
-  const _sentinel = $("scrollSentinel");
-  if (_sentinel) {
-    const _infiniteObserver = new IntersectionObserver(
-      entries => {
-        if (entries[0].isIntersecting && !_loadingMore) loadMoreIdeas();
-      },
-      { rootMargin: "600px" } // start loading 600px before reaching the bottom
-    );
-    _infiniteObserver.observe(_sentinel);
-  }
+  $("loadMoreBtn")?.addEventListener("click", loadMoreIdeas);
+
+  // ── Infinite scroll ─────────────────────────────────────
+  const _infiniteObserver = new IntersectionObserver(
+    entries => { if (entries[0].isIntersecting) loadMoreIdeas(); },
+    { rootMargin: "400px" }
+  );
+  const _sentinel = $("loadMoreBtn");
+  if (_sentinel) _infiniteObserver.observe(_sentinel);
 
   // ── Lazy-load images via IntersectionObserver ───────────
   function setupLazyImages() {
+    // Mark already-loaded images
+    document.querySelectorAll(".idea-card img").forEach(img => {
+      if (img.complete && img.naturalWidth) img.classList.add("loaded");
+      else img.addEventListener("load", () => img.classList.add("loaded"), { once: true });
+    });
+
+    // IntersectionObserver for data-src lazy images
     const lazyObserver = new IntersectionObserver(
       entries => entries.forEach(entry => {
         if (entry.isIntersecting) {
           const img = entry.target;
-          if (img.dataset.src) { img.src = img.dataset.src; delete img.dataset.src; }
+          if (img.dataset.src) {
+            img.src = img.dataset.src;
+            delete img.dataset.src;
+            img.addEventListener("load",  () => img.classList.add("loaded"), { once: true });
+            img.addEventListener("error", () => img.classList.add("loaded"), { once: true });
+          }
           lazyObserver.unobserve(img);
         }
       }),
-      { rootMargin: "300px" }
+      { rootMargin: "400px" }
     );
     document.querySelectorAll("img[data-src]").forEach(img => lazyObserver.observe(img));
   }
   setupLazyImages();
-  // Re-run after grid updates
+  // Re-run after grid updates (renderGrid dispatches this)
   window.addEventListener("zenpin:gridupdate", setupLazyImages);
 
   // ── AI generator ──────────────────────────────────────────
@@ -1914,8 +1937,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     if ($("epTwitter"))  $("epTwitter").value   = sl.twitter   || "";
     // Refresh font picker with current selection
     TypographySettings.renderPicker("fontPickerWrap");
-  UnsplashSettings.renderInput("unsplashSettingWrap");
-  PixabaySettings.renderInput("pixabaySettingWrap");
     if ($("epError"))    $("epError").textContent = "";
     m.classList.add("open");
   }
@@ -2036,12 +2057,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // ── Font picker in profile settings ───────────────────────
   TypographySettings.renderPicker("fontPickerWrap");
-  UnsplashSettings.renderInput("unsplashSettingWrap");
-  PixabaySettings.renderInput("pixabaySettingWrap");
 
   // ── Dashboard nav link ─────────────────────────────────────
   $("navDashboardBtn")?.addEventListener("click", () => go("dashboard"));
-  $("newBoardBtn")?.addEventListener("click", showNewBoardModal);
   $("dashNewPostBtn")?.addEventListener("click", () => openCreatorPost?.());
 
   // ── Collab chat ────────────────────────────────────────────
