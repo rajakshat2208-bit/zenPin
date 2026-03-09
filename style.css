@@ -1750,3 +1750,71 @@ body  { font-family: var(--font-body); }
   transition: opacity 0.3s ease;
 }
 .card-img.loaded { opacity: 1; }
+
+/* ── Skeleton loading cards ──────────────────────────────── */
+.skeleton-card {
+  pointer-events: none;
+  cursor: default;
+  animation: none !important;
+  box-shadow: none;
+}
+.skeleton-img {
+  background: linear-gradient(90deg,
+    var(--surface-2, #e8e8e8) 25%,
+    var(--surface-3, #d0d0d0) 50%,
+    var(--surface-2, #e8e8e8) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite linear;
+  border-radius: 14px 14px 0 0;
+  min-height: 200px;
+}
+.skeleton-footer { padding: 12px 14px 14px; }
+.skeleton-badge {
+  width: 56px; height: 20px; border-radius: 20px;
+  background: linear-gradient(90deg,
+    var(--surface-2, #e8e8e8) 25%,
+    var(--surface-3, #d0d0d0) 50%,
+    var(--surface-2, #e8e8e8) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite linear;
+  margin-bottom: 8px;
+}
+.skeleton-line {
+  height: 12px; border-radius: 6px; margin-bottom: 6px;
+  background: linear-gradient(90deg,
+    var(--surface-2, #e8e8e8) 25%,
+    var(--surface-3, #d0d0d0) 50%,
+    var(--surface-2, #e8e8e8) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite linear;
+}
+.skeleton-line.short { width: 55%; }
+.skeleton-line.long  { width: 85%; }
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Dark mode skeletons */
+@media (prefers-color-scheme: dark) {
+  .skeleton-img, .skeleton-badge, .skeleton-line {
+    background: linear-gradient(90deg, #2a2a2a 25%, #3a3a3a 50%, #2a2a2a 75%);
+    background-size: 200% 100%;
+  }
+}
+[data-theme="dark"] .skeleton-img,
+[data-theme="dark"] .skeleton-badge,
+[data-theme="dark"] .skeleton-line {
+  background: linear-gradient(90deg, #2a2a2a 25%, #3a3a3a 50%, #2a2a2a 75%);
+  background-size: 200% 100%;
+}
+
+/* ── Progressive image fade-in ──────────────────────────── */
+.idea-card img {
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+.idea-card img.loaded,
+.idea-card img[src]:not([src=""]) {
+  opacity: 1;
+}
