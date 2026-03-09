@@ -122,7 +122,28 @@ def init_db():
         )
     """)
 
-    # ── Discovery cache — stores external API results to reduce calls ──
+    # ── discovery_images — filtered, scored, category-correct images ──
+    # Populated by the backend filtering pipeline, served to frontend
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS discovery_images (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            category    TEXT    NOT NULL,
+            title       TEXT    NOT NULL DEFAULT '',
+            image_url   TEXT    NOT NULL,
+            thumb_url   TEXT    NOT NULL DEFAULT '',
+            tags        TEXT    NOT NULL DEFAULT '',
+            source      TEXT    NOT NULL DEFAULT 'api',
+            score       INTEGER NOT NULL DEFAULT 0,
+            author      TEXT    NOT NULL DEFAULT '',
+            created_at  TEXT    DEFAULT (datetime('now'))
+        )
+    """)
+    c.execute("CREATE INDEX IF NOT EXISTS idx_disc_cat ON discovery_images(category)")
+    c.execute("CREATE INDEX IF NOT EXISTS idx_disc_cat_score ON discovery_images(category, score DESC)")
+    # Prune stale images older than 48h on startup
+    c.execute("DELETE FROM discovery_images WHERE (julianday('now')-julianday(created_at))*24 > 48")
+
+    # ── discovery_cache — 24h page-level cache (fast serving) ──
     c.execute("""
         CREATE TABLE IF NOT EXISTS discovery_cache (
             id         INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -465,6 +486,68 @@ def add_idea_to_board(board_id, idea_id, user_id):
         conn.commit(); return True
     finally:
         conn.close()
+
+
+# ── DISCOVERY IMAGES ────────────────────────────────────────────
+
+def upsert_discovery_images(category: str, images: list):
+    """Store filtered+scored discovery images. Replaces existing for category."""
+    conn = get_connection()
+    try:
+        conn.execute("DELETE FROM discovery_images WHERE category=?", (category.lower(),))
+        for img in images:
+            conn.execute(
+                """INSERT INTO discovery_images
+                   (category,title,image_url,thumb_url,tags,source,score,author)
+                   VALUES (?,?,?,?,?,?,?,?)""",
+                (
+                    category.lower(),
+                    img.get("title", ""),
+                    img.get("image_url", ""),
+                    img.get("thumb_url", img.get("image_url", "")),
+                    img.get("tags", ""),
+                    img.get("source", "api"),
+                    int(img.get("score", 0)),
+                    img.get("author", ""),
+                )
+            )
+        conn.commit()
+    finally:
+        conn.close()
+
+def get_discovery_images(category: str, page: int = 1, limit: int = 12) -> list:
+    """Fetch stored discovery images for a category (sorted by score desc)."""
+    conn = get_connection()
+    try:
+        offset = (page - 1) * limit
+        rows = conn.execute(
+            """SELECT * FROM discovery_images
+               WHERE category=?
+               ORDER BY score DESC, id
+               LIMIT ? OFFSET ?""",
+            (category.lower(), limit, offset)
+        ).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+def count_discovery_images(category: str) -> int:
+    """Count how many fresh discovery images exist for a category."""
+    conn = get_connection()
+    try:
+        row = conn.execute(
+            """SELECT COUNT(*) as cnt FROM discovery_images
+               WHERE category=?
+               AND (julianday('now')-julianday(created_at))*24 < 24""",
+            (category.lower(),)
+        ).fetchone()
+        return row["cnt"] if row else 0
+    finally:
+        conn.close()
+
+def discovery_images_stale(category: str, max_age_hours: int = 24) -> bool:
+    """Return True if the category has no fresh images (needs refresh)."""
+    return count_discovery_images(category) == 0
 
 
 # ── DISCOVERY CACHE ─────────────────────────────────────────────
