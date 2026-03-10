@@ -37,24 +37,53 @@ ALLOWED_IMG_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 # Multiple queries tried in order for best results
 # ══════════════════════════════════════════════════════════════
 
+# ──────────────────────────────────────────────────────────────
+# CATEGORY QUERY SYSTEM — 3-layer diversity architecture
+#
+# Layer 1 — Core subject (most specific, highest precision)
+# Layer 2 — Aesthetic style (mood, lighting, composition)
+# Layer 3 — Trend/vibe (viral keywords, current aesthetics)
+#
+# Multiple queries per category → merged + scored results →
+# maximum variety while maintaining category accuracy
+# ──────────────────────────────────────────────────────────────
+
 CATEGORY_QUERIES = {
     "cars": [
+        # Layer 1: Core
         "sports car ferrari lamborghini photography",
         "supercar automotive luxury vehicle",
         "classic muscle car racing track",
-        "exotic car studio shoot",
+        # Layer 2: Aesthetic
+        "car photography golden hour cinematic",
+        "exotic car studio dark background",
+        "vintage classic car garage portrait",
+        # Layer 3: Trend
+        "drift car neon night photography",
+        "electric sports car futuristic design",
+        "rally racing car dirt track action",
     ],
     "bikes": [
         "sports motorcycle cafe racer photography",
         "superbike racing motorcycle track",
         "harley davidson custom chopper bike",
         "adventure motorcycle touring ride",
+        "motorcycle photography golden hour sunset",
+        "cafe racer custom build garage workshop",
+        "scrambler dirt bike trail adventure",
+        "motorcycle dark neon night urban",
+        "vintage classic motorcycle restoration",
     ],
     "anime": [
         "anime illustration digital art wallpaper",
         "anime aesthetic japan tokyo neon",
         "manga character artwork fan art",
         "studio ghibli fantasy anime scene",
+        "anime girl pastel aesthetic art",
+        "cyberpunk anime city neon illustration",
+        "lofi anime room cozy aesthetic",
+        "anime landscape fantasy background art",
+        "anime portrait character design illustration",
     ],
     "scenery": [
         "landscape mountain lake nature photography",
@@ -67,12 +96,22 @@ CATEGORY_QUERIES = {
         "gaming room PC build neon lights",
         "esports gaming chair monitor setup",
         "retro console game collection room",
+        "mechanical keyboard gaming aesthetic",
+        "custom PC build glass case RGB lighting",
+        "gaming setup minimal dark desk",
+        "retro gaming nostalgia controller collection",
+        "streaming setup dual monitor gaming room",
     ],
     "fashion": [
         "fashion editorial style outfit photography",
         "streetwear lookbook runway clothing",
         "high fashion designer couture shoot",
         "aesthetic outfit ootd style photo",
+        "dark academia fashion aesthetic outfit",
+        "minimalist neutral tones fashion photography",
+        "vintage thrift fashion street style",
+        "boho chic summer fashion photography",
+        "power dressing office fashion editorial",
     ],
     "nature": [
         "wildlife animal tiger eagle forest",
@@ -85,12 +124,22 @@ CATEGORY_QUERIES = {
         "aesthetic food flat lay ingredients",
         "sushi ramen japanese food photography",
         "dessert cake bakery artisan food",
+        "coffee latte art espresso photography",
+        "breakfast brunch food aesthetic natural light",
+        "pasta italian food gourmet plating",
+        "street food vendor photography travel",
+        "sourdough bread artisan bakery photography",
     ],
     "travel": [
         "travel destination architecture landmark",
         "santorini bali paris travel photography",
         "adventure travel explore mountain city",
         "aerial travel cityscape destination photo",
+        "travel photography golden hour landscape",
+        "backpacking adventure solo travel nature",
+        "luxury resort tropical destination photography",
+        "tokyo street photography night travel",
+        "europe architecture travel cityscape photo",
     ],
     "tech": [
         "technology circuit board futuristic digital",
@@ -127,6 +176,11 @@ CATEGORY_QUERIES = {
         "luxury handbag designer accessories fashion",
         "bangles bracelet rings jewelry photography",
         "pearls gemstone fine jewelry close up",
+        "gold bangle stack jewelry flatlay",
+        "statement earrings fashion accessories portrait",
+        "fine jewelry diamond ring close up macro",
+        "silk scarf headband hair accessories fashion",
+        "designer bag leather accessories photography",
     ],
     "tattoos": [
         "tattoo art sleeve bodyart ink photography",
@@ -159,16 +213,29 @@ CATEGORY_QUERIES = {
         "exotic pet bird parrot hamster",
     ],
     "superheroes": [
-        "superhero comic book batman superman",
-        "marvel DC superhero cosplay costume",
-        "action figure collectible superhero toy",
-        "superhero artwork comic illustration",
+        # Layer 1: Core — each major hero gets own query for variety
+        "spiderman comic book illustration art",
+        "batman dark knight gotham artwork",
+        "iron man marvel avengers art",
+        "captain america shield superhero illustration",
+        # Layer 2: Style
+        "wonder woman dc superhero art cinematic",
+        "thor lightning avengers artwork digital",
+        "black panther wakanda art illustration",
+        # Layer 3: Trend
+        "superhero cosplay costume photography",
+        "marvel dc superhero action figure collectible",
     ],
     "drinks": [
         "cocktail craft bar drink photography",
         "coffee latte art espresso barista",
         "whiskey wine champagne beverage",
         "craft beer smoothie drink aesthetic",
+        "negroni old fashioned cocktail photography",
+        "wine glass red white pour photography",
+        "matcha tea ceremony japanese aesthetic",
+        "cold brew iced coffee photography",
+        "cocktail bar neon dark moody photography",
     ],
     "flowers": [
         "flowers floral bouquet bloom photography",
@@ -251,11 +318,21 @@ def score_image(image: dict, category: str) -> int:
     Score an image for category relevance.
     +3 if category keyword in title
     +2 if category keyword in tags
-    +1 if partial/related keyword match
+    +1 if category keyword in description
     -3 for each reject keyword found
     Accept if score >= 1
+
+    Special cases:
+    - LoremFlickr / curated fallbacks always get score=2 (they're already category-matched)
+    - Images with no metadata get score=1 (benefit of the doubt — query already filtered)
     """
     cat = category.lower()
+
+    # Curated fallback sources don't need scoring — they're always correct
+    source = (image.get("source") or "").lower()
+    if source in ("curated", "loremflickr"):
+        return 2
+
     accept_kws = CATEGORY_ACCEPT_KEYWORDS.get(cat, [cat])
     reject_kws = CATEGORY_REJECT_KEYWORDS.get(cat, [])
 
@@ -263,7 +340,11 @@ def score_image(image: dict, category: str) -> int:
     title = (image.get("title") or "").lower()
     tags  = (image.get("tags")  or "").lower()
     desc  = (image.get("description") or image.get("alt_description") or "").lower()
-    combined = f"{title} {tags} {desc}"
+    combined = f"{title} {tags} {desc}".strip()
+
+    # No metadata at all — trust the query (score 1 = barely acceptable)
+    if not combined:
+        return 1
 
     score = 0
 
@@ -276,12 +357,16 @@ def score_image(image: dict, category: str) -> int:
             score += 2   # tag match = strong signal
         elif kw_l in desc:
             score += 1   # desc match = weak signal
+        if score >= 6:
+            break  # Short-circuit: already a strong match, don't need to keep scanning
 
     # Negative scoring — reject cross-contamination
     for kw in reject_kws:
         kw_l = kw.lower()
         if kw_l in combined:
             score -= 3
+            if score <= -6:
+                break  # Definitely rejected, no need to keep scanning
 
     return score
 
@@ -297,6 +382,65 @@ def filter_images(images: list, category: str, min_score: int = 1) -> list:
     scored.sort(key=lambda x: x[0], reverse=True)
     return [img for _, img in scored]
 
+
+
+# ──────────────────────────────────────────────────────────────
+# TREND MINING SYSTEM
+# Aesthetic + trend keyword layers applied to any category.
+# These expand results with current visual trends.
+# ──────────────────────────────────────────────────────────────
+
+AESTHETIC_KEYWORDS = [
+    "dark academia aesthetic",
+    "cottagecore aesthetic",
+    "minimalist aesthetic photography",
+    "cyberpunk neon aesthetic",
+    "vaporwave aesthetic",
+    "lofi aesthetic cozy",
+    "golden hour photography",
+    "film grain vintage aesthetic",
+    "moody dark photography",
+    "pastel soft aesthetic",
+]
+
+# Category-specific trend layers (appended to base queries)
+CATEGORY_TREND_LAYER = {
+    "cars":               ["cyberpunk car neon night", "vaporwave car aesthetic retro", "car photography cinematic film"],
+    "bikes":              ["motorcycle sunset golden hour", "cafe racer vintage aesthetic", "motorcycle dark moody photography"],
+    "anime":              ["lofi anime room aesthetic", "vaporwave anime aesthetic", "anime cyberpunk neon art"],
+    "gaming":             ["gaming room aesthetic neon", "minimal gaming setup dark", "retro gaming nostalgia aesthetic"],
+    "fashion":            ["dark academia fashion aesthetic", "cottagecore fashion nature", "minimalist neutral fashion"],
+    "ladies accessories": ["jewelry golden hour flatlay", "accessories minimal aesthetic", "fine jewelry dark background"],
+    "travel":             ["travel photography film grain", "golden hour travel destination", "moody travel landscape"],
+    "food":               ["food photography dark moody", "breakfast aesthetic golden light", "artisan food craft photography"],
+    "interior design":    ["japandi interior minimal", "dark academia room aesthetic", "cozy cottagecore interior"],
+    "workspace":          ["minimal desk setup aesthetic", "dark mode desk setup", "cozy workspace morning light"],
+    "nature":             ["nature photography moody dark", "wildlife golden hour magic", "forest mist aesthetic photography"],
+    "tech":               ["cyberpunk technology neon", "minimal tech aesthetic dark", "futuristic technology concept"],
+    "art":                ["dark academia art aesthetic", "lofi art cozy illustration", "abstract art moody dark"],
+    "architecture":       ["brutalist architecture moody", "modern architecture golden hour", "dark architecture night photography"],
+    "scenery":            ["landscape photography golden hour", "moody dramatic landscape", "misty atmospheric landscape"],
+    "flowers":            ["cottagecore flowers aesthetic", "moody dark flower photography", "flowers pastel soft aesthetic"],
+    "plants":             ["cottagecore plant aesthetic", "cozy plant shelf morning light", "botanical plant dark moody"],
+    "fitness":            ["fitness aesthetic dark moody", "gym photography dramatic lighting", "athlete golden hour photography"],
+    "music":              ["vinyl record aesthetic warm", "dark academia music aesthetic", "jazz club moody photography"],
+    "pets":               ["golden hour pet portrait", "cozy pet aesthetic warm", "pet portrait moody dark"],
+    "tattoos":            ["fine line tattoo minimal aesthetic", "dark tattoo moody photography", "tattoo art aesthetic close up"],
+    "superheroes":        ["superhero dark cinematic art", "comic book aesthetic vibrant", "superhero neon digital art"],
+    "drinks":             ["cocktail moody dark bar", "coffee aesthetic warm morning", "drinks golden hour flatlay"],
+    "cigarettes":         ["smoke aesthetic dark moody", "cigarette vintage film photography", "smoke art dark aesthetic"],
+}
+
+
+def get_trend_queries(category: str, limit: int = 3) -> list:
+    """Return trend-layer queries for a category to boost aesthetic diversity."""
+    cat = category.lower()
+    trend = CATEGORY_TREND_LAYER.get(cat, [])
+    # Add 1-2 random aesthetic keywords as extra queries
+    import random
+    aesthetic = random.sample(AESTHETIC_KEYWORDS, min(2, len(AESTHETIC_KEYWORDS)))
+    aesthetic_q = [f"{cat} {kw}" for kw in aesthetic]
+    return (trend + aesthetic_q)[:limit]
 
 # ══════════════════════════════════════════════════════════════
 # PART 3 — CURATED FALLBACK IMAGES
@@ -750,18 +894,39 @@ async def get_discovery_images(
         return_exceptions=True
     )
 
-    # If primary query got few results, try secondary queries
+    # Collect all primary results
     all_raw = []
     for r in raw_results:
         if isinstance(r, list): all_raw.extend(r)
 
-    if len(all_raw) < limit and len(queries) > 1:
+    # If we don't have enough, try secondary core queries
+    if len(all_raw) < limit * 2 and len(queries) > 1:
         secondary_results = await asyncio.gather(
             fetch_unsplash(cat, queries[1], page, limit),
             fetch_pexels(  cat, queries[1], page, limit),
             return_exceptions=True
         )
         for r in secondary_results:
+            if isinstance(r, list): all_raw.extend(r)
+
+    # Try tertiary query for more variety
+    if len(all_raw) < limit * 2 and len(queries) > 2:
+        tertiary_results = await asyncio.gather(
+            fetch_unsplash(cat, queries[2], page, limit // 2),
+            _fetch_pixabay_v2(cat, queries[2], page, limit // 2),
+            return_exceptions=True
+        )
+        for r in tertiary_results:
+            if isinstance(r, list): all_raw.extend(r)
+
+    # Add trend layer queries for aesthetic diversity
+    trend_qs = get_trend_queries(cat, limit=2)
+    if trend_qs and len(all_raw) < limit * 3:
+        trend_results = await asyncio.gather(
+            *[fetch_unsplash(cat, tq, page, limit // 2) for tq in trend_qs[:2]],
+            return_exceptions=True
+        )
+        for r in trend_results:
             if isinstance(r, list): all_raw.extend(r)
 
     # Score + filter
@@ -775,16 +940,30 @@ async def get_discovery_images(
     # Sort by score descending — best matches first
     scored_raw.sort(key=lambda x: x[0], reverse=True)
 
-    # Deduplicate by URL
-    seen_urls: set = set()
-    filtered: list = []
-    for score, img in scored_raw:
-        url = img.get("image_url", "")
-        if url and url not in seen_urls and score >= 1:
-            seen_urls.add(url)
-            filtered.append(img)
+    # Deduplicate by URL + apply diversity rule
+    # Pinterest-style: no more than 3 consecutive images from same source
+    seen_urls:   set  = set()
+    source_run:  dict = {}   # track consecutive count per source
+    filtered:    list = []
 
-    print(f"  Filtered: {len(filtered)} (score≥1) → top {limit}")
+    for score, img in scored_raw:
+        url    = img.get("image_url", "")
+        source = img.get("source", "unknown")
+        if not url or url in seen_urls or score < 1:
+            continue
+        # Diversity cap: skip if this source has 3 consecutive images already
+        consec = source_run.get(source, 0)
+        if consec >= 3:
+            continue
+        seen_urls.add(url)
+        filtered.append(img)
+        # Reset other sources' consecutive counts when source changes
+        for s in list(source_run.keys()):
+            if s != source:
+                source_run[s] = 0
+        source_run[source] = consec + 1
+
+    print(f"  Filtered: {len(filtered)} (score≥1, diversity-ranked) → top {limit}")
     images = filtered[:limit]
 
     # Persist to discovery_images DB (replaces stale data for this category)
@@ -813,6 +992,148 @@ async def refresh_category(name: str = Query(..., min_length=1, max_length=50)):
     # Re-fetch
     return await get_discovery_images(name=cat, page=1, limit=12, refresh=True)
 
+
+
+
+@app.get("/warmup")
+async def warmup_discovery():
+    """
+    Pre-warm discovery cache for the most popular categories.
+    Call this from a cron job or health check to keep Render awake
+    and have fresh filtered images ready for users.
+    Hit it with: GET /warmup?categories=cars,bikes,gaming
+    """
+    import asyncio
+    top_cats = ["cars", "bikes", "anime", "gaming", "fashion",
+                "food", "travel", "interior design", "nature", "tech"]
+    
+    async def warm_one(cat: str):
+        try:
+            cached = db.get_cached_discovery(cat, 1, max_age_minutes=360)  # 6h min
+            if cached:
+                return cat, "cached"
+            imgs = await _fetch_for_category(cat, page=1, limit=12)
+            if imgs:
+                db.set_cached_discovery(cat, 1, imgs)
+                return cat, f"warmed ({len(imgs)} images)"
+            return cat, "no results"
+        except Exception as e:
+            return cat, f"error: {e}"
+    
+    results = await asyncio.gather(*[warm_one(c) for c in top_cats])
+    return {"warmup": {cat: status for cat, status in results}}
+
+
+async def _fetch_for_category(cat: str, page: int = 1, limit: int = 12) -> list:
+    """Internal helper: fetch + filter images for a category. Used by warmup."""
+    queries = CATEGORY_QUERIES.get(cat, [f"{cat} photography"])
+    raw_results = await asyncio.gather(
+        fetch_unsplash(cat, queries[0], page, limit),
+        fetch_pexels(  cat, queries[0], page, limit),
+        _fetch_pixabay_v2(cat, queries[0], page, limit),
+        return_exceptions=True
+    )
+    all_raw = [img for r in raw_results if isinstance(r, list) for img in r]
+    if len(all_raw) < limit and len(queries) > 1:
+        fallback = await asyncio.gather(
+            fetch_unsplash(cat, queries[1], page, limit),
+            fetch_pexels(  cat, queries[1], page, limit),
+            return_exceptions=True
+        )
+        all_raw += [img for r in fallback if isinstance(r, list) for img in r]
+    
+    scored = [(score_image(img, cat), img) for img in all_raw]
+    scored.sort(key=lambda x: x[0], reverse=True)
+    seen: set = set()
+    filtered = []
+    for score, img in scored:
+        url = img.get("image_url", "")
+        if url and url not in seen and score >= 1:
+            seen.add(url)
+            filtered.append(img)
+    return filtered[:limit]
+
+
+
+@app.get("/images/aesthetic-mix")
+async def get_aesthetic_mix(
+    page:  int = Query(1, ge=1, le=20),
+    limit: int = Query(12, ge=6, le=30),
+):
+    """
+    Aesthetic Mix feed — Pinterest-style explore page.
+    Combines images from all categories, ranked by visual aesthetic.
+    Rotates through categories with aesthetic trend queries for variety.
+    """
+    import random
+
+    # Cache key for the mix
+    cache_key = f"aesthetic-mix"
+    cached = db.get_cached_discovery(cache_key, page, max_age_minutes=120)  # 2h cache
+    if cached:
+        return {"page": page, "source": "cache", "images": cached}
+
+    # Rotate through all categories for this page
+    all_cats = list(CATEGORY_QUERIES.keys())
+    random.shuffle(all_cats)
+
+    # Pick 4-5 random categories, fetch aesthetic-style images from each
+    selected_cats = all_cats[:(4 if page % 2 == 0 else 5)]
+    per_cat = max(3, limit // len(selected_cats))
+
+    # Use aesthetic trend queries for the mix (more visually interesting)
+    async def fetch_aesthetic(cat: str) -> list:
+        trend_qs = get_trend_queries(cat, limit=2)
+        aesthetic_q = trend_qs[0] if trend_qs else f"{cat} aesthetic photography"
+        results = await asyncio.gather(
+            fetch_unsplash(cat, aesthetic_q, page, per_cat),
+            fetch_pexels(  cat, aesthetic_q, page, per_cat),
+            return_exceptions=True
+        )
+        raw = [img for r in results if isinstance(r, list) for img in r]
+        scored = [(score_image(img, cat), img) for img in raw]
+        scored.sort(key=lambda x: x[0], reverse=True)
+        seen: set = set()
+        out = []
+        for s, img in scored:
+            url = img.get("image_url", "")
+            if url and url not in seen and s >= 1:
+                seen.add(url)
+                img["mix_category"] = cat  # tag with category for frontend
+                out.append(img)
+        return out[:per_cat]
+
+    results = await asyncio.gather(*[fetch_aesthetic(c) for c in selected_cats], return_exceptions=True)
+    all_imgs = [img for r in results if isinstance(r, list) for img in r]
+
+    # Interleave categories for variety (not all cats clumped together)
+    per_bucket = {}
+    for img in all_imgs:
+        c = img.get("mix_category", "misc")
+        per_bucket.setdefault(c, []).append(img)
+
+    interleaved = []
+    while any(per_bucket.values()):
+        for c in list(per_bucket.keys()):
+            if per_bucket[c]:
+                interleaved.append(per_bucket[c].pop(0))
+            else:
+                del per_bucket[c]
+
+    images = interleaved[:limit]
+
+    # Fallback if APIs returned nothing
+    if not images:
+        cats = random.sample(all_cats, min(3, len(all_cats)))
+        images = []
+        for c in cats:
+            images.extend(get_curated_fallback(c, page, per_cat))
+        images = images[:limit]
+
+    if images:
+        db.set_cached_discovery(cache_key, page, images)
+
+    return {"page": page, "source": "api", "images": images}
 
 # ── IDEAS (unchanged) ──────────────────────────────────────────
 @app.get("/ideas")
@@ -919,6 +1240,180 @@ async def upload_image(
     with open(os.path.join(UPLOAD_DIR, filename), "wb") as f:
         f.write(contents)
     return {"url": f"{BASE_URL}/uploads/{filename}", "filename": filename}
+
+
+class AIResearchRequest(BaseModel):
+    query:    str
+    history:  list = []  # [{role, content}]
+
+
+@app.post("/ai/research")
+async def ai_research(
+    body: AIResearchRequest,
+    current_user: Optional[dict] = Depends(auth_utils.get_optional_user)
+):
+    """
+    AI Research Assistant — RAG architecture:
+      1. Keyword-search ZenPin DB for relevant ideas
+      2. Fetch discovery images matching the query topic
+      3. Build rich context from results
+      4. Send to OpenAI/Claude with context + conversation history
+    Returns AI response + relevant ZenPin ideas as cards
+    """
+    query = body.query.strip()[:300]
+    if not query:
+        raise HTTPException(400, "Query required")
+
+    # ── Step 1: Semantic keyword search on ZenPin DB ──────────────
+    # Extract keywords and find matching ideas
+    words = [w.lower().strip(".,!?") for w in query.split() if len(w) > 2]
+    db_ideas = db.get_ideas(limit=200)
+
+    def relevance_score(idea: dict, keywords: list) -> int:
+        text = f"{idea.get('title','')} {idea.get('category','')} {idea.get('description','')}".lower()
+        return sum(2 if kw in (idea.get("title","")).lower() else 1
+                   for kw in keywords if kw in text)
+
+    scored_ideas = [(relevance_score(i, words), i) for i in db_ideas]
+    scored_ideas.sort(key=lambda x: x[0], reverse=True)
+    relevant_ideas = [i for score, i in scored_ideas if score > 0][:8]
+
+    # ── Step 2: Map query to category for discovery images ────────
+    cat_map = {
+        "car": "cars", "ferrari": "cars", "supercar": "cars", "lamborghini": "cars",
+        "bike": "bikes", "motorcycle": "bikes", "moto": "bikes",
+        "anime": "anime", "manga": "anime", "otaku": "anime",
+        "gaming": "gaming", "game": "gaming", "esport": "gaming",
+        "fashion": "fashion", "outfit": "fashion", "style": "fashion",
+        "food": "food", "recipe": "food", "cook": "food",
+        "travel": "travel", "destination": "travel", "trip": "travel",
+        "interior": "interior design", "room": "interior design", "home": "interior design",
+        "workspace": "workspace", "desk": "workspace", "office": "workspace",
+        "nature": "nature", "wildlife": "nature", "forest": "nature",
+        "tech": "tech", "computer": "tech", "ai": "tech",
+        "art": "art", "painting": "art", "illustration": "art",
+        "architecture": "architecture", "building": "architecture",
+        "flower": "flowers", "floral": "flowers",
+        "plant": "plants", "botanical": "plants",
+        "fitness": "fitness", "gym": "fitness", "workout": "fitness",
+        "music": "music", "vinyl": "music", "concert": "music",
+        "pet": "pets", "dog": "pets", "cat": "pets",
+        "jewelry": "ladies accessories", "necklace": "ladies accessories",
+        "superhero": "superheroes", "marvel": "superheroes", "batman": "superheroes",
+        "drink": "drinks", "cocktail": "drinks", "coffee": "drinks",
+        "tattoo": "tattoos", "ink": "tattoos",
+        "scenery": "scenery", "landscape": "scenery", "mountain": "scenery",
+    }
+
+    detected_cats = list(set(
+        cat for kw in words for key, cat in cat_map.items() if key in kw
+    ))[:2]
+
+    # Fetch relevant discovery images in background
+    discovery_images = []
+    if detected_cats:
+        disc_results = await asyncio.gather(
+            *[_fetch_for_category(cat, page=1, limit=4) for cat in detected_cats],
+            return_exceptions=True
+        )
+        for r in disc_results:
+            if isinstance(r, list):
+                discovery_images.extend(r)
+
+    # ── Step 3: Build rich context for AI ────────────────────────
+    context_parts = []
+
+    if relevant_ideas:
+        ideas_text = "\n".join(
+            f"- {i['title']} ({i['category']})"
+            + (f": {i.get('description','')[:100]}" if i.get('description') else "")
+            for i in relevant_ideas[:6]
+        )
+        context_parts.append(f"Relevant ZenPin ideas for this query:\n{ideas_text}")
+
+    if detected_cats:
+        context_parts.append(f"Related categories on ZenPin: {', '.join(detected_cats)}")
+
+    context = "\n\n".join(context_parts)
+
+    # ── Step 4: AI generates research-grade response ──────────────
+    system_prompt = """You are ZenPin Research Assistant — an expert AI that combines the depth of Perplexity
+with the creative focus of Pinterest. You help users discover ideas, learn techniques, and explore aesthetic trends.
+
+Your role:
+- Answer questions about design, photography, fashion, travel, food, tech, art, and creative culture
+- Give specific, actionable tips and recommendations
+- Cite trends and techniques with confidence
+- Keep responses informative but digestible (use short paragraphs or bullet points for long answers)
+- When ZenPin ideas are provided in context, reference them naturally
+
+You have access to ZenPin's discovery database. When relevant ideas are found, acknowledge them.
+Format: Use markdown for structure when helpful (bold, bullets). Keep responses under 300 words."""
+
+    messages_to_send = list(body.history[-6:]) if body.history else []  # last 6 turns
+    if context:
+        messages_to_send = messages_to_send + [
+            {"role": "user", "content": f"[Context from ZenPin database]\n{context}\n\n[User question]: {query}"}
+        ]
+    else:
+        messages_to_send = messages_to_send + [{"role": "user", "content": query}]
+
+    reply_text = ""
+    powered_by = "mock"
+
+    if os.getenv("OPENAI_API_KEY"):
+        try:
+            from openai import AsyncOpenAI
+            client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+            resp = await client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[{"role": "system", "content": system_prompt}] + messages_to_send,
+                max_tokens=500,
+                temperature=0.7,
+            )
+            reply_text = resp.choices[0].message.content.strip()
+            powered_by = "openai"
+        except Exception as e:
+            print(f"OpenAI research error: {e}")
+
+    # Fallback: smart template response
+    if not reply_text:
+        if relevant_ideas:
+            titles = ", ".join(i["title"] for i in relevant_ideas[:3])
+            reply_text = (
+                f"Here's what I found on ZenPin related to **{query}**:\n\n"
+                f"I found {len(relevant_ideas)} relevant ideas including: {titles}.\n\n"
+                f"Explore the cards below for visual inspiration. Try refining your search "
+                f"or browsing the {detected_cats[0].title() if detected_cats else 'Discovery'} category for more."
+            )
+        else:
+            reply_text = (
+                f"I searched ZenPin for **{query}** but didn't find exact matches in the database yet. "
+                f"The Discovery feed is continuously updated — try browsing the Explore page or "
+                f"using the AI Generator to build a custom inspiration board on this topic."
+            )
+        powered_by = "search"
+
+    # Merge relevant DB ideas and discovery images for card display
+    all_cards = relevant_ideas.copy()
+    for img in discovery_images:
+        # Convert discovery image to card format
+        all_cards.append({
+            "id": abs(hash(img.get("image_url", ""))) % 900000 + 100000,
+            "title": img.get("title", query.title()),
+            "category": (detected_cats[0].title() if detected_cats else "Discovery"),
+            "image_url": img.get("image_url", ""),
+            "difficulty": 3, "creativity": 4, "usefulness": 3,
+            "source": "discovery",
+        })
+
+    return {
+        "query":       query,
+        "reply":       reply_text,
+        "ideas":       all_cards[:8],
+        "categories":  detected_cats,
+        "powered_by":  powered_by,
+    }
 
 @app.post("/ai/generate")
 async def ai_generate(
