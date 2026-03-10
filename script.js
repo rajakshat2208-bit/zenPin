@@ -192,10 +192,10 @@ function cardHTML(idea, idx) {
   return `
 <div class="idea-card" data-id="${idea.id}" style="--i:${idx}">
   <div class="card-img-wrap">
-    <img class="card-img"
-      src="${imgSrc}"
+    <img class="card-img lazy-img"
+      src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs="
+      data-src="${imgSrc}"
       alt="${escHtml(idea.title)}"
-      loading="lazy"
       data-fb1="${picsumFb}"
       data-fb2="${svgFb}"
       onerror="(function(el){if(!el._e1){el._e1=1;el.src=el.dataset.fb1;}else if(!el._e2){el._e2=1;el.src=el.dataset.fb2;el.onerror=null;}})(this)"
@@ -248,6 +248,8 @@ function appendGrid(container, ideas, startIdx) {
   const tmp = document.createElement("div");
   tmp.innerHTML = ideas.map((idea, i) => cardHTML(idea, startIdx + i)).join("");
   while (tmp.firstChild) container.appendChild(tmp.firstChild);
+  // Notify lazy observers about new cards
+  window.dispatchEvent(new CustomEvent("zenpin:gridupdate"));
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -401,17 +403,28 @@ const TypographySettings = {
 // PAGE: DASHBOARD
 // ─────────────────────────────────────────────────────────────
 async function initDashboard() {
-  // ── Not logged in: show a friendly prompt instead of redirecting ──
+  // ── Not logged in: show global trending + prompt ─────────────
   const user = getUser();
   if (!user) {
     const inner = document.querySelector("#page-dashboard .page-inner");
     if (inner) inner.innerHTML = `
-      <div style="text-align:center;padding:80px 20px">
+      <div style="text-align:center;padding:60px 20px 32px">
         <div style="font-size:3rem;margin-bottom:16px">📊</div>
         <h2 style="font-size:1.4rem;font-weight:700;margin-bottom:8px">Your Dashboard</h2>
         <p style="color:var(--text-3);margin-bottom:24px">Sign in to track your posts, saves, and creative activity.</p>
         <button class="btn-primary" onclick="window.location.href='login.html'">Sign In</button>
+      </div>
+      <div style="padding:0 0 40px">
+        <h3 style="font-size:1rem;font-weight:700;margin-bottom:16px;padding:0 4px">🔥 Trending Discoveries</h3>
+        <div class="ideas-grid" id="dashTrendingGrid"></div>
       </div>`;
+    // Load trending discovery for logged-out users
+    const trendGrid = document.getElementById("dashTrendingGrid");
+    if (trendGrid) {
+      const cats = Object.keys(CAT_CONFIG).sort(() => Math.random() - 0.5).slice(0, 3);
+      const ideas = cats.flatMap(c => getLocalDiscovery(c, 1)).slice(0, 12);
+      renderGrid(trendGrid, ideas);
+    }
     return;
   }
 
@@ -429,11 +442,12 @@ async function initDashboard() {
   try {
     const data = await apiFetch("GET", "/dashboard");
 
-    // ── Stats ──
-    if ($("dashPosts"))  $("dashPosts").textContent  = fmt(data.posts  || 0);
-    if ($("dashSaves"))  $("dashSaves").textContent  = fmt(data.saves  || 0);
-    if ($("dashLikes"))  $("dashLikes").textContent  = fmt(data.likes  || 0);
-    if ($("dashBoards")) $("dashBoards").textContent = fmt(data.boards || 0);
+    // ── Stats ── (handle both flat and nested formats from backend)
+    const stats = data.stats || data;
+    if ($("dashPosts"))  $("dashPosts").textContent  = fmt(stats.posts  || 0);
+    if ($("dashSaves"))  $("dashSaves").textContent  = fmt(stats.saves  || 0);
+    if ($("dashLikes"))  $("dashLikes").textContent  = fmt(stats.likes  || 0);
+    if ($("dashBoards")) $("dashBoards").textContent = fmt(stats.boards || 0);
 
     // ── Recent uploads ──
     if (uploadGrid) {
@@ -947,8 +961,14 @@ async function initExplore() {
   const cat = S.filter && S.filter !== "all" ? S.filter.toLowerCase() : null;
 
   // ── Step 1: Show local discovery instantly ─────────────────
+  // "mix" is a special filter that loads the Aesthetic Mix feed
+  const isMix = cat === "mix" || cat === "aesthetic mix";
   let localIdeas;
-  if (cat) {
+  if (isMix) {
+    // For aesthetic mix: pull 3 random cats as instant preview
+    const shuffled = [...ALL_CATEGORIES].sort(() => Math.random() - 0.5).slice(0, 3);
+    localIdeas = shuffled.flatMap(c => getLocalDiscovery(c, 1)).sort(() => Math.random() - 0.5);
+  } else if (cat) {
     localIdeas = getLocalDiscovery(cat);
   } else {
     // All-feed: show 4 random categories = 48 cards
@@ -959,12 +979,27 @@ async function initExplore() {
 
   // ── Step 2: Upgrade with backend discovery images ───────────
   try {
+    let backendDisc = [];
+
+    if (isMix) {
+      // Aesthetic Mix — hit the dedicated endpoint
+      const mixData = await apiFetch("GET", `/images/aesthetic-mix?page=1&limit=24`).catch(() => null);
+      if (mixData?.images?.length) {
+        backendDisc = discoveryToIdeas(mixData.images, "mix");
+      } else {
+        // fallback: multi-category local mix
+        const cats = [...ALL_CATEGORIES].sort(() => Math.random() - 0.5).slice(0, 4);
+        backendDisc = cats.flatMap(c => getLocalDiscovery(c, 1)).sort(() => Math.random() - 0.5);
+      }
+      if (backendDisc.length) renderGrid(grid, backendDisc);
+      return; // aesthetic mix doesn't need DB ideas interleaved
+    }
+
     const p = new URLSearchParams({ limit: 40, sort: "trending" });
     if (cat) p.set("category", cat);
     if (S.search) p.set("search", S.search);
     const { ideas: dbIdeas } = await apiFetch("GET", `/ideas?${p}`);
 
-    let backendDisc = [];
     if (cat) {
       backendDisc = await loadDiscoveryImages(cat);
     } else {
@@ -1243,37 +1278,80 @@ function setupChat() {
     appendMsg("assistant", "", true); // typing indicator
 
     try {
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          system: `You are ZenPin AI — a creative assistant for ZenPin, a visual inspiration platform.
-You help users discover ideas, plan creative projects, suggest aesthetics, and explore design concepts.
-You know about interior design, architecture, fashion, food, travel, art, tech, and workspace aesthetics.
-Keep responses concise, inspiring, and practical. Use emojis sparingly to add warmth.
-The user is browsing ZenPin — a Pinterest-like platform for creative inspiration.`,
-          messages: _chatHistory
-        })
-      });
+      // Use ZenPin research endpoint first (RAG: DB search + AI)
+      let reply = "";
+      let ideaCards = [];
+      let poweredBy = "";
 
-      const data = await response.json();
-      const reply = data.content?.[0]?.text || "I couldn't generate a response. Please try again.";
+      try {
+        const resData = await apiFetch("POST", "/ai/research", {
+          query:   msg,
+          history: _chatHistory.slice(-6),
+        });
+        reply      = resData.reply || "";
+        ideaCards  = resData.ideas || [];
+        poweredBy  = resData.powered_by || "";
+      } catch (_) {
+        // Backend unavailable — fall back to direct Claude API call
+        const response = await fetch("https://api.anthropic.com/v1/messages", {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model:      "claude-sonnet-4-20250514",
+            max_tokens: 800,
+            system: `You are ZenPin Research Assistant — an expert AI combining the depth of Perplexity with the creative focus of Pinterest.
+Help users discover ideas, learn techniques, and explore aesthetic trends across design, photography, fashion, food, travel, and creative culture.
+Give specific, actionable advice. Use short paragraphs or bullets. Keep responses under 250 words.`,
+            messages: _chatHistory
+          })
+        });
+        const data = await response.json();
+        reply = data.content?.[0]?.text || "I couldn't generate a response. Please try again.";
+        poweredBy = "claude";
+      }
 
-      // Remove typing indicator
       $("aiTyping")?.remove();
-
       _chatHistory.push({ role: "assistant", content: reply });
-      // Keep last 20 messages for context
       if (_chatHistory.length > 20) _chatHistory = _chatHistory.slice(-20);
 
-      appendMsg("assistant", reply.replace(/\n/g, "<br>"));
+      // Format markdown-lite: **bold**, bullet points
+      const formatted = reply
+        .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+        .replace(/\n- /g, "<br>• ")
+        .replace(/\n/g, "<br>");
+
+      // Render AI reply
+      appendMsg("assistant", formatted);
+
+      // If research returned relevant ZenPin cards, show them inline
+      if (ideaCards.length) {
+        const cardWrap = document.createElement("div");
+        cardWrap.className = "chat-results-row";
+        cardWrap.innerHTML = `
+          <div class="chat-results-label">
+            ${ poweredBy === "openai" ? "✨ GPT-4o" : poweredBy === "claude" ? "✦ Claude" : "⚡ ZenPin" }
+            · Found ${ideaCards.length} ideas
+          </div>
+          <div class="chat-cards-strip">
+            ${ideaCards.slice(0, 5).map(idea => `
+              <div class="chat-card" data-id="${idea.id}" style="cursor:pointer" onclick="openModal(${idea.id})">
+                <img src="${idea.image_url || getPhotoUrl((idea.category||'scenery').toLowerCase(), 0)}"
+                     alt="${escHtml(idea.title)}" loading="lazy"
+                     onerror="this.src='${makePlaceholder((idea.category||'scenery').toLowerCase(),0,idea.title)}'"/>
+                <div class="chat-card-title">${escHtml(idea.title)}</div>
+              </div>`).join("")}
+          </div>`;
+        const chatMsgsEl = $("chatMsgs");
+        if (chatMsgsEl) {
+          chatMsgsEl.appendChild(cardWrap);
+          chatMsgsEl.scrollTop = chatMsgsEl.scrollHeight;
+        }
+      }
 
     } catch (err) {
       $("aiTyping")?.remove();
       appendMsg("assistant", "Sorry, I couldn't connect right now. Try again in a moment.");
-      console.error("AI chat error:", err);
+      console.error("AI research error:", err);
     } finally {
       sendBtn.disabled = false;
       chatInput.focus();
@@ -1281,8 +1359,12 @@ The user is browsing ZenPin — a Pinterest-like platform for creative inspirati
   }
 
   // Welcome message
-  if (!chatMsgs.innerHTML.trim()) {
-    appendMsg("assistant", "Hi! I'm ZenPin AI ✦ Ask me anything — design ideas, aesthetic advice, project inspiration, or help exploring the platform!");
+  const existingMsgs = chatMsgs.querySelectorAll(".chat-msg");
+  if (existingMsgs.length <= 2) {  // only demo messages exist
+    appendMsg("assistant",
+      "Hi! I'm ZenPin Research Assistant ✦ Ask me anything — <strong>motorcycle photography tips</strong>, " +
+      "<strong>latest interior trends</strong>, <strong>anime art techniques</strong>, or explore any creative topic. " +
+      "I'll search ZenPin's discovery feed and give you expert insights.");
   }
 
   sendBtn.addEventListener("click", sendMsg);
@@ -1777,6 +1859,18 @@ document.addEventListener("DOMContentLoaded", async () => {
   // ── Filters ────────────────────────────────────────────────
   $("homeFilters")?.addEventListener("click",    e => handleFilter(e, "home"));
   $("exploreFilters")?.addEventListener("click", e => handleFilter(e, "explore"));
+
+  // ── Category slider arrow buttons ────────────────────────────
+  // Buttons have class .chips-scroll-btn and data-target="{gridId}"
+  document.addEventListener("click", e => {
+    const btn = e.target.closest(".chips-scroll-btn");
+    if (!btn) return;
+    const targetId = btn.dataset.target;
+    const strip    = targetId ? document.getElementById(targetId) : null;
+    if (!strip) return;
+    const dir = btn.classList.contains("chips-scroll-left") ? -1 : 1;
+    strip.scrollBy({ left: dir * 280, behavior: "smooth" });
+  });
   $("homeSort")?.addEventListener("change", e => { S.sort = e.target.value; initHome(); });
 
   // ── Search ─────────────────────────────────────────────────
@@ -1807,19 +1901,35 @@ document.addEventListener("DOMContentLoaded", async () => {
   );
 
   // ── Load more (manual + infinite scroll) ──────────────────
+  let _loadingMore = false;   // prevent concurrent fetches
+
   async function loadMoreIdeas() {
+    if (_loadingMore) return;
+    _loadingMore = true;
     const btn = $("loadMoreBtn");
     if (btn) { btn.classList.add("busy"); btn.querySelector("span").textContent = "Loading…"; }
     try {
-      const p = buildParams({ offset: S.loaded });
-      const { ideas: newIdeas } = await apiFetch("GET", `/ideas?${p}`);
-      // Also fetch next page of discovery images for current category
-      let discoveryNew = [];
-      const cat = S.filter && S.filter !== "all" ? S.filter : null;
-      if (cat) {
-        const nextPage = Math.floor(S.loaded / 12) + 2;
-        discoveryNew = await loadDiscoveryImages(cat, nextPage);
-      }
+      const cat = S.filter && S.filter !== "all" ? S.filter.toLowerCase() : null;
+
+      // Track discovery page per category for correct pagination
+      const discKey  = cat || "all";
+      const nextDisc = (S.discoveryPage[discKey] || 1) + 1;
+
+      // Fetch DB ideas + next discovery page in parallel
+      const [{ ideas: newIdeas }, discoveryNew] = await Promise.all([
+        apiFetch("GET", `/ideas?${buildParams({ offset: S.loaded })}`).catch(() => ({ ideas: [] })),
+        cat ? loadDiscoveryImages(cat, nextDisc)
+            : (async () => {
+                const cats = Object.keys(CAT_CONFIG).sort(() => Math.random() - 0.5).slice(0, 2);
+                const res  = await Promise.all(cats.map(c => loadDiscoveryImages(c, nextDisc)));
+                return res.flat().sort(() => Math.random() - 0.5);
+              })(),
+      ]);
+
+      // Advance discovery page counter
+      S.discoveryPage[discKey] = nextDisc;
+
+      // Interleave: 1 discovery card every 4 DB cards
       const merged = [];
       let di = 0;
       for (let i = 0; i < newIdeas.length; i++) {
@@ -1829,56 +1939,108 @@ document.addEventListener("DOMContentLoaded", async () => {
       while (di < discoveryNew.length) merged.push(discoveryNew[di++]);
 
       if (!merged.length) { if (btn) btn.style.display = "none"; return; }
+
       appendGrid($("homeGrid"), merged, S.loaded);
       S.allIdeas = [...S.allIdeas, ...merged];
       S.loaded  += merged.length;
-      if (newIdeas.length < 20 && !discoveryNew.length) { if (btn) btn.style.display = "none"; }
+      if (newIdeas.length < 20 && discoveryNew.length === 0) {
+        if (btn) btn.style.display = "none";
+      }
     } catch (e) {
-      toast(e.message, true);
+      console.warn("loadMoreIdeas failed:", e.message);
     } finally {
       if (btn) { btn.classList.remove("busy"); btn.querySelector("span").textContent = "Load more ideas"; }
+      _loadingMore = false;
     }
   }
 
   $("loadMoreBtn")?.addEventListener("click", loadMoreIdeas);
 
-  // ── Infinite scroll ─────────────────────────────────────
-  const _infiniteObserver = new IntersectionObserver(
+  // ── Infinite scroll — home ────────────────────────────────
+  const homeScrollObserver = new IntersectionObserver(
     entries => { if (entries[0].isIntersecting) loadMoreIdeas(); },
-    { rootMargin: "400px" }
+    { rootMargin: "600px" }   // pre-trigger 600px before sentinel hits viewport
   );
-  const _sentinel = $("loadMoreBtn");
-  if (_sentinel) _infiniteObserver.observe(_sentinel);
+  if ($("loadMoreBtn")) homeScrollObserver.observe($("loadMoreBtn"));
 
-  // ── Lazy-load images via IntersectionObserver ───────────
-  function setupLazyImages() {
-    // Mark already-loaded images
-    document.querySelectorAll(".idea-card img").forEach(img => {
+  // ── Infinite scroll — explore ─────────────────────────────
+  let _exploreLoading = false;
+  let _exploreDiscPage = 1;
+
+  async function loadMoreExplore() {
+    if (_exploreLoading) return;
+    const grid = $("exploreGrid");
+    if (!grid) return;
+    _exploreLoading = true;
+    try {
+      const cat = S.filter && S.filter !== "all" ? S.filter.toLowerCase() : null;
+      _exploreDiscPage++;
+      const [{ ideas: more }, discMore] = await Promise.all([
+        apiFetch("GET", `/ideas?limit=20&offset=${grid.children.length}&sort=trending${cat ? `&category=${encodeURIComponent(cat)}` : ""}`).catch(() => ({ ideas: [] })),
+        cat ? loadDiscoveryImages(cat, _exploreDiscPage)
+            : (async () => {
+                const cats = Object.keys(CAT_CONFIG).sort(() => Math.random() - 0.5).slice(0, 2);
+                const res  = await Promise.all(cats.map(c => loadDiscoveryImages(c, _exploreDiscPage)));
+                return res.flat().sort(() => Math.random() - 0.5);
+              })(),
+      ]);
+      const merged = [...more, ...discMore];
+      if (merged.length) appendGrid(grid, merged, grid.children.length);
+    } catch (e) {
+      console.warn("loadMoreExplore failed:", e.message);
+    } finally {
+      _exploreLoading = false;
+    }
+  }
+
+  // Create an invisible sentinel at the bottom of explore grid
+  const exploreSentinel = document.createElement("div");
+  exploreSentinel.id = "exploreSentinel";
+  exploreSentinel.style.cssText = "height:1px;width:100%";
+  $("exploreGrid")?.after(exploreSentinel);
+
+  const exploreScrollObserver = new IntersectionObserver(
+    entries => { if (entries[0].isIntersecting) loadMoreExplore(); },
+    { rootMargin: "600px" }
+  );
+  if (exploreSentinel) exploreScrollObserver.observe(exploreSentinel);
+
+  // ── Lazy image loading via IntersectionObserver ─────────
+  // Uses data-src pattern: images load only when near viewport
+  // Progressive fade-in via CSS .lazy-img → .loaded transition
+  const lazyObserver = new IntersectionObserver(
+    entries => entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const img = entry.target;
+      const src = img.dataset.src;
+      if (!src) { lazyObserver.unobserve(img); return; }
+      img.onload  = () => { img.classList.add("loaded"); lazyObserver.unobserve(img); };
+      img.onerror = () => { img.classList.add("loaded"); lazyObserver.unobserve(img); };
+      img.src = src;
+      delete img.dataset.src;
+    }),
+    { rootMargin: "500px 0px" }  // pre-load 500px before entering viewport
+  );
+
+  function observeNewImages() {
+    document.querySelectorAll("img.lazy-img:not(.loaded)").forEach(img => {
+      // If already has a real src (not blank GIF), just mark loaded
+      if (img.src && !img.src.includes("data:image/gif") && !img.dataset.src) {
+        if (img.complete && img.naturalWidth) img.classList.add("loaded");
+        else img.addEventListener("load", () => img.classList.add("loaded"), { once: true });
+        return;
+      }
+      lazyObserver.observe(img);
+    });
+    // Also handle non-lazy images already in DOM (modal thumbnails etc)
+    document.querySelectorAll("img:not(.lazy-img)").forEach(img => {
       if (img.complete && img.naturalWidth) img.classList.add("loaded");
       else img.addEventListener("load", () => img.classList.add("loaded"), { once: true });
     });
-
-    // IntersectionObserver for data-src lazy images
-    const lazyObserver = new IntersectionObserver(
-      entries => entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          const img = entry.target;
-          if (img.dataset.src) {
-            img.src = img.dataset.src;
-            delete img.dataset.src;
-            img.addEventListener("load",  () => img.classList.add("loaded"), { once: true });
-            img.addEventListener("error", () => img.classList.add("loaded"), { once: true });
-          }
-          lazyObserver.unobserve(img);
-        }
-      }),
-      { rootMargin: "400px" }
-    );
-    document.querySelectorAll("img[data-src]").forEach(img => lazyObserver.observe(img));
   }
-  setupLazyImages();
-  // Re-run after grid updates (renderGrid dispatches this)
-  window.addEventListener("zenpin:gridupdate", setupLazyImages);
+
+  observeNewImages();
+  window.addEventListener("zenpin:gridupdate", observeNewImages);
 
   // ── AI generator ──────────────────────────────────────────
   $("aiGenBtn")?.addEventListener("click", runAI);
