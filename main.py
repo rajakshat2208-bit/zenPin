@@ -1242,6 +1242,103 @@ async def upload_image(
     return {"url": f"{BASE_URL}/uploads/{filename}", "filename": filename}
 
 
+# ── Category auto-detection from text ──────────────────────────
+_AUTO_CAT_MAP = [
+    (["car","ferrari","lambo","supercar","bmw","porsche","mustang","drift"],      "Cars"),
+    (["motorcycle","bike","moto","harley","cafe racer","scrambler"],             "Bikes"),
+    (["anime","manga","otaku","ghibli","naruto","demon slayer"],                 "Anime"),
+    (["gaming","game","pc setup","controller","xbox","playstation","steam"],     "Gaming"),
+    (["fashion","outfit","ootd","streetwear","drip","style"],                    "Fashion"),
+    (["jewelry","necklace","earring","bracelet","ring","bangle","accessory"],    "Ladies Accessories"),
+    (["interior","room decor","home decor","living room","bedroom"],             "Interior Design"),
+    (["desk","workspace","setup","monitor","battlestation"],                     "Workspace"),
+    (["food","recipe","cook","bake","meal","sushi","pizza","ramen"],             "Food"),
+    (["drink","cocktail","coffee","latte","matcha","wine","whiskey"],            "Drinks"),
+    (["flower","floral","bouquet","bloom"],                                      "Flowers"),
+    (["plant","houseplant","monstera","succulent","cactus"],                     "Plants"),
+    (["travel","trip","vacation","hotel","destination","wanderlust"],            "Travel"),
+    (["tech","gadget","apple","iphone","macbook","ai","robot"],                  "Tech"),
+    (["architecture","building","skyscraper","brutalist"],                       "Architecture"),
+    (["art","painting","illustration","canvas","drawing"],                       "Art"),
+    (["nature","forest","mountain","ocean","sunset","landscape"],                "Nature"),
+    (["scenery","view","vista","golden hour","sky"],                             "Scenery"),
+    (["fitness","gym","workout","lifting","yoga","running"],                     "Fitness"),
+    (["music","vinyl","guitar","concert","studio","headphones"],                 "Music"),
+    (["pet","dog","cat","puppy","kitten","animal"],                              "Pets"),
+    (["tattoo","ink","sleeve","body art"],                                       "Tattoos"),
+    (["superhero","marvel","dc","batman","spiderman","avengers"],               "Superheroes"),
+    (["cigarette","smoke","smoking","tobacco"],                                  "Cigarettes"),
+]
+
+def auto_detect_category(text: str) -> str:
+    """Detect category from description/tags text. Returns 'Art' as default."""
+    t = text.lower()
+    for keywords, cat in _AUTO_CAT_MAP:
+        if any(kw in t for kw in keywords):
+            return cat
+    return "Art"
+
+
+class SimpleUploadRequest(BaseModel):
+    """Simplified upload request — only description required."""
+    description: str
+    category:    str  = ""    # auto-detected if empty
+    tags:        list = []
+    image_url:   str  = ""
+    reference_link: str = ""
+
+
+@app.post("/upload-image", status_code=201)
+async def upload_image_simple(
+    body: SimpleUploadRequest,
+    current_user: dict = Depends(auth_utils.get_current_user)
+):
+    """
+    Simplified upload endpoint — matches the new 4-field upload form.
+    Only description + image_url required.
+    Category is auto-detected from description + tags if not provided.
+    """
+    if not body.description.strip():
+        raise HTTPException(400, "Description is required.")
+    if not body.image_url.strip():
+        raise HTTPException(400, "An image URL is required.")
+
+    # Auto-detect category if not provided
+    search_text = body.description + " " + " ".join(body.tags)
+    category = body.category.strip() or auto_detect_category(search_text)
+
+    # Generate title from first sentence of description
+    title = body.description.replace("\n", " ").strip()
+    title = title.split(".")[0].split("!")[0].split("?")[0].strip()[:80]
+    if not title:
+        title = body.description.strip()[:80]
+
+    # Persist as an idea
+    idea = db.create_idea(
+        user_id         = current_user["id"],
+        title           = title,
+        category        = category,
+        image_url       = body.image_url.strip(),
+        description     = body.description.strip(),
+        difficulty      = 3,
+        creativity      = 3,
+        usefulness      = 3,
+        steps           = [],
+        tools           = body.tags,
+        estimated_cost  = "",
+        reference_links = [body.reference_link] if body.reference_link.startswith("http") else [],
+        source          = "creator",
+    )
+    return {
+        "id":          idea["id"],
+        "title":       title,
+        "category":    category,
+        "image_url":   body.image_url,
+        "auto_cat":    not bool(body.category.strip()),
+        "message":     "Posted successfully",
+    }
+
+
 class AIResearchRequest(BaseModel):
     query:    str
     history:  list = []  # [{role, content}]
