@@ -546,8 +546,18 @@ def count_discovery_images(category: str) -> int:
         conn.close()
 
 def discovery_images_stale(category: str, max_age_hours: int = 24) -> bool:
-    """Return True if the category has no fresh images (needs refresh)."""
-    return count_discovery_images(category) == 0
+    """Return True if the category has no images OR images are older than max_age_hours."""
+    conn = get_connection()
+    try:
+        row = conn.execute(
+            """SELECT COUNT(*) as cnt FROM discovery_images
+               WHERE category=?
+               AND (julianday('now')-julianday(created_at))*24 < ?""",
+            (category.lower(), max_age_hours)
+        ).fetchone()
+        return (row["cnt"] if row else 0) == 0
+    finally:
+        conn.close()
 
 
 # ── DISCOVERY CACHE ─────────────────────────────────────────────
