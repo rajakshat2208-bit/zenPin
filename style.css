@@ -1886,3 +1886,42 @@ body  { font-family: var(--font-body); }
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* ── Simplified Upload Form ─────────────────────────────────── */
+.ep-required { color: var(--accent, #7c3aed); font-weight: 600; }
+.ep-optional  { font-size: 0.7rem; color: var(--text-3); font-weight: 400; margin-left: 4px; }
+
+/* URL paste row */
+.cp-url-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+.cp-url-or {
+  font-size: 0.72rem;
+  color: var(--text-3);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.cp-url-input { flex: 1; }
+
+/* Reference link expander */
+.cp-advanced {
+  margin-top: 10px;
+  font-size: 0.8rem;
+}
+.cp-advanced summary {
+  color: var(--text-3);
+  cursor: pointer;
+  user-select: none;
+  padding: 4px 0;
+  list-style: none;
+}
+.cp-advanced summary::-webkit-details-marker { display: none; }
+.cp-advanced summary::before {
+  content: "+ ";
+  font-size: 0.9rem;
+  color: var(--accent, #7c3aed);
+}
+.cp-advanced[open] summary::before { content: "− "; }
