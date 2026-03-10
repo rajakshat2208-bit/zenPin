@@ -746,84 +746,74 @@
 
 <!-- ── Creator Post Modal ──────────────────────────────── -->
 <div class="zp-modal-backdrop" id="creatorPostModal">
-  <div class="zp-modal" style="max-width:520px">
+  <div class="zp-modal" style="max-width:480px">
     <div class="zp-modal-header">
-      <h3>Share Your Idea</h3>
+      <h3>Share Something</h3>
       <button class="zp-modal-close" id="creatorPostClose">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
-    <div class="zp-modal-body" style="max-height:70vh;overflow-y:auto">
-      <div class="ep-field">
-        <label class="ep-label">Title *</label>
-        <input class="ep-input" id="cpTitle" type="text" maxlength="120" placeholder="Give your idea a title…"/>
+    <div class="zp-modal-body" style="max-height:75vh;overflow-y:auto">
+
+      <!-- Image upload — visual first -->
+      <div class="cp-upload-area" id="cpUploadArea">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <p>Drop image here or <strong>click to upload</strong></p>
+        <span>JPG · PNG · WebP · up to 10 MB</span>
       </div>
+      <input type="file" id="cpFile" accept="image/*" style="display:none"/>
+      <img id="cpPreview" style="display:none;width:100%;border-radius:12px;margin-top:10px;max-height:240px;object-fit:cover"/>
+
+      <!-- OR paste URL -->
+      <div class="cp-url-row">
+        <span class="cp-url-or">or paste URL</span>
+        <input class="ep-input cp-url-input" id="cpImageUrl" type="url" placeholder="https://…"/>
+      </div>
+
+      <!-- Description — required -->
+      <div class="ep-field" style="margin-top:14px">
+        <label class="ep-label">Caption <span class="ep-required">*</span></label>
+        <textarea class="ep-input ep-textarea" id="cpDesc" maxlength="500" rows="3"
+          placeholder="What's this? Add a caption…"></textarea>
+      </div>
+
+      <!-- Category — optional -->
       <div class="ep-field">
-        <label class="ep-label">Category *</label>
+        <label class="ep-label">Category <span class="ep-optional">optional</span></label>
         <select class="ep-input" id="cpCategory">
-          <option value="">Choose a category…</option>
-          <option>Anime</option><option>Cars</option><option>Bikes</option>
-          <option>Scenery</option><option>Gaming</option>
-          <option>Ladies Accessories</option><option>Interior Design</option>
-          <option>Workspace</option><option>Architecture</option><option>Art</option>
-          <option>Nature</option><option>Food</option>
-          <option>Fashion</option><option>Travel</option><option>Tech</option>
-          <option>Tattoos</option><option>Plants</option><option>Fitness</option>
-          <option>Music</option><option>Pets</option>
-          <option>Superheroes</option><option>Drinks</option><option>Flowers</option>
+          <option value="">Auto-detect…</option>
+          <option>Anime</option><option>Art</option><option>Architecture</option>
+          <option>Bikes</option><option>Cars</option><option>Drinks</option>
+          <option>Fashion</option><option>Fitness</option><option>Flowers</option>
+          <option>Food</option><option>Gaming</option><option>Interior Design</option>
+          <option>Ladies Accessories</option><option>Music</option><option>Nature</option>
+          <option>Pets</option><option>Plants</option><option>Scenery</option>
+          <option>Superheroes</option><option>Tattoos</option><option>Tech</option>
+          <option>Travel</option><option>Workspace</option>
         </select>
       </div>
+
+      <!-- Tags — optional -->
       <div class="ep-field">
-        <label class="ep-label">Image</label>
-        <div class="cp-upload-area" id="cpUploadArea">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-          <p>Click to upload an image</p>
-          <span>JPG, PNG, WebP up to 10MB</span>
-        </div>
-        <input type="file" id="cpFile" accept="image/*" style="display:none"/>
-        <img id="cpPreview" style="display:none;width:100%;border-radius:10px;margin-top:8px;max-height:200px;object-fit:cover"/>
-        <div style="margin-top:8px;font-size:0.75rem;color:var(--text-3)">— or paste an image URL —</div>
-        <input class="ep-input" id="cpImageUrl" type="url" placeholder="https://…" style="margin-top:6px"/>
+        <label class="ep-label">Tags <span class="ep-optional">optional</span></label>
+        <input class="ep-input" id="cpTags" type="text" maxlength="200"
+          placeholder="cyberpunk, neon, cars  (comma separated)"/>
       </div>
-      <div class="ep-field">
-        <label class="ep-label">Description</label>
-        <textarea class="ep-input ep-textarea" id="cpDesc" maxlength="2000" placeholder="Describe your idea…"></textarea>
-      </div>
-      <div class="ep-field">
-        <label class="ep-label">Steps (one per line)</label>
-        <textarea class="ep-input ep-textarea" id="cpSteps" rows="3" placeholder="1. Choose color palette&#10;2. Mix materials&#10;3. Assemble"></textarea>
-      </div>
-      <div class="ep-field">
-        <label class="ep-label">Tools / Materials (comma separated)</label>
-        <input class="ep-input" id="cpTools" type="text" placeholder="brush, canvas, acrylic paint"/>
-      </div>
-      <div class="cp-row">
-        <div class="ep-field" style="flex:1">
-          <label class="ep-label">Difficulty</label>
-          <select class="ep-input" id="cpDifficulty">
-            <option value="1">⭐ Beginner</option>
-            <option value="2">⭐⭐ Easy</option>
-            <option value="3" selected>⭐⭐⭐ Medium</option>
-            <option value="4">⭐⭐⭐⭐ Hard</option>
-            <option value="5">⭐⭐⭐⭐⭐ Expert</option>
-          </select>
-        </div>
-        <div class="ep-field" style="flex:1">
-          <label class="ep-label">Estimated Cost</label>
-          <input class="ep-input" id="cpCost" type="text" placeholder="e.g. $20 – $50"/>
-        </div>
-      </div>
-      <div class="ep-field">
-        <label class="ep-label">Reference Links (one per line)</label>
-        <textarea class="ep-input ep-textarea" id="cpLinks" rows="2" placeholder="https://inspiration.com"></textarea>
-      </div>
+
+      <!-- Reference link — optional, collapsed by default -->
+      <details class="cp-advanced">
+        <summary>Add reference link</summary>
+        <input class="ep-input" id="cpLinks" type="url"
+          placeholder="https://inspiration.com" style="margin-top:8px"/>
+      </details>
+
     </div>
     <div class="zp-modal-footer">
       <span class="ep-error-msg" id="cpError"></span>
       <button class="zp-btn-cancel" id="cpCancel">Cancel</button>
       <button class="zp-btn-save" id="cpSubmit">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Post Idea
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Post
       </button>
     </div>
   </div>
