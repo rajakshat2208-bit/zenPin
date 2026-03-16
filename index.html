@@ -28,10 +28,39 @@
     </a>
 
     <!-- Search -->
-    <div class="nav-search-wrap">
+    <div class="nav-search-wrap" id="navSearchWrap">
       <svg class="nav-search-ico" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <input class="nav-search-input" id="globalSearch" type="text" placeholder="Search for ideas, projects, inspiration…"/>
-      <span class="nav-search-kbd">/</span>
+      <input class="nav-search-input" id="globalSearch" type="text"
+        placeholder="Search images… press Enter for AI search"
+        autocomplete="off"/>
+      <span class="nav-search-kbd" id="searchKbd">/</span>
+      <button class="nav-ai-search-btn" id="navAiSearchBtn" title="AI Search" style="display:none">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M11 8v3l2 2" stroke-width="2"/></svg>
+        Search
+      </button>
+    </div>
+
+    <!-- AI Search Results Panel (slides down under navbar) -->
+    <div class="ai-search-panel" id="aiSearchPanel" style="display:none">
+      <div class="ai-search-panel-inner">
+        <!-- Answer -->
+        <div class="ai-search-answer" id="aiSearchAnswer" style="display:none">
+          <div class="ai-search-answer-icon">✦</div>
+          <div class="ai-search-answer-text" id="aiSearchAnswerText"></div>
+          <div class="ai-search-answer-meta" id="aiSearchMeta"></div>
+        </div>
+        <!-- Image grid -->
+        <div class="masonry ai-search-grid" id="aiSearchGrid"></div>
+        <!-- Analyze panel (shown when user uploads/pastes an image) -->
+        <div class="ai-analyze-wrap" id="aiAnalyzeWrap" style="display:none">
+          <div class="ai-analyze-result" id="aiAnalyzeResult"></div>
+        </div>
+        <!-- Close -->
+        <button class="ai-search-close" id="aiSearchClose">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          Close
+        </button>
+      </div>
     </div>
 
     <!-- Links -->
@@ -432,33 +461,136 @@
 <div id="page-ai" class="page">
   <div class="ai-page">
 
-    <div class="ai-hero-section">
-      <div class="ai-star-icon">
-        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
-      </div>
-      <h2 class="ai-page-title">AI Idea Generator</h2>
-      <p class="ai-page-sub">Describe a topic and watch ZenPin build a complete inspiration board in seconds.</p>
+    <!-- ── AI Page Tab Bar ─────────────────────────────── -->
+    <div class="ai-tab-bar">
+      <button class="ai-tab active" data-ai-tab="generate">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        Generate Board
+      </button>
+      <button class="ai-tab" data-ai-tab="search">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        AI Search
+      </button>
+      <button class="ai-tab" data-ai-tab="analyze">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        Analyze Image
+      </button>
     </div>
 
-    <div class="ai-input-card">
-      <div class="ai-input-row">
-        <input class="ai-text-input" id="aiInput" type="text" placeholder="e.g. Minimalist Japanese kitchen with oak wood tones…"/>
-        <button class="ai-gen-btn" id="aiGenBtn">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-          Generate Board
+    <!-- ── TAB: Generate Board ──────────────────────────── -->
+    <div class="ai-tab-panel" id="aiTabGenerate">
+      <div class="ai-hero-section">
+        <div class="ai-star-icon">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+        </div>
+        <h2 class="ai-page-title">AI Idea Generator</h2>
+        <p class="ai-page-sub">Describe a topic and watch ZenPin build a complete inspiration board in seconds.</p>
+      </div>
+      <div class="ai-input-card">
+        <div class="ai-input-row">
+          <input class="ai-text-input" id="aiInput" type="text" placeholder="e.g. Minimalist Japanese kitchen with oak wood tones…"/>
+          <button class="ai-gen-btn" id="aiGenBtn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            Generate Board
+          </button>
+        </div>
+        <div class="quick-prompts-row">
+          <span class="quick-label">Try:</span>
+          <button class="quick-btn">Wabi-sabi living room</button>
+          <button class="quick-btn">Cyberpunk home office</button>
+          <button class="quick-btn">Cottagecore garden</button>
+          <button class="quick-btn">Brutalist architecture</button>
+          <button class="quick-btn">Pastel café branding</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── TAB: AI Search ───────────────────────────────── -->
+    <div class="ai-tab-panel" id="aiTabSearch" style="display:none">
+      <div class="ai-hero-section">
+        <div class="ai-star-icon" style="background:linear-gradient(135deg,#0ea5e9,#7c3aed)">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        </div>
+        <h2 class="ai-page-title">AI Image Search</h2>
+        <p class="ai-page-sub">Search ZenPin's curated library with natural language — powered by Gemini.</p>
+      </div>
+      <div class="ai-input-card">
+        <div class="ai-input-row">
+          <input class="ai-text-input" id="aiSearchInput" type="text"
+            placeholder="black sports car · minimal desk · anime cyberpunk…"/>
+          <button class="ai-gen-btn" id="aiSearchRunBtn" style="background:linear-gradient(135deg,#0ea5e9,#7c3aed)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            Search
+          </button>
+        </div>
+        <div class="quick-prompts-row">
+          <span class="quick-label">Try:</span>
+          <button class="quick-search-btn">black sports car neon</button>
+          <button class="quick-search-btn">minimal desk setup dark</button>
+          <button class="quick-search-btn">anime cyberpunk wallpaper</button>
+          <button class="quick-search-btn">luxury jewelry flatlay</button>
+          <button class="quick-search-btn">lofi room aesthetic</button>
+        </div>
+      </div>
+      <!-- Results rendered inline (no panel overlay on this tab) -->
+      <div class="ai-search-inline-result" id="aiSearchInlineResult" style="display:none">
+        <div class="ai-search-answer" id="aiSearchInlineAnswer" style="display:none">
+          <div class="ai-search-answer-icon">✦</div>
+          <div>
+            <div class="ai-search-answer-text" id="aiSearchInlineText"></div>
+            <div class="ai-search-answer-meta" id="aiSearchInlineMeta"></div>
+          </div>
+        </div>
+        <div class="masonry" id="aiSearchInlineGrid"></div>
+      </div>
+      <div class="ai-loading-state" id="aiSearchLoading" style="display:none">
+        <div class="ai-dots"><span></span><span></span><span></span></div>
+        <p>Searching ZenPin library…</p>
+      </div>
+    </div>
+
+    <!-- ── TAB: Analyze Image ───────────────────────────── -->
+    <div class="ai-tab-panel" id="aiTabAnalyze" style="display:none">
+      <div class="ai-hero-section">
+        <div class="ai-star-icon" style="background:linear-gradient(135deg,#f97316,#ec4899)">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        </div>
+        <h2 class="ai-page-title">Analyze Any Image</h2>
+        <p class="ai-page-sub">Upload or paste an image URL — get captions, mood, tags, and design suggestions instantly.</p>
+      </div>
+      <div class="ai-input-card">
+        <!-- Drop zone -->
+        <div class="cp-upload-area" id="analyzeDropZone" style="margin-bottom:14px">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <p>Drop image here or <strong>click to upload</strong></p>
+          <span>JPG · PNG · WebP</span>
+        </div>
+        <input type="file" id="analyzeFile" accept="image/*" style="display:none"/>
+        <img id="analyzePreview" style="display:none;width:100%;max-height:260px;object-fit:cover;border-radius:12px;margin-bottom:12px"/>
+        <div class="cp-url-row" style="margin-bottom:12px">
+          <span class="cp-url-or">or paste URL</span>
+          <input class="ep-input cp-url-input" id="analyzeUrl" type="url" placeholder="https://…"/>
+        </div>
+        <!-- Optional question -->
+        <input class="ep-input" id="analyzePrompt" type="text"
+          placeholder="Ask something (optional): e.g. How can I recreate this look?"
+          style="margin-bottom:12px"/>
+        <button class="ai-gen-btn" id="analyzeRunBtn" style="width:100%;justify-content:center;background:linear-gradient(135deg,#f97316,#ec4899)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          Analyze Image
         </button>
       </div>
-      <div class="quick-prompts-row">
-        <span class="quick-label">Try:</span>
-        <button class="quick-btn">Wabi-sabi living room</button>
-        <button class="quick-btn">Cyberpunk home office</button>
-        <button class="quick-btn">Cottagecore garden</button>
-        <button class="quick-btn">Brutalist architecture</button>
-        <button class="quick-btn">Pastel café branding</button>
+      <!-- Analysis result renders here -->
+      <div id="analyzePageResult" style="margin-top:20px"></div>
+      <div class="ai-loading-state" id="analyzeLoading" style="display:none">
+        <div class="ai-dots"><span></span><span></span><span></span></div>
+        <p>Analyzing image with Gemini Vision…</p>
       </div>
     </div>
 
-    <!-- Loading -->
+    </div><!-- end #aiTabGenerate -->
+
+    <!-- Loading + Output stay outside tabs so they render below all tabs -->
     <div class="ai-loading-state" id="aiLoading" style="display:none">
       <div class="ai-dots"><span></span><span></span><span></span></div>
       <p>Building your inspiration board…</p>
@@ -713,6 +845,10 @@
         <button class="btn-primary" id="modalSaveBtn">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
           Save Idea
+        </button>
+        <button class="btn-ghost" id="modalAnalyzeBtn" title="Analyze with AI">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M11 8v3l2 2"/></svg>
+          Analyze
         </button>
         <button class="btn-ghost modal-share-btn" id="modalShareBtn">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
