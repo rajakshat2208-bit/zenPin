@@ -1925,3 +1925,289 @@ body  { font-family: var(--font-body); }
   color: var(--accent, #7c3aed);
 }
 .cp-advanced[open] summary::before { content: "− "; }
+
+/* ═══════════════════════════════════════════════════════════════
+   AI SEARCH PANEL
+   Slides down below the navbar when user triggers AI search.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Navbar states during search */
+.nav-search-wrap.searching .nav-search-input {
+  outline: 2px solid rgba(124,58,237,0.4);
+  outline-offset: -2px;
+}
+.nav-ai-search-btn {
+  display: none;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: none;
+  background: var(--grad-brand);
+  color: white;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity var(--t-fast);
+  margin-left: 4px;
+  flex-shrink: 0;
+}
+.nav-ai-search-btn:hover { opacity: 0.85; }
+
+/* Panel container — full-width bar under navbar */
+.ai-search-panel {
+  position: fixed;
+  top: 60px;          /* sits flush under navbar */
+  left: 0;
+  right: 0;
+  z-index: 200;
+  max-height: calc(100vh - 64px);
+  overflow-y: auto;
+  background: var(--surface-1, #fff);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.12);
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.ai-search-panel.open {
+  opacity: 1;
+  transform: translateY(0);
+}
+[data-theme="dark"] .ai-search-panel {
+  background: var(--surface-1, #0f0f0f);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+}
+.ai-search-panel-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px 24px 32px;
+}
+
+/* Answer block */
+.ai-search-answer {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  background: linear-gradient(135deg,rgba(124,58,237,0.06),rgba(6,182,212,0.04));
+  border: 1px solid rgba(124,58,237,0.15);
+  border-radius: 14px;
+  margin-bottom: 20px;
+}
+.ai-search-answer-icon {
+  font-size: 1.1rem;
+  color: #7c3aed;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.ai-search-answer-text {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--text-1);
+  flex: 1;
+}
+.ai-search-answer-text strong { color: var(--text-1); }
+.ai-search-answer-meta {
+  font-size: 0.7rem;
+  color: var(--text-3);
+  margin-top: 6px;
+}
+
+/* Search grid (reuses existing masonry styles) */
+.ai-search-grid {
+  margin-top: 4px;
+}
+
+/* Close button */
+.ai-search-close {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 20px auto 0;
+  padding: 6px 16px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-3);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast);
+}
+.ai-search-close:hover {
+  background: var(--surface-2);
+  color: var(--text-1);
+}
+
+/* ── Image Analysis ──────────────────────────────────────────── */
+.ai-analyze-loading {
+  text-align: center;
+  padding: 32px;
+}
+.ai-analyze-card {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+@media (max-width: 600px) {
+  .ai-analyze-card { flex-direction: column; }
+}
+.ai-analyze-thumb {
+  width: 160px;
+  height: 160px;
+  object-fit: cover;
+  border-radius: 12px;
+  flex-shrink: 0;
+  background: var(--surface-2);
+}
+.ai-analyze-body {
+  flex: 1;
+  min-width: 0;
+}
+.ai-analyze-caption {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-1);
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+.ai-analyze-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.ai-analyze-pill {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: rgba(124,58,237,0.1);
+  color: #7c3aed;
+  border: 1px solid rgba(124,58,237,0.2);
+}
+.ai-analyze-mood {
+  font-size: 0.72rem;
+  color: var(--text-3);
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: var(--surface-2);
+}
+.ai-analyze-section-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-3);
+  margin: 10px 0 6px;
+}
+.ai-analyze-suggestions {
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--text-2);
+}
+.ai-analyze-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 8px;
+}
+.ai-tag {
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: var(--surface-2);
+  color: var(--text-2);
+  border: 1px solid var(--border);
+}
+.ai-analyze-searches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.ai-search-suggestion {
+  font-size: 0.75rem !important;
+  cursor: pointer;
+}
+.ai-search-suggestion:hover {
+  background: rgba(124,58,237,0.12) !important;
+}
+
+/* ── AI Page Tab Bar ─────────────────────────────────────────── */
+.ai-tab-bar {
+  display: flex;
+  gap: 4px;
+  background: var(--surface-2);
+  border-radius: 14px;
+  padding: 4px;
+  margin-bottom: 24px;
+  width: fit-content;
+}
+.ai-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: var(--text-3);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast);
+  white-space: nowrap;
+}
+.ai-tab.active {
+  background: var(--surface-1);
+  color: var(--text-1);
+  box-shadow: 0 1px 6px rgba(0,0,0,0.08);
+}
+.ai-tab:hover:not(.active) {
+  color: var(--text-2);
+  background: rgba(255,255,255,0.4);
+}
+
+/* ── Card context menu ──────────────────────────────────────── */
+.card-ctx-menu {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 4px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  min-width: 160px;
+  animation: ctxIn 0.15s var(--ease) both;
+}
+@keyframes ctxIn {
+  from { opacity: 0; transform: scale(0.92) translateY(-4px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0);    }
+}
+.card-ctx-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: var(--text-1);
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--t-fast);
+}
+.card-ctx-item:hover { background: var(--surface-2); }
+
+/* Drag-over state for upload zones */
+.cp-upload-area.drag-over {
+  border-color: #7c3aed;
+  background: rgba(124,58,237,0.06);
+}
+
+/* Inline search results area */
+.ai-search-inline-result {
+  margin-top: 20px;
+}
