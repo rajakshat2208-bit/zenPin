@@ -1135,6 +1135,339 @@ async def get_aesthetic_mix(
 
     return {"page": page, "source": "api", "images": images}
 
+
+
+# ══════════════════════════════════════════════════════════════
+# AI SEARCH ENGINE — RAG with Gemini + local vector index
+# ══════════════════════════════════════════════════════════════
+#
+# Architecture (Render-free-tier safe — no local ML models):
+#
+#   User query
+#     ↓
+#   Gemini embedding API  (text-embedding-004, REST call)
+#     ↓
+#   Cosine similarity against search_index.json  (pure numpy, in-memory)
+#     ↓
+#   Top-K matching images retrieved
+#     ↓
+#   Gemini Flash generates answer + insight
+#     ↓
+#   Return {answer, images, query}
+#
+# search_index.json is generated locally by:  python index_images.py
+# It must be present in the backend working directory.
+# ══════════════════════════════════════════════════════════════
+
+import numpy as np
+
+GEMINI_KEY = os.getenv("GEMINI_API_KEY", "")
+
+# ── Load search index once at startup ────────────────────────
+_search_index   = []      # list of record dicts
+_search_vectors = None    # numpy array shape (N, 384)
+_search_loaded  = False
+
+def _load_search_index():
+    global _search_index, _search_vectors, _search_loaded
+    if _search_loaded:
+        return
+    path = os.path.join(os.path.dirname(__file__), "search_index.json")
+    if not os.path.exists(path):
+        print("⚠️  search_index.json not found — AI search will use keyword fallback")
+        _search_loaded = True
+        return
+    try:
+        data = json.loads(open(path).read())
+        _search_index = data.get("records", [])
+        if _search_index:
+            _search_vectors = np.array(
+                [r["vector"] for r in _search_index], dtype=np.float32
+            )
+            info = data.get("_info", {})
+            print(f"✅ Search index loaded: {info.get('total', len(_search_index))} images, "
+                  f"{info.get('categories', '?')} categories, dim={info.get('dim', '?')}")
+    except Exception as e:
+        print(f"⚠️  search_index.json load error: {e}")
+    _search_loaded = True
+
+_load_search_index()
+
+
+# ── Gemini helpers ────────────────────────────────────────────
+GEMINI_EMBED_URL  = "https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent"
+GEMINI_FLASH_URL  = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
+GEMINI_VISION_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
+
+async def gemini_embed(text: str) -> list:
+    """Embed text using Gemini text-embedding-004 API."""
+    if not GEMINI_KEY:
+        return []
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            r = await client.post(
+                GEMINI_EMBED_URL,
+                params={"key": GEMINI_KEY},
+                json={"model": "models/text-embedding-004",
+                      "content": {"parts": [{"text": text}]}}
+            )
+        if r.status_code == 200:
+            return r.json()["embedding"]["values"]
+    except Exception as e:
+        print(f"Gemini embed error: {e}")
+    return []
+
+async def gemini_flash(prompt: str, system: str = "") -> str:
+    """Generate text with Gemini 1.5 Flash."""
+    if not GEMINI_KEY:
+        return ""
+    try:
+        messages = []
+        if system:
+            messages.append({"role": "user",   "parts": [{"text": system}]})
+            messages.append({"role": "model",  "parts": [{"text": "Understood."}]})
+        messages.append({"role": "user", "parts": [{"text": prompt}]})
+        async with httpx.AsyncClient(timeout=20) as client:
+            r = await client.post(
+                GEMINI_FLASH_URL,
+                params={"key": GEMINI_KEY},
+                json={"contents": messages,
+                      "generationConfig": {"maxOutputTokens": 400, "temperature": 0.7}}
+            )
+        if r.status_code == 200:
+            return r.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+    except Exception as e:
+        print(f"Gemini flash error: {e}")
+    return ""
+
+async def gemini_vision(image_url: str, prompt: str) -> str:
+    """Analyze an image with Gemini Vision."""
+    if not GEMINI_KEY:
+        return ""
+    try:
+        # Fetch image and base64 encode it for Gemini
+        async with httpx.AsyncClient(timeout=15) as client:
+            img_r = await client.get(image_url)
+        if img_r.status_code != 200:
+            return ""
+        import base64
+        img_b64   = base64.b64encode(img_r.content).decode()
+        mime_type = img_r.headers.get("content-type", "image/jpeg").split(";")[0]
+
+        async with httpx.AsyncClient(timeout=20) as client:
+            r = await client.post(
+                GEMINI_VISION_URL,
+                params={"key": GEMINI_KEY},
+                json={"contents": [{"parts": [
+                    {"inline_data": {"mime_type": mime_type, "data": img_b64}},
+                    {"text": prompt}
+                ]}],
+                "generationConfig": {"maxOutputTokens": 500, "temperature": 0.8}}
+            )
+        if r.status_code == 200:
+            return r.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+    except Exception as e:
+        print(f"Gemini vision error: {e}")
+    return ""
+
+
+# ── Cosine similarity search ──────────────────────────────────
+def vector_search(query_vec: list, top_k: int = 8) -> list:
+    """
+    Cosine similarity search over the in-memory numpy matrix.
+    Returns top_k records sorted by similarity descending.
+    """
+    if _search_vectors is None or not _search_index:
+        return []
+    q = np.array(query_vec, dtype=np.float32)
+    q_norm = q / (np.linalg.norm(q) + 1e-9)
+    # Matrix already normalised by index_images.py (normalize_embeddings=True)
+    scores = _search_vectors @ q_norm          # (N,) dot products = cosine sims
+    top_idx = np.argsort(scores)[::-1][:top_k]
+    results = []
+    for idx in top_idx:
+        rec = dict(_search_index[idx])
+        rec["score"] = float(scores[idx])
+        results.append(rec)
+    return results
+
+
+# ── Keyword fallback (when no index or no Gemini key) ─────────
+def keyword_search(query: str, top_k: int = 8) -> list:
+    """Simple keyword match against captions when vectors unavailable."""
+    if not _search_index:
+        return []
+    words  = set(query.lower().split())
+    scored = []
+    for rec in _search_index:
+        text   = (rec.get("caption","") + " " + rec.get("embed_text","")).lower()
+        score  = sum(1 for w in words if w in text)
+        if score > 0:
+            r = dict(rec)
+            r["score"] = score
+            scored.append(r)
+    scored.sort(key=lambda x: x["score"], reverse=True)
+    return scored[:top_k]
+
+
+# ── GET /ai/search ────────────────────────────────────────────
+@app.get("/ai/search")
+async def ai_search(
+    q:     str = Query(..., min_length=1, max_length=300),
+    limit: int = Query(8, ge=1, le=20),
+):
+    """
+    AI-powered image search.
+    1. Embed query with Gemini
+    2. Cosine search against search_index.json
+    3. Gemini Flash generates an answer + insight
+    Returns: {answer, images, query, source}
+    """
+    query = q.strip()
+
+    # ── Step 1: Embed query ──────────────────────────────────
+    vec = await gemini_embed(query)
+
+    # ── Step 2: Vector search (or keyword fallback) ──────────
+    if vec and _search_vectors is not None:
+        results = vector_search(vec, top_k=limit)
+        search_source = "vector"
+    else:
+        results = keyword_search(query, top_k=limit)
+        search_source = "keyword"
+
+    # ── Step 3: Also pull from ZenPin DB for user content ────
+    db_ideas = db.get_ideas(limit=200)
+    words    = set(query.lower().split())
+    db_matches = []
+    for idea in db_ideas:
+        text  = f"{idea.get('title','')} {idea.get('category','')} {idea.get('description','')}".lower()
+        score = sum(1 for w in words if w in text)
+        if score > 0:
+            db_matches.append({**idea, "score": score, "source_type": "db"})
+    db_matches.sort(key=lambda x: x["score"], reverse=True)
+
+    # ── Step 4: Merge — indexed images + DB ideas ────────────
+    image_urls  = [r["url"]       for r in results    if r.get("url")]
+    image_meta  = [r              for r in results    if r.get("url")]
+    db_cards    = db_matches[:max(0, limit - len(image_urls))]
+
+    # ── Step 5: Gemini generates answer ──────────────────────
+    answer = ""
+    if GEMINI_KEY:
+        # Build context from top results
+        ctx_lines = []
+        for r in results[:4]:
+            ctx_lines.append(f"- {r.get('caption','')!r} ({r.get('category','')})")
+        for d in db_cards[:2]:
+            ctx_lines.append(f"- {d.get('title','')!r} ({d.get('category','')})")
+        ctx = "\n".join(ctx_lines) if ctx_lines else "No specific matches found."
+
+        system = (
+            "You are ZenPin Search — a visual discovery assistant. "
+            "Answer concisely (2-3 sentences max). Be specific, inspiring, practical. "
+            "If asked about design or aesthetics, give actionable tips."
+        )
+        prompt = (
+            f"User searched: \"{query}\"\n\n"
+            f"Top matching images from ZenPin:\n{ctx}\n\n"
+            f"Give a short, helpful answer about this topic for a visual inspiration platform."
+        )
+        answer = await gemini_flash(prompt, system)
+
+    # Fallback answer when no Gemini key
+    if not answer:
+        cats = list(set(r.get("category","") for r in results[:3]))
+        if cats:
+            answer = f"Found {len(results)} images matching \"{query}\" — mainly in {', '.join(cats)}."
+        else:
+            answer = f"Showing results for \"{query}\". Browse the cards below for inspiration."
+
+    # ── Step 6: Build response ────────────────────────────────
+    cards = []
+    for r in image_meta:
+        cards.append({
+            "id":        abs(hash(r["url"])) % 900000,
+            "title":     r.get("caption", query)[:80],
+            "category":  r.get("category", "Discovery"),
+            "image_url": r["url"],
+            "score":     round(r.get("score", 0), 3),
+            "source":    "discovery",
+            "difficulty": 3, "creativity": 4, "usefulness": 3,
+        })
+    for d in db_cards:
+        cards.append({**d, "source_type": "db"})
+
+    return {
+        "query":   query,
+        "answer":  answer,
+        "images":  image_urls[:limit],
+        "cards":   cards[:limit],
+        "total":   len(cards),
+        "source":  search_source,
+    }
+
+
+# ── POST /ai/analyze ──────────────────────────────────────────
+class AnalyzeRequest(BaseModel):
+    image_url:   str
+    prompt:      str  = ""   # optional user question about the image
+
+@app.post("/ai/analyze")
+async def ai_analyze(body: AnalyzeRequest):
+    """
+    Analyze any image with Gemini Vision.
+    Returns: caption, design suggestions, mood, tags.
+    Example use: user uploads a dress → get design ideas.
+    """
+    url = body.image_url.strip()
+    if not url:
+        raise HTTPException(400, "image_url required")
+
+    user_q = body.prompt.strip() or ""
+
+    if not GEMINI_KEY:
+        raise HTTPException(503, "GEMINI_API_KEY not configured")
+
+    base_prompt = (
+        "Analyze this image for a visual discovery platform called ZenPin.\n\n"
+        "Provide a JSON response with exactly these fields:\n"
+        "{\n"
+        '  "caption":     "one sentence description of what is shown",\n'
+        '  "category":    "best matching category (Cars/Anime/Fashion/Food/etc)",\n'
+        '  "mood":        "3 mood/aesthetic words e.g. minimal dark cinematic",\n'
+        '  "tags":        ["tag1","tag2","tag3","tag4","tag5"],\n'
+        '  "suggestions": "2-3 sentences of design/creative suggestions based on this image",\n'
+        '  "similar_searches": ["search query 1","search query 2","search query 3"]\n'
+        "}"
+    )
+    if user_q:
+        base_prompt += f"\n\nUser question: {user_q}"
+
+    raw = await gemini_vision(url, base_prompt)
+    if not raw:
+        raise HTTPException(500, "Vision analysis failed")
+
+    # Parse JSON from Gemini response
+    try:
+        clean = raw.replace("```json","").replace("```","").strip()
+        # Find first { to last }
+        start = clean.find("{")
+        end   = clean.rfind("}") + 1
+        result = json.loads(clean[start:end])
+    except Exception:
+        # Return raw text if JSON parse fails
+        result = {
+            "caption":          raw[:200],
+            "category":         "Discovery",
+            "mood":             "",
+            "tags":             [],
+            "suggestions":      raw,
+            "similar_searches": [],
+        }
+
+    return {"image_url": url, "analysis": result}
+
 # ── IDEAS (unchanged) ──────────────────────────────────────────
 @app.get("/ideas")
 def list_ideas(
