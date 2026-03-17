@@ -210,9 +210,6 @@
   document.getElementById("email").oninput    = () => showErr("emailErr", false);
 
   // Submit
-  // Wake up Render immediately when page loads (prevents cold start on submit)
-  fetch(API_URL + "/", { mode: "cors", credentials: "omit" }).catch(() => {});
-
   document.getElementById("signupForm").onsubmit = async function(e) {
     e.preventDefault(); clearBanner();
     const username = document.getElementById("username").value.trim();
@@ -226,44 +223,19 @@
 
     const btn = document.getElementById("submitBtn");
     btn.classList.add("loading"); btn.disabled = true;
-    setBanner(""); 
-
-    // Retry logic — Render free tier sometimes needs 2 attempts after cold start
-    let lastErr = null;
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 30000); // 30s timeout
-        const res = await fetch(`${API_URL}/auth/signup`, {
-          method: "POST",
-          mode: "cors",
-          credentials: "omit",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username, email, password }),
-          signal: controller.signal,
-        });
-        clearTimeout(timeout);
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          setBanner(typeof data.detail === "string" ? data.detail : "Signup failed.");
-          return;
-        }
-        localStorage.setItem("zenpin_token", data.token);
-        localStorage.setItem("zenpin_user", JSON.stringify(data.user));
-        localStorage.setItem("zenpin_skill", skillLevel);
-        window.location.href = "index.html";
-        return;
-      } catch (err) {
-        lastErr = err;
-        if (attempt < 3) {
-          setBanner(`Server is waking up... retrying (${attempt}/3)`);
-          await new Promise(r => setTimeout(r, 3000)); // wait 3s between retries
-        }
-      }
-    }
-    setBanner("Could not reach server after 3 attempts. Please try again in 30 seconds.");
-    console.error("Signup failed:", lastErr);
-    btn.classList.remove("loading"); btn.disabled = false;
+    try {
+      const res  = await fetch(`${API_URL}/auth/signup`, {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ username, email, password }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setBanner(typeof data.detail==="string" ? data.detail : "Signup failed."); return; }
+      localStorage.setItem("zenpin_token", data.token);
+      localStorage.setItem("zenpin_user", JSON.stringify(data.user));
+      localStorage.setItem("zenpin_skill", skillLevel);
+      window.location.href = "index.html";
+    } catch { setBanner("Could not reach the server. Check your connection."); }
+    finally { btn.classList.remove("loading"); btn.disabled = false; }
   };
 </script>
 </body>
