@@ -350,11 +350,6 @@ function cardHTML(idea, idx) {
       <div class="card-bot-row">
         <div class="card-cat-pill">${idea.category}</div>
         <div class="card-title">${idea.title}</div>
-        <div class="card-ratings">
-          <div class="rating-badge"><span class="rb-label">Diff</span><div class="rb-stars">${stars(diff,"blue")}</div></div>
-          <div class="rating-badge"><span class="rb-label">Create</span><div class="rb-stars">${stars(creat,"purple")}</div></div>
-          <div class="rating-badge"><span class="rb-label">Use</span><div class="rb-stars">${stars(use,"green")}</div></div>
-        </div>
       </div>
     </div>
   </div>
@@ -392,6 +387,7 @@ function renderGrid(container, ideas) {
   container.innerHTML = "";
   container.appendChild(frag);
 
+  console.log(`[ZenPin] renderGrid: ${ideas.length} ideas painted to #${container.id || "grid"}`);
   window.dispatchEvent(new CustomEvent("zenpin:gridupdate"));
 
   // Preload first 6 above-the-fold images immediately
@@ -1466,27 +1462,176 @@ function curatedUrlsToIdeas(urls, category, startId = 0) {
   }));
 }
 
-// ── Get curated images for a category ─────────────────────────
-// Returns up to `limit` cards, rotating through the library per page
-// so infinite scroll never repeats the same images.
-function getCuratedForCategory(category, limit = 12, page = 1) {
-  const key  = category.toLowerCase();
-  const urls = _curatedCache[key] || [];
-  if (!urls.length) return [];
-
-  // Rotate through the library based on page number
-  // Page 1 → first 12, Page 2 → next 12, wraps around if needed
-  const start  = ((page - 1) * limit) % urls.length;
-  const slice  = [];
-  for (let i = 0; i < limit; i++) {
-    slice.push(urls[(start + i) % urls.length]);
+// ─────────────────────────────────────────────────────────────
+// Fisher-Yates shuffle — unbiased, O(n), run once per session
+// ─────────────────────────────────────────────────────────────
+function fisherYates(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
   }
-  return curatedUrlsToIdeas(slice, category, (page - 1) * limit);
+  return a;
+}
+
+// ── All curated ideas for one category (every image, no cap) ──
+// IDs use a hash of the URL so they are globally unique and
+// never collide across categories, even if char codes match.
+function getAllCuratedIdeas(cacheKey) {
+  const urls = _curatedCache[cacheKey] || [];
+  if (!urls.length) return [];
+  const label  = cacheKey.split(" ").map(w => w[0].toUpperCase() + w.slice(1)).join(" ");
+  const cfg    = CAT_CONFIG[cacheKey] || {};
+  const titles = cfg.titles || [];
+  return urls.map((url, i) => {
+    // Stable negative ID from URL hash — guaranteed unique
+    let h = 0;
+    for (let c = 0; c < url.length; c++) h = (Math.imul(31, h) + url.charCodeAt(c)) | 0;
+    return {
+      id:          h < 0 ? h : -h - 1,   // always negative
+      title:       titles[i % titles.length] || `${label} ${i + 1}`,
+      category:    label,
+      image_url:   url,
+      source:      "curated",
+      saves_count: 0,
+      likes_count: 0,
+      username:    "",
+    };
+  });
+}
+
+// ── All curated ideas across every category ────────────────────
+// Deduplicates by URL, applies Fisher-Yates shuffle once,
+// then balances categories so no folder clusters together.
+// Result is cached in _localDataset for the session.
+let _localDataset = null;
+
+function getAllLocalIdeas() {
+  if (_localDataset) return _localDataset;
+
+  // Build flat array, deduplicate by URL
+  const seenUrls = new Set();
+  const raw = Object.keys(_curatedCache).flatMap(key => {
+    return getAllCuratedIdeas(key).filter(idea => {
+      if (seenUrls.has(idea.image_url)) return false;
+      seenUrls.add(idea.image_url);
+      return true;
+    });
+  });
+
+  // Fisher-Yates shuffle for unbiased random order
+  const shuffled = fisherYates(raw);
+
+  // Category balance pass: space out same-category cards
+  // by interleaving from per-category buckets
+  const buckets = {};
+  for (const idea of shuffled) {
+    const k = idea.category;
+    if (!buckets[k]) buckets[k] = [];
+    buckets[k].push(idea);
+  }
+  const balanced = [];
+  const queues   = Object.values(buckets);
+  let   round    = 0;
+  while (queues.some(q => q.length > 0)) {
+    for (const q of queues) {
+      if (q.length > 0) balanced.push(q.shift());
+    }
+    round++;
+  }
+
+  _localDataset = balanced;
+  return _localDataset;
+}
+
+// Call this when filter changes so the dataset is rebuilt
+function resetLocalDataset() {
+  _localDataset = null;
+}
+
+// ── Generate category filter chips from _curatedCache ──────────
+// Replaces the static HTML chips with a live list driven by which
+// folders actually have images. Run once on DOMContentLoaded.
+// Preserves the "All" chip and the sort selector.
+const CAT_ICONS = {
+  "cars":"🚗","bikes":"🏍","anime":"🎌","gaming":"🎮","scenery":"🌄",
+  "superhero":"🦸","workspace":"💻","fashion":"👗","food":"🍜","pets":"🐾",
+  "nature":"🌿","architecture":"🏛","accessories":"💎","art":"🎨","interior":"🏠",
+  "travel":"✈️","tech":"⚡","tattoos":"🖊️","plants":"🪴","fitness":"💪",
+  "music":"🎵","drinks":"🥃","flowers":"🌸","cigarettes":"🚬",
+};
+
+// Map from cacheKey → display label → chip data-filter value
+// The data-filter value must round-trip through CATEGORY_MAP correctly.
+const CACHE_KEY_TO_FILTER = {
+  "cars":         "Cars",
+  "bikes":        "Bikes",
+  "anime":        "Anime",
+  "gaming":       "Gaming",
+  "scenery":      "Scenery",
+  "superhero":    "Superheroes",
+  "workspace":    "Workspace",
+  "fashion":      "Fashion",
+  "food":         "Food",
+  "pets":         "Pets",
+  "nature":       "Nature",
+  "architecture": "Architecture",
+  "accessories":  "Ladies Accessories",
+  "art":          "Art",
+  "interior":     "Interior Design",
+};
+
+function generateCategoryChips(containerId) {
+  const container = $(containerId);
+  if (!container) return;
+
+  // Collect chips already in DOM (preserves "All" + any custom chips)
+  // Remove all data-filter chips except "all" — we'll regenerate them
+  container.querySelectorAll(".chip[data-filter]:not([data-filter='all'])").forEach(el => el.remove());
+
+  // Insert a chip for every cacheKey that has images, in a stable order
+  const allChip = container.querySelector(".chip[data-filter='all']");
+  const keys    = Object.keys(_curatedCache)
+    .filter(k => (_curatedCache[k] || []).length > 0)
+    .sort();
+
+  for (const key of keys) {
+    const filterVal = CACHE_KEY_TO_FILTER[key] || key;
+    const label     = filterVal;
+    const icon      = CAT_ICONS[key] || "✦";
+    const btn       = document.createElement("button");
+    btn.className   = "chip";
+    btn.dataset.filter = filterVal;
+    btn.textContent = `${icon} ${label}`;
+    // Insert after the "All" chip (or append if not found)
+    if (allChip) allChip.after(btn);
+    else container.appendChild(btn);
+  }
+
+  console.log(`[ZenPin] Generated ${keys.length} category chips in #${containerId}`);
+}
+
+// ── Paginated slice from one category ─────────────────────────
+// Used by infinite scroll to feed pages of cards for a category.
+function getCuratedForCategory(category, limit = 12, page = 1) {
+  const raw = category.toLowerCase().trim();
+  const key = CATEGORY_MAP[raw] || raw;
+  const all = getAllCuratedIdeas(key);
+  if (!all.length) return [];
+
+  // Strict slice — no wrap-around, no duplicates.
+  // Page 1 → [0..limit), Page 2 → [limit..2*limit), etc.
+  // Returns empty array when the page is beyond the dataset end.
+  const start = (page - 1) * limit;
+  if (start >= all.length) return [];
+  return all.slice(start, start + limit);
 }
 
 // ── Check if any curated images exist for a category ──────────
 function hasCurated(category) {
-  return (_curatedCache[category.toLowerCase()] || []).length > 0;
+  const raw = category.toLowerCase().trim();
+  const key = CATEGORY_MAP[raw] || raw;
+  return (_curatedCache[key] || []).length > 0;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -1496,80 +1641,77 @@ async function initHome() {
   const grid = $("homeGrid");
   if (!grid) return;
 
-  const ALL_CATEGORIES = Object.keys(CAT_CONFIG);
   const cat = S.filter && S.filter !== "all" ? S.filter.toLowerCase() : null;
 
-  // ── Step 1: Show curated images instantly (images.json) ─────
-  // Priority: curated library > LoremFlickr fallback
-  let discoveryIdeas = [];
-  if (cat) {
-    const curated = getCuratedForCategory(cat, 12);
-    discoveryIdeas = curated.length ? curated : getLocalDiscovery(cat);
-  } else {
-    const shuffled = [...ALL_CATEGORIES].sort(() => Math.random() - 0.5).slice(0, 3);
-    discoveryIdeas = shuffled.flatMap(c => {
-      const curated = getCuratedForCategory(c, 8);
-      return curated.length ? curated : getLocalDiscovery(c);
-    }).sort(() => Math.random() - 0.5);
-  }
-  S.ideas = discoveryIdeas;
-  S.allIdeas = discoveryIdeas;
-  renderGrid(grid, S.ideas);
+  // Reset scroll pointer every time we (re)initialize the feed
+  S.loaded = 0;
 
-  // ── Step 2: Fetch DB ideas + backend-filtered photos (upgrades the grid) ──
-  const _cancelWakeup = maybeShowWakeupToast(4000);
+  // ── Step 1: Build local dataset ──────────────────────────────
+  let localIdeas;
+  if (cat) {
+    const cacheKey = CATEGORY_MAP[cat] || cat;
+    localIdeas = getAllCuratedIdeas(cacheKey);
+    if (!localIdeas.length) localIdeas = getLocalDiscovery(cat);
+  } else {
+    localIdeas = getAllLocalIdeas();   // pre-shuffled, balanced, deduplicated
+  }
+
+  // Personalization re-ranks without changing the URL-dedup guarantee
+  S.ideas    = applyFeedIntelligence(localIdeas);
+  S.allIdeas = S.ideas;
+
+  // ── Debug logging ─────────────────────────────────────────────
+  const _t0 = performance.now();
+  console.log(`[ZenPin] Total ideas in dataset: ${S.allIdeas.length}`);
+
+  // Render the first page immediately — no network required
+  // 48 cards = ~3 viewport heights, enough to fill the screen
+  // on any device without waiting for scroll.
+  const INIT_BATCH = 48;
+  const firstPage  = S.allIdeas.slice(0, INIT_BATCH);
+  renderGrid(grid, firstPage);
+  S.loaded = firstPage.length;
+
+  console.log(`[ZenPin] Initially rendered: ${firstPage.length} ideas (${(performance.now()-_t0).toFixed(0)}ms)`);
+
+  // Show/hide end-of-feed sentinel based on dataset size
+  _updateEndSentinel();
+
+  // ── Step 2: Blend creator posts from DB (non-blocking) ────────
   try {
     const params = buildParams();
     const { ideas: dbIdeas } = await apiFetch("GET", `/ideas?${params}`);
-    if (typeof _cancelWakeup === "function") _cancelWakeup();
 
-    // Load backend-filtered discovery images in parallel
-    let backendIdeas = [];
-    if (cat) {
-      backendIdeas = await loadDiscoveryImages(cat);
-    } else {
-      const shuffled = [...ALL_CATEGORIES].sort(() => Math.random() - 0.5).slice(0, 3);
-      const results  = await Promise.all(shuffled.map(c => loadDiscoveryImages(c)));
-      backendIdeas = results.flat().sort(() => Math.random() - 0.5);
-    }
-
-    // Stamp DB ideas: prefer local curated image over LoremFlickr
-    for (const idea of dbIdeas) {
-      if (!idea.image_url || idea.image_url.includes("loremflickr")) {
-        idea.image_url = getLocalImage(idea);
+    if (dbIdeas.length) {
+      // Stamp missing images
+      for (const idea of dbIdeas) {
+        if (!idea.image_url || idea.image_url.includes("loremflickr")) {
+          idea.image_url = getLocalImage(idea);
+        }
       }
-    }
-
-    // Discovery priority: curated > API > LoremFlickr fallback
-    const curatedSlice = cat ? getCuratedForCategory(cat, 12, 2) : [];
-    const apiSlice     = backendIdeas.length ? backendIdeas : [];
-    // Fill: API images first, then curated, then loremflickr
-    const finalDiscovery = [
-      ...apiSlice,
-      ...curatedSlice.filter(c => !apiSlice.some(a => a.image_url === c.image_url)),
-      ...((!apiSlice.length && !curatedSlice.length) ? discoveryIdeas : []),
-    ];
-
-    // Merge: creator posts > discovery (curated/API) interleaved every 3 cards
-    const merged = [];
-    let di = 0;
-    for (let i = 0; i < dbIdeas.length; i++) {
-      merged.push(dbIdeas[i]);
-      if ((i + 1) % 3 === 0 && di < finalDiscovery.length) {
-        merged.push(finalDiscovery[di++]);
+      // Interleave creator posts into the full dataset (not just visible)
+      const merged = [];
+      let di = 0;
+      for (let i = 0; i < S.allIdeas.length; i++) {
+        merged.push(S.allIdeas[i]);
+        if ((i + 1) % 5 === 0 && di < dbIdeas.length) merged.push(dbIdeas[di++]);
       }
-    }
-    while (di < finalDiscovery.length) merged.push(finalDiscovery[di++]);
+      while (di < dbIdeas.length) merged.push(dbIdeas[di++]);
 
-    if (merged.length) {
       S.ideas    = applyFeedIntelligence(merged);
       S.allIdeas = S.ideas;
       applySkillFilter();
-      renderGrid(grid, S.ideas);
+
+      // Re-render the first page with the enriched dataset
+      // (creator posts are now interleaved — always re-render when DB responded)
+      const newFirst = S.allIdeas.slice(0, INIT_BATCH);
+      renderGrid(grid, newFirst);
+      S.loaded = newFirst.length;
+      console.log(`[ZenPin] After DB blend: ${S.allIdeas.length} total, rendering ${newFirst.length}`);
+      _updateEndSentinel();
     }
   } catch (e) {
-    // Backend sleeping — local discovery images already showing, that's fine
-    console.warn("initHome backend fetch failed:", e.message);
+    console.warn("initHome DB fetch failed (non-critical):", e.message);
   }
 
   if (window.Trends) Trends.renderTrendingStrip("trendingStrip");
@@ -1639,20 +1781,20 @@ async function initExplore() {
   const ALL_CATEGORIES = Object.keys(CAT_CONFIG);
   const cat = S.filter && S.filter !== "all" ? S.filter.toLowerCase() : null;
 
-  // ── Step 1: Show local discovery instantly ─────────────────
-  // "mix" is a special filter that loads the Aesthetic Mix feed
+  // ── Step 1: Show ALL local images instantly ─────────────────
   const isMix = cat === "mix" || cat === "aesthetic mix";
   let localIdeas;
   if (isMix) {
-    // For aesthetic mix: pull 3 random cats as instant preview
-    const shuffled = [...ALL_CATEGORIES].sort(() => Math.random() - 0.5).slice(0, 3);
-    localIdeas = shuffled.flatMap(c => getLocalDiscovery(c, 1)).sort(() => Math.random() - 0.5);
+    // Aesthetic mix: all images shuffled
+    localIdeas = getAllLocalIdeas().sort(() => Math.random() - 0.5);
   } else if (cat) {
-    localIdeas = getLocalDiscovery(cat);
+    // Category filter — resolve to cache key
+    const cacheKey = CATEGORY_MAP[cat] || cat;
+    localIdeas = getAllCuratedIdeas(cacheKey);
+    if (!localIdeas.length) localIdeas = getLocalDiscovery(cat); // legacy fallback
   } else {
-    // All-feed: show 4 random categories = 48 cards
-    const shuffled = [...ALL_CATEGORIES].sort(() => Math.random() - 0.5).slice(0, 4);
-    localIdeas = shuffled.flatMap(c => getLocalDiscovery(c)).sort(() => Math.random() - 0.5);
+    // All-feed: every image from every folder, shuffled
+    localIdeas = getAllLocalIdeas().sort(() => Math.random() - 0.5);
   }
   renderGrid(grid, localIdeas);
 
@@ -2480,6 +2622,9 @@ function handleFilter(e, page) {
   btn.closest(".filter-chips").querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
   btn.classList.add("active");
   S.filter = btn.dataset.filter;
+  // Reset dataset and scroll pointer when category changes
+  resetLocalDataset();
+  S.loaded = 0;
   // Explicitly choosing a category = strong intent signal (+2 weight)
   if (S.filter && S.filter !== "all") UserPrefs.bump(S.filter, 2);
   if (page === "home")    initHome();
@@ -2714,8 +2859,12 @@ function autoDetectCategory(text) {
 
 document.addEventListener("DOMContentLoaded", async () => {
   // Decay preference weights slightly each session
-  // (prevents old interests from dominating forever)
   UserPrefs.decay();
+
+  // Generate category chips from actual _curatedCache keys
+  // (runs after _curatedCache IIFE has already executed)
+  generateCategoryChips("homeFilters");
+  generateCategoryChips("exploreFilters");
   // ── Warm up Render backend (free tier sleeps) ──────────────
   // Ping silently so by the time user requests data, it's awake
   (async () => {
@@ -2884,49 +3033,37 @@ document.addEventListener("DOMContentLoaded", async () => {
   // ── Load more (manual + infinite scroll) ──────────────────
   let _loadingMore = false;   // prevent concurrent fetches
 
+  // Show/hide end-of-feed message and load-more button
+  function _updateEndSentinel() {
+    const btn      = $("loadMoreBtn");
+    const sentinel = $("endOfFeedMsg");
+    const atEnd    = S.loaded >= S.allIdeas.length;
+    if (btn) btn.style.display = atEnd ? "none" : "";
+    if (sentinel) sentinel.style.display = atEnd && S.allIdeas.length > 0 ? "block" : "none";
+  }
+
   async function loadMoreIdeas() {
     if (_loadingMore) return;
+    // Already shown everything — don't fire again
+    if (S.loaded >= S.allIdeas.length) { _updateEndSentinel(); return; }
+
     _loadingMore = true;
     const btn = $("loadMoreBtn");
     if (btn) { btn.classList.add("busy"); btn.querySelector("span").textContent = "Loading…"; }
     try {
-      const cat = S.filter && S.filter !== "all" ? S.filter.toLowerCase() : null;
+      const BATCH = 24;
+      const next  = S.allIdeas.slice(S.loaded, S.loaded + BATCH);
 
-      // Track discovery page per category for correct pagination
-      const discKey  = cat || "all";
-      const nextDisc = (S.discoveryPage[discKey] || 1) + 1;
-
-      // Fetch DB ideas + next discovery page in parallel
-      const [{ ideas: newIdeas }, discoveryNew] = await Promise.all([
-        apiFetch("GET", `/ideas?${buildParams({ offset: S.loaded })}`).catch(() => ({ ideas: [] })),
-        cat ? loadDiscoveryImages(cat, nextDisc)
-            : (async () => {
-                const cats = Object.keys(CAT_CONFIG).sort(() => Math.random() - 0.5).slice(0, 2);
-                const res  = await Promise.all(cats.map(c => loadDiscoveryImages(c, nextDisc)));
-                return res.flat().sort(() => Math.random() - 0.5);
-              })(),
-      ]);
-
-      // Advance discovery page counter
-      S.discoveryPage[discKey] = nextDisc;
-
-      // Interleave: 1 discovery card every 4 DB cards
-      const merged = [];
-      let di = 0;
-      for (let i = 0; i < newIdeas.length; i++) {
-        merged.push(newIdeas[i]);
-        if ((i + 1) % 4 === 0 && di < discoveryNew.length) merged.push(discoveryNew[di++]);
+      if (!next.length) {
+        _updateEndSentinel();
+        return;
       }
-      while (di < discoveryNew.length) merged.push(discoveryNew[di++]);
 
-      if (!merged.length) { if (btn) btn.style.display = "none"; return; }
+      appendGrid($("homeGrid"), next, S.loaded);
+      S.loaded += next.length;
 
-      appendGrid($("homeGrid"), merged, S.loaded);
-      S.allIdeas = [...S.allIdeas, ...merged];
-      S.loaded  += merged.length;
-      if (newIdeas.length < 20 && discoveryNew.length === 0) {
-        if (btn) btn.style.display = "none";
-      }
+      // Check if we've shown everything
+      if (S.loaded >= S.allIdeas.length) _updateEndSentinel();
     } catch (e) {
       console.warn("loadMoreIdeas failed:", e.message);
     } finally {
