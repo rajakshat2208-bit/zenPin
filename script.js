@@ -367,19 +367,10 @@ function renderGrid(container, ideas) {
   if (!container) return;
   resetImageVariety();
 
-  // ── Incremental update: only re-render if content actually changed ──
-  // Comparing by idea IDs is fast (O(n) string compare) and prevents
-  // the browser from doing a full layout recalculation on every filter
-  // or page navigation when the data hasn't changed.
-  const newIds  = ideas.map(i => i.id).join(",");
-  const prevIds = container.dataset.renderedIds || "";
-  if (newIds === prevIds && container.children.length === ideas.length) {
-    // Same ideas in same order — skip the DOM write entirely
-    return;
-  }
-  container.dataset.renderedIds = newIds;
-
   // Use DocumentFragment for a single DOM insertion (fewer reflows)
+  // No incremental skip guard — always render what we're given.
+  // The guard was causing silent failures when the first-N IDs
+  // matched a previous render but the full dataset had changed.
   const frag = document.createDocumentFragment();
   const tmp  = document.createElement("div");
   tmp.innerHTML = ideas.map((idea, i) => cardHTML(idea, i)).join("");
@@ -387,7 +378,7 @@ function renderGrid(container, ideas) {
   container.innerHTML = "";
   container.appendChild(frag);
 
-  console.log(`[ZenPin] renderGrid: ${ideas.length} ideas painted to #${container.id || "grid"}`);
+  console.log(`[ZenPin] renderGrid: ${ideas.length} ideas → #${container.id || "grid"}`);
   window.dispatchEvent(new CustomEvent("zenpin:gridupdate"));
 
   // Preload first 6 above-the-fold images immediately
@@ -942,14 +933,16 @@ const CATEGORY_MAP = {
   "superheroes":        "superhero",
   "superhero":          "superhero",
   "hero":               "superhero",
-  "tech":               null,
-  "tattoos":            null,
-  "plants":             null,
-  "flowers":            null,
-  "fitness":            null,
-  "music":              null,
-  "drinks":             null,
-  "cigarettes":         null,
+  // Direct mappings for all uploaded folders
+  "tech":               "tech",
+  "tattoos":            "tattoos",
+  "plants":             "plants",
+  "flowers":            "flowers",
+  "fitness":            "fitness",
+  "music":              "music",
+  "drinks":             "drinks",
+  "travel":             "travel",
+  "cigarettes":         "cigarettes",
 };
 
 // ════════════════════════════════════════════════════════════
@@ -1064,10 +1057,14 @@ function scoreIdea(idea) {
 //    user upload → Picsum (stable seed, never breaks)
 // ════════════════════════════════════════════════════════════
 function getLocalImage(idea) {
+  // Null guard — always return a valid string, never undefined
+  if (!idea) return `https://picsum.photos/seed/0/400/600`;
   const raw = (idea.category || "scenery").toLowerCase().trim();
   const key = CATEGORY_MAP[raw];
 
-  if (key) {
+  // If key exists and cache has URLs for it, use them.
+  // key may be undefined (not in CATEGORY_MAP) — treat same as null.
+  if (key && key !== "null") {
     const urls = _curatedCache[key];
     if (urls && urls.length > 0) {
       const base  = Math.abs(idea.id);
@@ -1397,15 +1394,17 @@ const _curatedCache = (() => {
     "accessories":  seq("accessories",  "accessories",  25), // key=accessories
     "art":          seq("art",          "art",          30), // art/ folder
     "interior":     seq("interior",     "interior",     25), // Interior Design → interior
-    // ── Uncomment as you upload each folder ────────────────
-    // "travel":    seq("travel",       "travel",       25),
-    // "tech":      seq("tech",         "tech",         25),
-    // "flowers":   seq("flowers",      "flower",       25),
-    // "plants":    seq("plants",       "plant",        25),
-    // "fitness":   seq("fitness",      "fitness",      25),
-    // "music":     seq("music",        "music",        25),
-    // "tattoos":   seq("tattoos",      "tattoo",       25),
-    // "drinks":    seq("drinks",       "drink",        25),
+    // ── Activate additional folders as you upload them ─────
+    // Set count to match actual files in each folder.
+    // If a folder doesn't exist yet, set count to 0.
+    "travel":    seq("travel",    "travel",    25),
+    "tech":      seq("tech",      "tech",      25),
+    "flowers":   seq("flowers",   "flower",    25),
+    "plants":    seq("plants",    "plant",     25),
+    "fitness":   seq("fitness",   "fitness",   25),
+    "music":     seq("music",     "music",     25),
+    "tattoos":   seq("tattoos",   "tattoo",    25),
+    "drinks":    seq("drinks",    "drink",     25),
   };
 
   // ── Also try to load images.json if present ──────────────────
@@ -1579,6 +1578,15 @@ const CACHE_KEY_TO_FILTER = {
   "accessories":  "Ladies Accessories",
   "art":          "Art",
   "interior":     "Interior Design",
+  // Newly activated categories
+  "travel":       "Travel",
+  "tech":         "Tech",
+  "flowers":      "Flowers",
+  "plants":       "Plants",
+  "fitness":      "Fitness",
+  "music":        "Music",
+  "tattoos":      "Tattoos",
+  "drinks":       "Drinks",
 };
 
 function generateCategoryChips(containerId) {
@@ -1643,8 +1651,11 @@ async function initHome() {
 
   const cat = S.filter && S.filter !== "all" ? S.filter.toLowerCase() : null;
 
-  // Reset scroll pointer every time we (re)initialize the feed
+  // Reset scroll pointer and cached dataset every (re)init.
+  // Without this, getAllLocalIdeas() returns stale all-category data
+  // even when a single-category filter is active.
   S.loaded = 0;
+  resetLocalDataset();
 
   // ── Step 1: Build local dataset ──────────────────────────────
   let localIdeas;
@@ -2114,22 +2125,29 @@ function setupChat() {
         ideaCards = resData.ideas  || [];
         poweredBy = resData.powered_by || "";
       } catch (_) {
-        // Backend sleeping or unreachable — direct Claude API fallback
-        const response = await fetch("https://api.anthropic.com/v1/messages", {
-          method:  "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            model:      "claude-sonnet-4-20250514",
-            max_tokens: 600,
-            system: `You are ZenPin AI — a creative expert for a Pinterest-style platform.
+        // Backend sleeping — use Anthropic API if available, else graceful message
+        try {
+          const response = await fetch("https://api.anthropic.com/v1/messages", {
+            method:  "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              model:      "claude-sonnet-4-20250514",
+              max_tokens: 600,
+              system: `You are ZenPin AI — a creative expert for a Pinterest-style platform.
 Help with inspiration, design, fashion, cars, anime, food, travel, interior design, and creative culture.
 Be conversational but expert. Use **bold** and bullets. Stay under 200 words.`,
-            messages: _chatHistory
-          })
-        });
-        const data = await response.json();
-        reply     = data.content?.[0]?.text || "I couldn't connect right now. Try again in a moment.";
-        poweredBy = "claude";
+              messages: _chatHistory
+            })
+          });
+          const data = await response.json();
+          if (data.error) throw new Error(data.error.message);
+          reply     = data.content?.[0]?.text || "";
+          poweredBy = "claude";
+        } catch {
+          // Both backend and Anthropic unavailable — show a retry suggestion
+          reply     = "The ZenPin server is starting up (Render free tier takes ~30s). **Please try again in a moment** — your message is saved above.";
+          poweredBy = "offline";
+        }
       }
 
       $("aiTyping")?.remove();
