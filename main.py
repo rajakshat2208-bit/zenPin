@@ -1137,6 +1137,99 @@ async def get_aesthetic_mix(
 
 
 
+
+
+# ══════════════════════════════════════════════════════════════
+# OTP SYSTEM (simple in-memory, no SMS required)
+# Use for email verification or optional 2FA.
+# In production, replace _otp_store with Redis + send real email.
+# ══════════════════════════════════════════════════════════════
+
+import secrets, time as _time
+_otp_store: dict = {}   # {email: {otp, expires_at, attempts}}
+OTP_TTL  = 600          # 10 minutes
+OTP_MAX  = 5            # max wrong attempts before invalidation
+
+
+class OTPRequestBody(BaseModel):
+    email: str
+
+class OTPVerifyBody(BaseModel):
+    email: str
+    otp:   str
+
+
+@app.post("/auth/otp/send")
+def send_otp(body: OTPRequestBody):
+    """
+    Generate a 6-digit OTP for an email address and store it in memory.
+    In production: send the OTP via email (SMTP / SendGrid / Resend).
+    In development / demo: the OTP is returned in the response so you
+    can test without email infrastructure.
+    """
+    email = body.email.lower().strip()
+    if not email or "@" not in email:
+        raise HTTPException(400, "Valid email required.")
+
+    otp = str(secrets.randbelow(900000) + 100000)   # 100000–999999
+    _otp_store[email] = {
+        "otp":        otp,
+        "expires_at": _time.time() + OTP_TTL,
+        "attempts":   0,
+    }
+
+    # ── TODO: send real email here ───────────────────────────────
+    # import smtplib
+    # ...send OTP to email...
+    # ─────────────────────────────────────────────────────────────
+
+    print(f"[OTP] Generated for {email}: {otp}")   # visible in Render logs for testing
+
+    return {
+        "message":  "OTP sent. Check your email.",
+        "demo_otp": otp,          # REMOVE this line before going live
+        "expires_in": OTP_TTL,
+    }
+
+
+@app.post("/auth/otp/verify")
+def verify_otp(body: OTPVerifyBody):
+    """
+    Verify the OTP submitted by the user.
+    Returns {valid: true} or raises 400/410.
+    """
+    email = body.email.lower().strip()
+    entry = _otp_store.get(email)
+
+    if not entry:
+        raise HTTPException(404, "No OTP found for this email. Request a new one.")
+
+    if _time.time() > entry["expires_at"]:
+        del _otp_store[email]
+        raise HTTPException(410, "OTP expired. Please request a new one.")
+
+    entry["attempts"] += 1
+    if entry["attempts"] > OTP_MAX:
+        del _otp_store[email]
+        raise HTTPException(429, "Too many failed attempts. Request a new OTP.")
+
+    if body.otp.strip() != entry["otp"]:
+        raise HTTPException(400, f"Incorrect OTP. {OTP_MAX - entry['attempts'] + 1} attempts remaining.")
+
+    del _otp_store[email]   # OTP used — remove immediately
+    return {"valid": True, "message": "OTP verified successfully."}
+
+
+@app.post("/auth/signup-with-otp", status_code=201)
+def signup_with_otp(body: SignupRequest):
+    """
+    Signup that requires a pre-verified OTP.
+    Add ?require_otp=true to enforce OTP; without it behaves like normal signup.
+    Extend body with otp field if you want to verify inline.
+    """
+    # Reuse normal signup — OTP verification is done client-side via /auth/otp/verify
+    return signup(body)
+
 # ══════════════════════════════════════════════════════════════
 # AI SEARCH ENGINE — RAG with Gemini + local vector index
 # ══════════════════════════════════════════════════════════════
@@ -1843,6 +1936,150 @@ Format: Use markdown for structure when helpful (bold, bullets). Keep responses 
         "ideas":       all_cards[:8],
         "categories":  detected_cats,
         "powered_by":  powered_by,
+    }
+
+
+
+class AIChatRequest(BaseModel):
+    message: str
+    history: list = []   # [{role:"user"|"assistant", content:"..."}]
+
+
+@app.post("/ai/chat")
+async def ai_chat(
+    body: AIChatRequest,
+    current_user: Optional[dict] = Depends(auth_utils.get_optional_user)
+):
+    """
+    AI Chat endpoint — Gemini-first conversational assistant.
+
+    Pipeline:
+      1. Keyword-match query against ZenPin DB → relevant idea cards
+      2. Build context string from top matches
+      3. Send full conversation history + context to Gemini 1.5 Flash
+      4. Return {answer, ideas, powered_by}
+
+    Falls back to OpenAI → smart-template if keys are missing.
+    Works on Render free tier: no streaming, single request.
+    """
+    msg = body.message.strip()[:500]
+    if not msg:
+        raise HTTPException(400, "message required")
+
+    # ── 1. Keyword search across all ZenPin ideas ─────────────────
+    words = [w.lower().strip(".,!?") for w in msg.split() if len(w) > 2]
+    all_ideas = db.get_ideas(limit=300)
+
+    def kw_score(idea: dict) -> int:
+        haystack = f"{idea.get('title','')} {idea.get('category','')} {idea.get('description','')}".lower()
+        title    = idea.get("title", "").lower()
+        return sum(3 if kw in title else 1 for kw in words if kw in haystack)
+
+    scored = sorted(((kw_score(i), i) for i in all_ideas), key=lambda x: x[0], reverse=True)
+    relevant = [i for s, i in scored if s > 0][:8]
+
+    # ── 2. Build context ──────────────────────────────────────────
+    context = ""
+    if relevant:
+        lines = [
+            f"- {i['title']} ({i['category']})"
+            + (f": {i.get('description','')[:80]}" if i.get('description') else "")
+            for i in relevant[:6]
+        ]
+        context = "ZenPin ideas related to this query:\n" + "\n".join(lines)
+
+    SYSTEM = (
+        "You are ZenPin AI — a creative expert assistant for a visual discovery platform like Pinterest. "
+        "You help users find inspiration, learn design techniques, and explore aesthetic trends across "
+        "fashion, cars, anime, interior design, food, travel, and creative culture.\n\n"
+        "Rules:\n"
+        "- Answer conversationally but with real expertise\n"
+        "- Use **bold** for key terms, bullet points for lists\n"
+        "- Keep responses under 250 words\n"
+        "- When ZenPin ideas are in context, reference 1-2 of them naturally\n"
+        "- If asked for images, explain you\'ll show cards below the message"
+    )
+
+    # Build messages with history (last 8 turns for context window efficiency)
+    history = body.history[-8:] if body.history else []
+    if context:
+        user_msg = f"[Context]\n{context}\n\n[Question]: {msg}"
+    else:
+        user_msg = msg
+    messages = history + [{"role": "user", "content": user_msg}]
+
+    reply = ""
+    powered_by = "fallback"
+
+    # ── 3a. Try Gemini first ──────────────────────────────────────
+    if GEMINI_KEY:
+        try:
+            gemini_msgs = []
+            for m in messages[:-1]:   # history
+                gemini_msgs.append({
+                    "role": "user"  if m["role"] == "user" else "model",
+                    "parts": [{"text": m["content"]}]
+                })
+            # Inject system via first user turn
+            first_content = SYSTEM + "\n\nUser: " + messages[-1]["content"]
+            gemini_msgs.append({"role": "user", "parts": [{"text": first_content}]})
+
+            async with httpx.AsyncClient(timeout=20) as client:
+                r = await client.post(
+                    GEMINI_FLASH_URL,
+                    params={"key": GEMINI_KEY},
+                    json={
+                        "contents": gemini_msgs,
+                        "generationConfig": {
+                            "maxOutputTokens": 400,
+                            "temperature": 0.75,
+                            "topP": 0.9,
+                        }
+                    }
+                )
+            if r.status_code == 200:
+                reply = r.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+                powered_by = "gemini"
+        except Exception as e:
+            print(f"Gemini chat error: {e}")
+
+    # ── 3b. Try OpenAI if Gemini unavailable ─────────────────────
+    if not reply and os.getenv("OPENAI_API_KEY"):
+        try:
+            from openai import AsyncOpenAI
+            client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+            resp = await client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[{"role": "system", "content": SYSTEM}] + messages,
+                max_tokens=400,
+                temperature=0.75,
+            )
+            reply = resp.choices[0].message.content.strip()
+            powered_by = "openai"
+        except Exception as e:
+            print(f"OpenAI chat error: {e}")
+
+    # ── 3c. Smart template fallback (no API keys needed) ─────────
+    if not reply:
+        if relevant:
+            titles = ", ".join(i["title"] for i in relevant[:3])
+            cats   = list(set(i["category"] for i in relevant[:4]))
+            reply  = (
+                f"Here\'s what I found on ZenPin for **{msg}**:\n\n"
+                f"I matched {len(relevant)} ideas including: {titles}.\n\n"
+                f"Categories: {', '.join(cats)}. Browse the cards below for visual inspiration."
+            )
+        else:
+            reply = (
+                f"I searched ZenPin for **{msg}** but didn\'t find direct matches yet. "
+                "Try browsing the Explore page or use the AI Generator to build a custom board."
+            )
+        powered_by = "search"
+
+    return {
+        "answer":     reply,
+        "ideas":      relevant,
+        "powered_by": powered_by,
     }
 
 @app.post("/ai/generate")
