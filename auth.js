@@ -193,7 +193,21 @@ const Auth = (() => {
     if (_token) refreshMe().then(updateNavbar);
   }
 
-  return { isLoggedIn, getUser, getToken, signup, login, logout, refreshMe, requireAuth, redirectIfAuthed, updateNavbar, showLoginModal, init };
+  // ── OTP helpers ───────────────────────────────────────────────
+  // sendOtp(email) → calls POST /auth/otp/send
+  //   Returns {demo_otp} in dev mode so you can test without email
+  // verifyOtp(email, otp) → calls POST /auth/otp/verify
+  //   Returns {valid: true} on success, throws on failure
+  async function sendOtp(email) {
+    return _post("/auth/otp/send", { email });
+  }
+  async function verifyOtp(email, otp) {
+    return _post("/auth/otp/verify", { email, otp: String(otp) });
+  }
+
+  return { isLoggedIn, getUser, getToken, signup, login, logout, refreshMe,
+           requireAuth, redirectIfAuthed, updateNavbar, showLoginModal, init,
+           sendOtp, verifyOtp };
 })();
 
 document.readyState === "loading"
