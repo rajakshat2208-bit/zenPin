@@ -151,10 +151,25 @@
 
       <p class="auth-terms">By signing up you agree to our <a href="#">Terms</a> and <a href="#">Privacy Policy</a>.</p>
 
-      <button type="submit" class="auth-submit" id="submitBtn">
-        <span class="btn-label">Create my account</span>
-        <div class="spinner"></div>
-      </button>
+      <!-- OTP verification step (shown after Send Code) -->
+      <div id="otpStep" style="display:none;margin-bottom:12px">
+        <label class="field-label" for="otpCode">Verification Code</label>
+        <div class="input-wrap" style="margin-top:6px">
+          <input class="auth-input" id="otpCode" type="text" inputmode="numeric"
+            maxlength="6" placeholder="6-digit code" autocomplete="one-time-code"/>
+        </div>
+        <p id="otpHint" style="font-size:.8rem;color:var(--text-3);margin-top:6px"></p>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button type="button" class="auth-submit" id="sendOtpBtn" style="flex:1">
+          <span class="btn-label">Send Code</span>
+          <div class="spinner"></div>
+        </button>
+        <button type="submit" class="auth-submit" id="submitBtn" style="display:none;flex:1">
+          <span class="btn-label">Create Account</span>
+          <div class="spinner"></div>
+        </button>
+      </div>
     </form>
 
     <div class="auth-divider">already a member?</div>
@@ -210,32 +225,102 @@
   document.getElementById("email").oninput    = () => showErr("emailErr", false);
 
   // Submit
+  // Wake up Render immediately when page loads (prevents cold start on submit)
+  fetch(API_URL + "/", { mode: "cors", credentials: "omit" }).catch(() => {});
+
+  // ── OTP: Send Code button ──────────────────────────────────────
+  let _otpVerified = false;
+
+  document.getElementById("sendOtpBtn").onclick = async function() {
+    const email = document.getElementById("email").value.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showErr("emailErr", true); return; }
+    showErr("emailErr", false);
+    this.disabled = true; this.classList.add("loading");
+    try {
+      const res  = await fetch(`${API_URL}/auth/otp/send`, {
+        method: "POST", headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ email })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setBanner(data.detail || "Could not send code."); return; }
+      document.getElementById("otpStep").style.display = "block";
+      document.getElementById("submitBtn").style.display = "flex";
+      document.getElementById("sendOtpBtn").style.display = "none";
+      const hint = document.getElementById("otpHint");
+      if (data.demo_otp) {
+        hint.innerHTML = `<strong>Dev mode — your code: ${data.demo_otp}</strong>`;
+      } else {
+        hint.textContent = "Check your email for the 6-digit code.";
+      }
+    } catch { setBanner("Server error sending code. Please try again."); }
+    finally  { this.disabled = false; this.classList.remove("loading"); }
+  };
+
   document.getElementById("signupForm").onsubmit = async function(e) {
     e.preventDefault(); clearBanner();
     const username = document.getElementById("username").value.trim();
     const email    = document.getElementById("email").value.trim();
     const password = document.getElementById("password").value;
+    const otp      = (document.getElementById("otpCode")?.value || "").trim();
     let ok = true;
     if (username.length < 2 || username.length > 30) { showErr("usernameErr", true); ok = false; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))  { showErr("emailErr", true);    ok = false; }
     if (password.length < 8)                          { showErr("pwErr", true);       ok = false; }
     if (!ok) return;
 
+    // Verify OTP before creating account
+    if (!_otpVerified && otp) {
+      try {
+        const vRes  = await fetch(`${API_URL}/auth/otp/verify`, {
+          method: "POST", headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({ email, otp })
+        });
+        const vData = await vRes.json().catch(() => ({}));
+        if (!vRes.ok) { setBanner(vData.detail || "Invalid code."); return; }
+        _otpVerified = true;
+      } catch { setBanner("Could not verify code. Please retry."); return; }
+    }
+
     const btn = document.getElementById("submitBtn");
     btn.classList.add("loading"); btn.disabled = true;
-    try {
-      const res  = await fetch(`${API_URL}/auth/signup`, {
-        method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ username, email, password }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) { setBanner(typeof data.detail==="string" ? data.detail : "Signup failed."); return; }
-      localStorage.setItem("zenpin_token", data.token);
-      localStorage.setItem("zenpin_user", JSON.stringify(data.user));
-      localStorage.setItem("zenpin_skill", skillLevel);
-      window.location.href = "index.html";
-    } catch { setBanner("Could not reach the server. Check your connection."); }
-    finally { btn.classList.remove("loading"); btn.disabled = false; }
+    setBanner(""); 
+
+    // Retry logic — Render free tier sometimes needs 2 attempts after cold start
+    let lastErr = null;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 30000); // 30s timeout
+        const res = await fetch(`${API_URL}/auth/signup`, {
+          method: "POST",
+          mode: "cors",
+          credentials: "omit",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, email, password }),
+          signal: controller.signal,
+        });
+        clearTimeout(timeout);
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          setBanner(typeof data.detail === "string" ? data.detail : "Signup failed.");
+          return;
+        }
+        localStorage.setItem("zenpin_token", data.token);
+        localStorage.setItem("zenpin_user", JSON.stringify(data.user));
+        localStorage.setItem("zenpin_skill", skillLevel);
+        window.location.href = "index.html";
+        return;
+      } catch (err) {
+        lastErr = err;
+        if (attempt < 3) {
+          setBanner(`Server is waking up... retrying (${attempt}/3)`);
+          await new Promise(r => setTimeout(r, 3000)); // wait 3s between retries
+        }
+      }
+    }
+    setBanner("Could not reach server after 3 attempts. Please try again in 30 seconds.");
+    console.error("Signup failed:", lastErr);
+    btn.classList.remove("loading"); btn.disabled = false;
   };
 </script>
 </body>
