@@ -1160,57 +1160,59 @@ function resetImageVariety() {
 function applyFeedIntelligence(ideas) {
   if (!ideas || ideas.length === 0) return ideas;
 
-  const topCats = new Set(UserPrefs.topCategories(3));
+  // ── Split by source ────────────────────────────────────────
+  // "curated" = local assets/discovery/ images (always primary)
+  // everything else = creator posts from DB (supplementary)
+  const curated   = ideas.filter(x => x.source === "curated" || x.source === "discovery");
+  const dbPosts   = ideas.filter(x => x.source !== "curated" && x.source !== "discovery");
 
-  // Score every idea (includes preference bonus)
-  const scored = ideas.map(idea => ({
-    idea,
-    score:      scoreIdea(idea),
-    catKey:     (idea.category || "").toLowerCase(),
-    isPersonal: topCats.size > 0 && topCats.has((idea.category || "").toLowerCase()),
-  }));
+  // ── Sort each bucket by preference weight only (NOT saves/likes) ──
+  // Local images are not penalised by having 0 engagement metrics.
+  const prefSort = (a, b) => {
+    const pa = UserPrefs.getWeight(a.category);
+    const pb = UserPrefs.getWeight(b.category);
+    return pb - pa;
+  };
+  curated.sort(prefSort);
+  dbPosts.sort((a, b) => {
+    // DB posts: sort by engagement + preference
+    const sa = (a.saves_count||0)*2 + (a.likes_count||0) + UserPrefs.getWeight(a.category)*10;
+    const sb = (b.saves_count||0)*2 + (b.likes_count||0) + UserPrefs.getWeight(b.category)*10;
+    return sb - sa;
+  });
 
-  scored.sort((a, b) => b.score - a.score);
-
-  const total      = scored.length;
-  const nPersonal  = Math.round(total * 0.60);
-  const nTrending  = Math.round(total * 0.30);
-
-  // Partition by bucket
-  const personal  = scored.filter(x => x.isPersonal);
-  const trending  = scored.filter(x => !x.isPersonal);
-  const discovery = scored.filter(x => !x.isPersonal);
-
-  // Build the target sequence: personal → trending → discovery
-  const sequence = [
-    ...personal.slice(0, nPersonal),
-    ...trending.slice(0, nTrending),
-    ...discovery.slice(nTrending),
-  ].slice(0, total);
-
-  // Pad with remaining scored items if we don't have enough in any bucket
-  const usedIds = new Set(sequence.map(x => x.idea.id));
-  const unused  = scored.filter(x => !usedIds.has(x.idea.id));
-  sequence.push(...unused);
-
-  // Category rotation guard — max 3 consecutive same-category cards
+  // ── Interleave: 1 DB post every 5 curated cards ────────────
+  // This guarantees local images are always visible in the feed.
   const result = [];
-  let   runCat = null, runLen = 0;
-  const deferred = [];
-
-  for (const item of sequence) {
-    if (item.catKey === runCat) {
-      runLen++;
-      if (runLen > 3) { deferred.push(item); continue; }
-    } else {
-      runCat = item.catKey;
-      runLen = 1;
+  let ci = 0, di = 0;
+  while (ci < curated.length || di < dbPosts.length) {
+    // Add up to 5 curated cards
+    for (let k = 0; k < 5 && ci < curated.length; k++, ci++) {
+      result.push(curated[ci]);
     }
-    result.push(item);
+    // Then 1 DB post (if any)
+    if (di < dbPosts.length) {
+      result.push(dbPosts[di++]);
+    }
   }
-  result.push(...deferred);
 
-  return result.slice(0, total).map(x => x.idea);
+  // ── Category rotation guard — max 3 consecutive same-category ─
+  const final    = [];
+  let   runCat   = null, runLen = 0;
+  const deferred = [];
+  for (const idea of result) {
+    const ck = (idea.category || "").toLowerCase();
+    if (ck === runCat) {
+      runLen++;
+      if (runLen > 3) { deferred.push(idea); continue; }
+    } else {
+      runCat = ck; runLen = 1;
+    }
+    final.push(idea);
+  }
+  final.push(...deferred);
+
+  return final;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -1548,6 +1550,24 @@ function resetLocalDataset() {
   _localDataset = null;
 }
 
+// Deduplicate an array of idea objects by image_url.
+// Local images (listed first) are always kept; duplicates dropped.
+function dedupe(arr) {
+  const seen = new Set();
+  return arr.filter(idea => {
+    const url = idea.image_url || idea.img || "";
+    if (!url || seen.has(url)) return false;
+    seen.add(url);
+    return true;
+  });
+}
+
+// Normalise any category string to a _curatedCache key.
+// Delegates to CATEGORY_MAP so all the edge cases are handled in one place.
+function normalizeCategory(cat) {
+  return CATEGORY_MAP[(cat || "").toLowerCase().trim()] || (cat || "").toLowerCase().trim();
+}
+
 // ── Generate category filter chips from _curatedCache ──────────
 // Replaces the static HTML chips with a live list driven by which
 // folders actually have images. Run once on DOMContentLoaded.
@@ -1700,25 +1720,21 @@ async function initHome() {
           idea.image_url = getLocalImage(idea);
         }
       }
-      // Interleave creator posts into the full dataset (not just visible)
-      const merged = [];
-      let di = 0;
-      for (let i = 0; i < S.allIdeas.length; i++) {
-        merged.push(S.allIdeas[i]);
-        if ((i + 1) % 5 === 0 && di < dbIdeas.length) merged.push(dbIdeas[di++]);
-      }
-      while (di < dbIdeas.length) merged.push(dbIdeas[di++]);
+      // Merge: local curated ideas (already in S.allIdeas) + DB creator posts
+      // dedupe() ensures local images are never replaced by DB entries
+      const merged = dedupe([...S.allIdeas, ...dbIdeas]);
+
+      console.log(`[ZenPin] Local: ${S.allIdeas.length}, DB: ${dbIdeas.length}, Final: ${merged.length}`);
 
       S.ideas    = applyFeedIntelligence(merged);
       S.allIdeas = S.ideas;
       applySkillFilter();
 
-      // Re-render the first page with the enriched dataset
-      // (creator posts are now interleaved — always re-render when DB responded)
+      // Re-render with the enriched dataset
       const newFirst = S.allIdeas.slice(0, INIT_BATCH);
       renderGrid(grid, newFirst);
       S.loaded = newFirst.length;
-      console.log(`[ZenPin] After DB blend: ${S.allIdeas.length} total, rendering ${newFirst.length}`);
+      console.log(`[ZenPin] Rendering ${newFirst.length} of ${S.allIdeas.length} ideas`);
       _updateEndSentinel();
     }
   } catch (e) {
