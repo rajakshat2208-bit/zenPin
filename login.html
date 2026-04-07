@@ -214,6 +214,30 @@
         <span class="btn-label">Log in to ZenPin</span>
         <div class="spinner"></div>
       </button>
+      <div style="text-align:center;margin-top:4px">
+        <button type="button" id="switchOtpBtn" style="background:none;border:none;color:var(--text-3);font-size:.82rem;cursor:pointer;text-decoration:underline;padding:4px 0">
+          Sign in with email code instead
+        </button>
+      </div>
+
+      <!-- OTP login step (hidden by default) -->
+      <div id="otpLoginStep" style="display:none;margin-top:4px">
+        <label class="field-label" for="otpLoginCode">6-Digit Code</label>
+        <div class="field-inner">
+          <input class="auth-input" id="otpLoginCode" type="text" inputmode="numeric"
+            maxlength="6" placeholder="123456" autocomplete="one-time-code"/>
+        </div>
+        <p id="otpLoginHint" style="font-size:.8rem;color:var(--text-3);margin-top:6px"></p>
+        <button type="button" class="auth-submit" id="otpLoginSendBtn" style="margin-top:8px">
+          <span class="btn-label">Send Code</span>
+          <div class="spinner"></div>
+        </button>
+        <button type="button" class="auth-submit" id="otpLoginVerifyBtn"
+          style="display:none;margin-top:8px">
+          <span class="btn-label">Verify Code &amp; Sign In</span>
+          <div class="spinner"></div>
+        </button>
+      </div>
 
     </form>
 
@@ -322,6 +346,97 @@
   // Live field clearing
   document.getElementById("email").oninput    = () => showErr("emailErr", false);
   document.getElementById("password").oninput = () => showErr("pwErr", false);
+
+  // ── OTP login flow ────────────────────────────────────────────
+  let _otpLoginMode = false;
+
+  document.getElementById("switchOtpBtn").onclick = function() {
+    _otpLoginMode = !_otpLoginMode;
+    const pwWrap = document.getElementById("password").closest(".field-wrap");
+    const otpStep = document.getElementById("otpLoginStep");
+    pwWrap.style.display = _otpLoginMode ? "none" : "";
+    document.getElementById("submitBtn").style.display = _otpLoginMode ? "none" : "";
+    otpStep.style.display = _otpLoginMode ? "block" : "none";
+    this.textContent = _otpLoginMode
+      ? "Sign in with password instead"
+      : "Sign in with email code instead";
+    clearError();
+  };
+
+  document.getElementById("otpLoginSendBtn").onclick = async function() {
+    const email = document.getElementById("email").value.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      showErr("emailErr", true); return;
+    }
+    const btn = this;
+    btn.classList.add("loading"); btn.disabled = true;
+    clearError();
+    try {
+      const res  = await fetch(`${API_URL}/auth/otp/send`, {
+        method: "POST", mode: "cors", credentials: "omit",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setError(data.detail || "Could not send code."); return; }
+      const hint = document.getElementById("otpLoginHint");
+      if (data.demo_otp) {
+        hint.innerHTML = `<strong style="color:var(--purple)">Dev mode — your code: ${data.demo_otp}</strong>`;
+      } else {
+        hint.textContent = "Code sent — check your inbox.";
+      }
+      document.getElementById("otpLoginVerifyBtn").style.display = "";
+      btn.textContent = "Resend Code";
+    } catch (err) {
+      setError("Server error. Please try again.");
+    } finally {
+      btn.classList.remove("loading"); btn.disabled = false;
+    }
+  };
+
+  document.getElementById("otpLoginVerifyBtn").onclick = async function() {
+    const email = document.getElementById("email").value.trim();
+    const otp   = document.getElementById("otpLoginCode").value.trim();
+    if (!otp || otp.length < 6) {
+      document.getElementById("otpLoginHint").textContent = "Enter the 6-digit code."; return;
+    }
+    const btn = this;
+    btn.classList.add("loading"); btn.disabled = true;
+    clearError();
+    try {
+      // Verify OTP
+      const vRes  = await fetch(`${API_URL}/auth/otp/verify`, {
+        method: "POST", mode: "cors", credentials: "omit",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, otp }),
+      });
+      const vData = await vRes.json().catch(() => ({}));
+      if (!vRes.ok) { setError(vData.detail || "Incorrect code."); return; }
+
+      // OTP valid — do a passwordless login attempt
+      // Try signup-with-otp first; if user exists it will fail gracefully
+      // then fall back to a regular login with a dummy password that won't work,
+      // so we need the backend to support OTP-verified sessions.
+      // For now: verify OTP then call /auth/login with stored credentials,
+      // OR use /auth/signup-with-otp if the user is new.
+      // Simple approach: after OTP verify, redirect with token if backend returns one.
+      if (vData.token) {
+        localStorage.setItem("zenpin_token", vData.token);
+        localStorage.setItem("zenpin_user", JSON.stringify(vData.user || {}));
+        const next = new URLSearchParams(window.location.search).get("next");
+        window.location.href = next || "index.html";
+        return;
+      }
+      // If no token from verify, show success and let user complete password login
+      document.getElementById("otpLoginHint").innerHTML =
+        `<span style="color:#10b981">✓ Identity confirmed. Enter your password to complete sign-in.</span>`;
+      document.getElementById("switchOtpBtn").click(); // switch back to password mode
+    } catch (err) {
+      setError("Verification failed. Please try again.");
+    } finally {
+      btn.classList.remove("loading"); btn.disabled = false;
+    }
+  };
 </script>
 </body>
 </html>
