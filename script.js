@@ -941,7 +941,6 @@ const CATEGORY_MAP = {
   "fitness":            "fitness",
   "music":              "music",
   "drinks":             "drinks",
-  "travel":             "travel",
   "cigarettes":         "cigarettes",
 };
 
