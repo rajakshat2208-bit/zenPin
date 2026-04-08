@@ -75,11 +75,11 @@
     @media(max-width:480px){.auth-card{padding:32px 22px}.auth-title{font-size:1.65rem}.skill-opt{font-size:.62rem}}
   
     /* ── Floating gallery background ─────────────────────────── */
-    .floating-gallery-bg {
+    .auth-floating-gallery {
       position: fixed; inset: 0;
       overflow: hidden; pointer-events: none; z-index: 0;
     }
-    .float-img {
+    .auth-float-img {
       position: absolute;
       width: 110px; height: 150px;
       object-fit: cover;
@@ -87,10 +87,10 @@
       opacity: 0;                       /* JS sets final opacity per image */
       filter: blur(1.5px) saturate(0.85);
       box-shadow: 0 18px 40px rgba(0,0,0,0.35);
-      animation: drift var(--dur,20s) ease-in-out var(--del,0s) infinite alternate;
+      animation: authAntiGravity var(--aa-dur,22s) ease-in-out var(--aa-del,0s) infinite alternate;
       transform-origin: center center;
     }
-    @keyframes drift {
+    @keyframes authAntiGravity {
       0%   { transform: translateY(0px)   rotate(var(--r0,-4deg)); }
       100% { transform: translateY(-38px) rotate(var(--r1, 5deg)); }
     }
@@ -99,7 +99,8 @@
     </style>
 </head>
 <body>
-<div class="floating-gallery-bg"></div>
+<div class="auth-floating-gallery" id="authFloatingGallery"></div>
+<div class="auth-bg-overlay"></div>
 <div class="auth-bg">
   <div class="auth-blob ab1"></div><div class="auth-blob ab2"></div><div class="auth-blob ab3"></div>
   <div class="auth-grid"></div>
@@ -369,7 +370,7 @@
       "assets/discovery/food/food9.jpg",
       "assets/discovery/workspace/workspace5.jpg",
     ];
-    const container = document.querySelector(".floating-gallery-bg");
+    const container = document.querySelector(".auth-floating-gallery");
     if (!container) return;
 
     const opacities = [0.09, 0.11, 0.08, 0.12, 0.10, 0.09, 0.11];
@@ -377,7 +378,7 @@
       const img = document.createElement("img");
       img.src   = src;
       img.alt   = "";
-      img.className = "float-img";
+      img.className = "auth-float-img";
       img.loading = "lazy";
       // Spread across viewport
       const col  = i % 4;
@@ -386,8 +387,8 @@
         `left: ${col * 26 + Math.random() * 8}%`,
         `top:  ${row * 26 + Math.random() * 10 + 2}%`,
         `opacity: ${opacities[i % opacities.length]}`,
-        `--dur: ${17 + (i * 1.7 % 8)}s`,
-        `--del: ${(i * 1.3 % 5)}s`,
+        `--aa-dur: ${17 + (i * 1.7 % 8)}s`,
+        `--aa-del: ${(i * 1.3 % 5)}s`,
         `--r0: ${-3 - (i % 5)}deg`,
         `--r1: ${3 + (i % 4)}deg`,
         `width: ${100 + (i % 4) * 18}px`,
@@ -397,6 +398,8 @@
     });
   })();
 
+  // Mouse parallax — depth-layered movement
+  if (window.initAuthParallax) initAuthParallax(".auth-float-img");
 </script>
 </body>
 </html>
