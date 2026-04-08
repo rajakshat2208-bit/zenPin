@@ -1487,150 +1487,341 @@ function fisherYates(arr) {
 // Mouse parallax: each image moves at a unique speed (depth
 // layers 1–5) toward the cursor centre, capped at ±18px.
 // ════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════
+// HERO — Three-layer depth gallery (replaces flat single-layer)
+//
+// Layer config:
+//   back  (layer=0): 10 cards, 200-240px, opacity 0.07-0.09,
+//                    heavy blur, placed ONLY in corners + outer edges
+//   mid   (layer=1): 10 cards, 140-170px, opacity 0.11-0.13,
+//                    slight blur, left/right bands (never center)
+//   front (layer=2):  8 cards, 100-130px, opacity 0.15-0.18,
+//                    sharp, strictly at edges
+//
+// SAFE ZONE: x 28%–72%, y 15%–85% → NO cards placed here
+// This keeps the hero title + buttons fully readable.
+//
+// Parallax uses CSS custom props --px / --py on each card's
+// inline style so it composites with the keyframe transform.
+// ════════════════════════════════════════════════════════════
 function initHeroGallery() {
   const gallery = document.getElementById("heroFloatingGallery");
   if (!gallery) return;
 
-  // Source images — drawn from ALL local category folders
-  const HERO_IMAGES = [
-    "assets/discovery/cars/car1.jpg",
-    "assets/discovery/cars/car7.jpg",
-    "assets/discovery/cars/car14.jpg",
-    "assets/discovery/cars/car22.jpg",
-    "assets/discovery/bikes/bike2.jpg",
-    "assets/discovery/bikes/bike10.jpg",
-    "assets/discovery/bikes/bike20.jpg",
-    "assets/discovery/anime/anime1.jpg",
-    "assets/discovery/anime/anime8.jpg",
-    "assets/discovery/anime/anime16.jpg",
-    "assets/discovery/anime/anime24.jpg",
-    "assets/discovery/accessories/accessories3.jpg",
-    "assets/discovery/accessories/accessories12.jpg",
-    "assets/discovery/accessories/accessories22.jpg",
-    "assets/discovery/architecture/architecture4.jpg",
-    "assets/discovery/architecture/architecture14.jpg",
-    "assets/discovery/fashion/fashion3.jpg",
-    "assets/discovery/fashion/fashion13.jpg",
-    "assets/discovery/nature/nature5.jpg",
-    "assets/discovery/nature/nature15.jpg",
-    "assets/discovery/scenery/scenery4.jpg",
-    "assets/discovery/scenery/scenery16.jpg",
-    "assets/discovery/scenery/scenery26.jpg",
-    "assets/discovery/superhero/superhero5.jpg",
-    "assets/discovery/superhero/superhero15.jpg",
-    "assets/discovery/gaming/gaming6.jpg",
-    "assets/discovery/food/food8.jpg",
-    "assets/discovery/workspace/workspace7.jpg",
+  // ── Image pool per visual theme ───────────────────────────
+  const POOL = {
+    editorial: [
+      "assets/discovery/fashion/fashion3.jpg",
+      "assets/discovery/fashion/fashion13.jpg",
+      "assets/discovery/accessories/accessories3.jpg",
+      "assets/discovery/accessories/accessories12.jpg",
+      "assets/discovery/interior/interior4.jpg",
+    ],
+    action: [
+      "assets/discovery/cars/car1.jpg",
+      "assets/discovery/cars/car7.jpg",
+      "assets/discovery/cars/car14.jpg",
+      "assets/discovery/cars/car22.jpg",
+      "assets/discovery/bikes/bike2.jpg",
+      "assets/discovery/bikes/bike10.jpg",
+      "assets/discovery/bikes/bike20.jpg",
+    ],
+    atmosphere: [
+      "assets/discovery/scenery/scenery4.jpg",
+      "assets/discovery/scenery/scenery16.jpg",
+      "assets/discovery/scenery/scenery26.jpg",
+      "assets/discovery/nature/nature5.jpg",
+      "assets/discovery/nature/nature15.jpg",
+      "assets/discovery/architecture/architecture4.jpg",
+      "assets/discovery/architecture/architecture14.jpg",
+    ],
+    culture: [
+      "assets/discovery/anime/anime1.jpg",
+      "assets/discovery/anime/anime8.jpg",
+      "assets/discovery/anime/anime16.jpg",
+      "assets/discovery/superhero/superhero5.jpg",
+      "assets/discovery/gaming/gaming6.jpg",
+    ],
+  };
+
+  // ALL images flattened for general use
+  const ALL = [
+    ...POOL.editorial, ...POOL.action,
+    ...POOL.atmosphere, ...POOL.culture,
   ];
 
-  // Opacity tier — slightly brighter for "closer" images
-  const OPACITIES = [0.10, 0.12, 0.14, 0.11, 0.13];
-
-  // 5-column × 6-row sparse grid positions (percent)
-  const COLS = [4, 21, 40, 59, 78];
-  const ROWS = [3, 20, 38, 56, 72, 86];
-  const positions = [];
-  for (const r of ROWS)
-    for (const c of COLS)
-      positions.push({ x: c + (Math.random() * 10 - 5), y: r + (Math.random() * 8 - 4) });
-
-  // Shuffle positions
-  for (let i = positions.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [positions[i], positions[j]] = [positions[j], positions[i]];
+  // Safe zone: cards must NOT overlap x 28%-72%, y 15%-85%
+  function inSafeZone(x, y) {
+    return x > 24 && x < 72 && y > 12 && y < 84;
   }
 
-  HERO_IMAGES.forEach((imgSrc, i) => {
-    const img   = document.createElement("img");
-    img.src     = imgSrc;
-    img.alt     = "";
-    img.loading = "lazy";
-    img.className = "hero-float-img";
-    img.dataset.parallaxLayer = (i % 5) + 1;   // 1 = slowest, 5 = fastest
+  // Generate a position that avoids the safe zone
+  function safePos(region) {
+    // region: 'left'|'right'|'top'|'bottom'|'topleft'|'topright'|'botleft'|'botright'
+    const configs = {
+      left:     () => ({ x: 1  + Math.random() * 18, y: 10 + Math.random() * 70 }),
+      right:    () => ({ x: 77 + Math.random() * 18, y: 10 + Math.random() * 70 }),
+      topleft:  () => ({ x: 2  + Math.random() * 22, y: 1  + Math.random() * 18 }),
+      topright: () => ({ x: 74 + Math.random() * 22, y: 1  + Math.random() * 18 }),
+      botleft:  () => ({ x: 2  + Math.random() * 22, y: 78 + Math.random() * 16 }),
+      botright: () => ({ x: 74 + Math.random() * 22, y: 78 + Math.random() * 16 }),
+      top:      () => ({ x: 20 + Math.random() * 55, y: 0  + Math.random() * 10 }),
+      bottom:   () => ({ x: 20 + Math.random() * 55, y: 86 + Math.random() * 10 }),
+    };
+    const fn = configs[region] || configs.left;
+    return fn();
+  }
 
-    const pos  = positions[i % positions.length];
-    const w    = 110 + (i % 5) * 15;            // 110 → 170 px wide
-    const h    = Math.round(w * 1.32);
-    const dur  = 16 + (i % 7) * 1.4;
-    const del  = (i * 1.1) % 9;
-    const rotations = [
-      [-4, 2, 6, -3, 5],
-      [-6, 3, -1, 4, -5],
-      [2, -5, 7, -2, 4],
-      [-3, 6, -4, 2, -6],
-      [5, -2, 3, -7, 4],
-    ][i % 5];
+  // ── Layer definitions ─────────────────────────────────────
+  const layers = [
+    // BACK LAYER — 10 large blurred cards in far corners
+    {
+      cls:     'hfg-back',
+      count:   10,
+      regions: ['topleft','topright','botleft','botright','left','right','top','bottom','topleft','topright'],
+      imgPool: ALL,
+      minW: 190, maxW: 240,
+      ratio: 1.30,
+      minOp: 0.065, maxOp: 0.085,
+      blur:  '8px',
+      radius: '30px',
+      minDur: 26, maxDur: 34,
+      parallaxScale: 0.006,
+    },
+    // MID LAYER — 10 medium cards on left/right bands
+    {
+      cls:     'hfg-mid',
+      count:   10,
+      regions: ['left','right','left','right','topleft','topright','botleft','botright','left','right'],
+      imgPool: ALL,
+      minW: 140, maxW: 175,
+      ratio: 1.30,
+      minOp: 0.11, maxOp: 0.14,
+      blur:  '1.5px',
+      radius: '22px',
+      minDur: 20, maxDur: 26,
+      parallaxScale: 0.010,
+    },
+    // FRONT LAYER — 8 small sharp edge cards
+    {
+      cls:     'hfg-front',
+      count:   8,
+      regions: ['topleft','topright','botleft','botright','left','right','top','bottom'],
+      imgPool: ALL,
+      minW: 96, maxW: 126,
+      ratio: 1.32,
+      minOp: 0.16, maxOp: 0.20,
+      blur:  '0px',
+      radius: '16px',
+      minDur: 16, maxDur: 21,
+      parallaxScale: 0.015,
+    },
+  ];
 
-    img.style.cssText = [
-      `left: ${pos.x}%`,
-      `top:  ${pos.y}%`,
-      `width: ${w}px`,
-      `height: ${h}px`,
-      `opacity: ${OPACITIES[i % OPACITIES.length]}`,
-      `--ag-dur: ${dur}s`,
-      `--ag-del: ${del}s`,
-      `--r0: ${rotations[0]}deg`,
-      `--r1: ${rotations[1]}deg`,
-      `--r2: ${rotations[2]}deg`,
-      `--r3: ${rotations[3]}deg`,
-      `--r4: ${rotations[4]}deg`,
-    ].join("; ");
+  const allCards = [];
 
-    gallery.appendChild(img);
-  });
+  layers.forEach(layer => {
+    for (let i = 0; i < layer.count; i++) {
+      const img   = document.createElement("img");
+      const iSrc  = layer.imgPool[i % layer.imgPool.length];
+      img.src     = iSrc;
+      img.alt     = "";
+      img.loading = "lazy";
+      img.className = layer.cls;
 
-  // Mouse parallax — moves images toward cursor, depth-layered
-  let _mx = 0, _my = 0, _rafPending = false;
+      const region  = layer.regions[i % layer.regions.length];
+      const pos     = safePos(region);
+      const w       = layer.minW + Math.random() * (layer.maxW - layer.minW);
+      const h       = Math.round(w * layer.ratio);
+      const opacity = layer.minOp + Math.random() * (layer.maxOp - layer.minOp);
+      const dur     = layer.minDur + Math.random() * (layer.maxDur - layer.minDur);
+      const del     = Math.random() * 12;
+      const ra      = -(3 + Math.random() * 4);
+      const rb      =   2 + Math.random() * 4;
 
-  window.addEventListener("mousemove", e => {
-    _mx = e.clientX;
-    _my = e.clientY;
-    if (!_rafPending) {
-      _rafPending = true;
-      requestAnimationFrame(() => {
-        const cx = window.innerWidth  / 2;
-        const cy = window.innerHeight / 2;
-        gallery.querySelectorAll(".hero-float-img").forEach(img => {
-          const layer = parseInt(img.dataset.parallaxLayer) || 1;
-          const speed = layer * 0.012;
-          const px    = (cx - _mx) * speed;
-          const py    = (cy - _my) * speed;
-          // Clamp to ±18px so far images don't slide off screen
-          img.style.transform = `translate(${Math.max(-18, Math.min(18, px))}px, ${Math.max(-18, Math.min(18, py))}px)`;
-        });
-        _rafPending = false;
-      });
+      img.style.cssText = [
+        `left:${pos.x.toFixed(1)}%`,
+        `top:${pos.y.toFixed(1)}%`,
+        `width:${Math.round(w)}px`,
+        `height:${Math.round(h)}px`,
+        `opacity:${opacity.toFixed(3)}`,
+        `filter:blur(${layer.blur}) saturate(0.88)`,
+        `border-radius:${layer.radius}`,
+        `--d:${dur.toFixed(1)}s`,
+        `--dl:${del.toFixed(1)}s`,
+        `--ra:${ra.toFixed(1)}deg`,
+        `--rb:${rb.toFixed(1)}deg`,
+        `--px:0px`,
+        `--py:0px`,
+      ].join(';');
+
+      img.dataset.pscale = layer.parallaxScale;
+      gallery.appendChild(img);
+      allCards.push(img);
     }
   });
-}
 
-
-// Auth page mouse parallax (called from login.html / signup.html)
-// Exported on window so inline scripts can call it.
-window.initAuthParallax = function(selector) {
-  const imgs = document.querySelectorAll(selector);
-  if (!imgs.length) return;
+  // ── Parallax via CSS custom props ─────────────────────────
+  // Set --px / --py instead of overriding transform directly,
+  // so keyframe animation composites correctly.
   let _mx = 0, _my = 0, _raf = false;
   window.addEventListener("mousemove", e => {
     _mx = e.clientX; _my = e.clientY;
-    if (!_raf) {
-      _raf = true;
-      requestAnimationFrame(() => {
-        const cx = window.innerWidth  / 2;
-        const cy = window.innerHeight / 2;
-        imgs.forEach((img, i) => {
-          const speed = ((i % 6) + 1) * 0.008;
-          const px = Math.max(-15, Math.min(15, (cx - _mx) * speed));
-          const py = Math.max(-15, Math.min(15, (cy - _my) * speed));
-          img.style.transform = `translate(${px}px, ${py}px)`;
-        });
-        _raf = false;
+    if (_raf) return;
+    _raf = true;
+    requestAnimationFrame(() => {
+      const cx = window.innerWidth  / 2;
+      const cy = window.innerHeight / 2;
+      const dx = cx - _mx;
+      const dy = cy - _my;
+      allCards.forEach(img => {
+        const s  = parseFloat(img.dataset.pscale) || 0.008;
+        const px = Math.max(-20, Math.min(20, dx * s));
+        const py = Math.max(-20, Math.min(20, dy * s));
+        img.style.setProperty('--px', `${px.toFixed(1)}px`);
+        img.style.setProperty('--py', `${py.toFixed(1)}px`);
       });
-    }
+      _raf = false;
+    });
+  });
+
+  // Hide gallery on mobile (saves paint budget, cards would overlap text)
+  if (window.matchMedia("(max-width: 640px)").matches) {
+    gallery.style.display = "none";
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+// AUTH PAGES — Themed floating gallery builder
+//
+// Called from login.html / signup.html inline scripts.
+// theme: 'login'  → darker cyber palette, action images
+//        'signup' → softer warm palette, editorial images
+// ════════════════════════════════════════════════════════════
+window.buildAuthGallery = function(theme) {
+  const container = document.querySelector(".auth-floating-gallery");
+  if (!container) return;
+
+  // Add theme-specific overlay class
+  const overlay = document.querySelector(".auth-bg-overlay");
+  if (overlay) {
+    overlay.classList.add(theme === 'login' ? 'auth-overlay-login' : 'auth-overlay-signup');
+  }
+
+  // Themed image pools
+  const POOLS = {
+    login: [
+      "assets/discovery/cars/car3.jpg",   "assets/discovery/cars/car9.jpg",
+      "assets/discovery/cars/car17.jpg",  "assets/discovery/cars/car25.jpg",
+      "assets/discovery/bikes/bike5.jpg", "assets/discovery/bikes/bike14.jpg",
+      "assets/discovery/bikes/bike23.jpg",
+      "assets/discovery/gaming/gaming2.jpg","assets/discovery/gaming/gaming10.jpg",
+      "assets/discovery/anime/anime4.jpg", "assets/discovery/anime/anime12.jpg",
+      "assets/discovery/anime/anime22.jpg",
+      "assets/discovery/superhero/superhero2.jpg",
+      "assets/discovery/scenery/scenery8.jpg",
+    ],
+    signup: [
+      "assets/discovery/fashion/fashion2.jpg",  "assets/discovery/fashion/fashion10.jpg",
+      "assets/discovery/fashion/fashion20.jpg",
+      "assets/discovery/accessories/accessories5.jpg",
+      "assets/discovery/accessories/accessories16.jpg",
+      "assets/discovery/accessories/accessories24.jpg",
+      "assets/discovery/scenery/scenery3.jpg",  "assets/discovery/scenery/scenery14.jpg",
+      "assets/discovery/scenery/scenery24.jpg",
+      "assets/discovery/interior/interior2.jpg","assets/discovery/interior/interior10.jpg",
+      "assets/discovery/nature/nature8.jpg",    "assets/discovery/nature/nature18.jpg",
+      "assets/discovery/art/art6.jpg",
+    ],
+  };
+  const images = POOLS[theme] || POOLS.signup;
+
+  // Edge-only positions — safe zone is the card area (center 50%)
+  function edgePos(i) {
+    const regions = [
+      { x: () =>  2 + Math.random()*16, y: () =>  5 + Math.random()*80 },  // far left
+      { x: () => 82 + Math.random()*14, y: () =>  5 + Math.random()*80 },  // far right
+      { x: () =>  5 + Math.random()*20, y: () =>  2 + Math.random()*20 },  // top-left
+      { x: () => 75 + Math.random()*20, y: () =>  2 + Math.random()*20 },  // top-right
+      { x: () =>  5 + Math.random()*20, y: () => 72 + Math.random()*22 },  // bot-left
+      { x: () => 75 + Math.random()*20, y: () => 72 + Math.random()*22 },  // bot-right
+      { x: () => 20 + Math.random()*55, y: () =>  0 + Math.random()* 8 },  // top strip
+      { x: () => 20 + Math.random()*55, y: () => 88 + Math.random()*10 },  // bottom strip
+    ];
+    return regions[i % regions.length];
+  }
+
+  const cards = [];
+  const total = 20;
+
+  for (let i = 0; i < total; i++) {
+    const img   = document.createElement("img");
+    img.src     = images[i % images.length];
+    img.alt     = "";
+    img.loading = "lazy";
+    img.className = "afg-card";
+
+    const posGen = edgePos(i);
+    const x   = posGen.x();
+    const y   = posGen.y();
+    const w   = 100 + Math.random() * 80;
+    const h   = Math.round(w * 1.30);
+    // depth tiers
+    const isFar = i < 7;
+    const opacity = isFar
+      ? (0.07 + Math.random() * 0.04)
+      : (0.12 + Math.random() * 0.06);
+    const blur    = isFar ? '6px' : (Math.random() > 0.5 ? '1.5px' : '0px');
+    const dur     = 22 + Math.random() * 12;
+    const del     = Math.random() * 14;
+    const ra      = -(3 + Math.random() * 5);
+    const rb      =   2 + Math.random() * 5;
+    const radius  = isFar ? '28px' : '20px';
+
+    img.style.cssText = [
+      `left:${x.toFixed(1)}%`,
+      `top:${y.toFixed(1)}%`,
+      `width:${Math.round(w)}px`,
+      `height:${Math.round(h)}px`,
+      `opacity:${opacity.toFixed(3)}`,
+      `filter:blur(${blur}) saturate(0.85)`,
+      `border-radius:${radius}`,
+      `--d:${dur.toFixed(1)}s`,
+      `--dl:${del.toFixed(1)}s`,
+      `--ra:${ra.toFixed(1)}deg`,
+      `--rb:${rb.toFixed(1)}deg`,
+      `--px:0px`,
+      `--py:0px`,
+    ].join(';');
+
+    img.dataset.pscale = (0.004 + (i % 4) * 0.002).toFixed(3);
+    container.appendChild(img);
+    cards.push(img);
+  }
+
+  // Parallax for auth pages (gentler than hero)
+  let _mx = 0, _my = 0, _raf = false;
+  window.addEventListener("mousemove", e => {
+    _mx = e.clientX; _my = e.clientY;
+    if (_raf) return;
+    _raf = true;
+    requestAnimationFrame(() => {
+      const cx = window.innerWidth  / 2;
+      const cy = window.innerHeight / 2;
+      cards.forEach(img => {
+        const s  = parseFloat(img.dataset.pscale) || 0.005;
+        const px = Math.max(-12, Math.min(12, (cx - _mx) * s));
+        const py = Math.max(-12, Math.min(12, (cy - _my) * s));
+        img.style.setProperty('--px', `${px.toFixed(1)}px`);
+        img.style.setProperty('--py', `${py.toFixed(1)}px`);
+      });
+      _raf = false;
+    });
   });
 };
 
-
+// Keep backward-compat name
+window.initAuthParallax = window.buildAuthGallery;
 
 // ── All curated ideas for one category (every image, no cap) ──
 // IDs use a hash of the URL so they are globally unique and
