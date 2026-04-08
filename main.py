@@ -1966,7 +1966,17 @@ async def ai_chat(
     if not msg:
         raise HTTPException(400, "message required")
 
-    # ── 1. Keyword search across all ZenPin ideas ─────────────────
+    # ── 1a. Vector search (when search_index.json is loaded) ────────
+    vector_results = []
+    if _search_vectors is not None:
+        try:
+            vec = await gemini_embed(msg)
+            if vec:
+                vector_results = vector_search(vec, top_k=6)
+        except Exception as e:
+            print(f"Vector search in chat failed: {e}")
+
+    # ── 1b. Keyword search across ZenPin DB ideas ─────────────────
     words = [w.lower().strip(".,!?") for w in msg.split() if len(w) > 2]
     all_ideas = db.get_ideas(limit=300)
 
@@ -1975,18 +1985,42 @@ async def ai_chat(
         title    = idea.get("title", "").lower()
         return sum(3 if kw in title else 1 for kw in words if kw in haystack)
 
-    scored = sorted(((kw_score(i), i) for i in all_ideas), key=lambda x: x[0], reverse=True)
-    relevant = [i for s, i in scored if s > 0][:8]
+    scored  = sorted(((kw_score(i), i) for i in all_ideas), key=lambda x: x[0], reverse=True)
+    kw_hits = [i for s, i in scored if s > 0][:6]
+
+    # Merge: vector results (highest quality) + keyword hits
+    seen_ids = set()
+    relevant = []
+    # Convert vector results to idea-like dicts
+    for r in vector_results:
+        if r.get("url") and r["url"] not in seen_ids:
+            seen_ids.add(r["url"])
+            relevant.append({
+                "id":          abs(hash(r["url"])) % 900000,
+                "title":       r.get("caption", msg)[:80],
+                "category":    r.get("category", "Discovery"),
+                "image_url":   r["url"],
+                "description": r.get("caption", ""),
+                "source":      "discovery",
+                "difficulty": 3, "creativity": 4, "usefulness": 3,
+            })
+    for idea in kw_hits:
+        if idea.get("id") not in seen_ids:
+            seen_ids.add(idea.get("id"))
+            relevant.append(idea)
+    relevant = relevant[:8]
 
     # ── 2. Build context ──────────────────────────────────────────
     context = ""
-    if relevant:
-        lines = [
-            f"- {i['title']} ({i['category']})"
-            + (f": {i.get('description','')[:80]}" if i.get('description') else "")
-            for i in relevant[:6]
-        ]
-        context = "ZenPin ideas related to this query:\n" + "\n".join(lines)
+    ctx_lines = []
+    for item in relevant[:6]:
+        line = f"- {item.get('title','')} ({item.get('category','')})"
+        if item.get("description"):
+            line += f": {item['description'][:80]}"
+        ctx_lines.append(line)
+    if ctx_lines:
+        src_note = "(from vector index + DB)" if vector_results else "(from DB)"
+        context = f"ZenPin content related to this query {src_note}:\n" + "\n".join(ctx_lines)
 
     SYSTEM = (
         "You are ZenPin AI — a creative expert assistant for a visual discovery platform like Pinterest. "
