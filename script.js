@@ -3234,23 +3234,34 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("newBoardBtn")?.addEventListener("click", showNewBoardModal);
 
   // ── Edit Profile ──────────────────────────────────────────
-  function openEditProfile() {
-    const user = getUser();
-    if (!user) return;
+  async function openEditProfile() {
+    // If user object isn't cached locally, fetch it from the backend first.
+    // This handles the case where a token exists but zenpin_user wasn't set.
+    let user = getUser();
+    if (!user && isLoggedIn()) {
+      try {
+        user = await apiFetch("GET", "/auth/me");
+        if (user) localStorage.setItem("zenpin_user", JSON.stringify(user));
+      } catch (_) {}
+    }
+    if (!user) {
+      toast("Sign in to edit your profile", true);
+      return;
+    }
     const m = $("editProfileModal");
     if (!m) return;
-    // Pre-fill
-    if ($("epUsername")) $("epUsername").value  = user.username || "";
-    if ($("epBio"))      $("epBio").value       = user.bio      || "";
-    if ($("epBioCount")) $("epBioCount").textContent = (user.bio || "").length;
+    // Pre-fill all fields from stored user object
+    if ($("epUsername"))     $("epUsername").value     = user.username || "";
+    if ($("epBio"))          $("epBio").value          = user.bio      || "";
+    if ($("epBioCount"))     $("epBioCount").textContent = (user.bio || "").length;
     if ($("epAvatarPreview")) $("epAvatarPreview").textContent = (user.username || "?")[0].toUpperCase();
-    if ($("epLocation")) $("epLocation").value  = user.location || "";
+    if ($("epLocation"))     $("epLocation").value     = user.location || "";
     const sl = user.social_links || {};
-    if ($("epInstagram")) $("epInstagram").value = sl.instagram || "";
-    if ($("epTwitter"))  $("epTwitter").value   = sl.twitter   || "";
-    // Refresh font picker with current selection
-    TypographySettings.renderPicker("fontPickerWrap");
-    if ($("epError"))    $("epError").textContent = "";
+    if ($("epInstagram"))    $("epInstagram").value    = sl.instagram || "";
+    if ($("epTwitter"))      $("epTwitter").value      = sl.twitter   || "";
+    // Refresh font picker
+    if (window.TypographySettings) TypographySettings.renderPicker("fontPickerWrap");
+    if ($("epError"))        $("epError").textContent = "";
     m.classList.add("open");
   }
 
