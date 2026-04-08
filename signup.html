@@ -73,9 +73,33 @@
     .auth-footer{text-align:center;font-size:.82rem;color:var(--text-2)}
     .auth-footer a{color:var(--purple);font-weight:700;text-decoration:none}
     @media(max-width:480px){.auth-card{padding:32px 22px}.auth-title{font-size:1.65rem}.skill-opt{font-size:.62rem}}
-  </style>
+  
+    /* ── Floating gallery background ─────────────────────────── */
+    .floating-gallery-bg {
+      position: fixed; inset: 0;
+      overflow: hidden; pointer-events: none; z-index: 0;
+    }
+    .float-img {
+      position: absolute;
+      width: 110px; height: 150px;
+      object-fit: cover;
+      border-radius: 20px;
+      opacity: 0;                       /* JS sets final opacity per image */
+      filter: blur(1.5px) saturate(0.85);
+      box-shadow: 0 18px 40px rgba(0,0,0,0.35);
+      animation: drift var(--dur,20s) ease-in-out var(--del,0s) infinite alternate;
+      transform-origin: center center;
+    }
+    @keyframes drift {
+      0%   { transform: translateY(0px)   rotate(var(--r0,-4deg)); }
+      100% { transform: translateY(-38px) rotate(var(--r1, 5deg)); }
+    }
+    /* Make auth card sit above the gallery */
+    .auth-card, .auth-wrap { position: relative; z-index: 5; }
+    </style>
 </head>
 <body>
+<div class="floating-gallery-bg"></div>
 <div class="auth-bg">
   <div class="auth-blob ab1"></div><div class="auth-blob ab2"></div><div class="auth-blob ab3"></div>
   <div class="auth-grid"></div>
@@ -322,6 +346,57 @@
     console.error("Signup failed:", lastErr);
     btn.classList.remove("loading"); btn.disabled = false;
   };
+
+  /* ── Floating gallery background ───────────────────────── */
+  (function buildGallery() {
+    const images = [
+      "assets/discovery/cars/car1.jpg",
+      "assets/discovery/cars/car8.jpg",
+      "assets/discovery/bikes/bike3.jpg",
+      "assets/discovery/bikes/bike12.jpg",
+      "assets/discovery/anime/anime2.jpg",
+      "assets/discovery/anime/anime9.jpg",
+      "assets/discovery/anime/anime18.jpg",
+      "assets/discovery/accessories/accessories4.jpg",
+      "assets/discovery/accessories/accessories14.jpg",
+      "assets/discovery/superhero/superhero3.jpg",
+      "assets/discovery/superhero/superhero11.jpg",
+      "assets/discovery/scenery/scenery5.jpg",
+      "assets/discovery/scenery/scenery20.jpg",
+      "assets/discovery/fashion/fashion7.jpg",
+      "assets/discovery/nature/nature6.jpg",
+      "assets/discovery/gaming/gaming4.jpg",
+      "assets/discovery/food/food9.jpg",
+      "assets/discovery/workspace/workspace5.jpg",
+    ];
+    const container = document.querySelector(".floating-gallery-bg");
+    if (!container) return;
+
+    const opacities = [0.09, 0.11, 0.08, 0.12, 0.10, 0.09, 0.11];
+    images.forEach((src, i) => {
+      const img = document.createElement("img");
+      img.src   = src;
+      img.alt   = "";
+      img.className = "float-img";
+      img.loading = "lazy";
+      // Spread across viewport
+      const col  = i % 4;
+      const row  = Math.floor(i / 4);
+      img.style.cssText = [
+        `left: ${col * 26 + Math.random() * 8}%`,
+        `top:  ${row * 26 + Math.random() * 10 + 2}%`,
+        `opacity: ${opacities[i % opacities.length]}`,
+        `--dur: ${17 + (i * 1.7 % 8)}s`,
+        `--del: ${(i * 1.3 % 5)}s`,
+        `--r0: ${-3 - (i % 5)}deg`,
+        `--r1: ${3 + (i % 4)}deg`,
+        `width: ${100 + (i % 4) * 18}px`,
+        `height: ${135 + (i % 3) * 20}px`,
+      ].join("; ");
+      container.appendChild(img);
+    });
+  })();
+
 </script>
 </body>
 </html>
