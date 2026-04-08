@@ -1421,13 +1421,38 @@ input, select { font-family: var(--f-ui); }
   .related-row { grid-template-columns: repeat(2,1fr); }
 }
 @media (max-width: 480px) {
-  :root { --px: 14px; }
-  .masonry { column-count: 2; column-gap: 8px; }
+  :root { --px: 12px; }
+  /* Grid: single column on small phones */
+  .masonry { column-count: 1; column-gap: 0; }
+  .ai-masonry { column-count: 1; }
+  /* CTA buttons full-width */
   .hero-cta-row { flex-direction: column; }
   .btn-lg { width: 100%; justify-content: center; }
+  /* AI generator */
   .ai-input-row { flex-direction: column; }
   .ai-gen-btn { width: 100%; justify-content: center; }
-  .modal-detail-col { padding: 18px; }
+  /* Modal full-width on phone */
+  .modal-card {
+    width: 95vw;
+    max-width: 95vw;
+    border-radius: 18px;
+    grid-template-columns: 1fr;
+  }
+  .modal-detail-col { padding: 16px 14px; }
+  .modal-img { min-height: 220px; max-height: 260px; }
+  /* Auth card */
+  .auth-card {
+    width: calc(100vw - 28px);
+    max-width: 100%;
+    padding: 22px 16px;
+    border-radius: 18px;
+  }
+  /* AI chat full-width */
+  .chat-box { border-radius: 12px; }
+  .collab-layout { gap: 12px; }
+  /* Navbar compact */
+  .navbar { padding: 9px 12px; }
+  .nav-logo-text { font-size: 1.1rem; }
 }
 
 /* ── ZenPin AI Chat ─────────────────────────────────── */
@@ -2210,4 +2235,85 @@ body  { font-family: var(--font-body); }
 /* Inline search results area */
 .ai-search-inline-result {
   margin-top: 20px;
+}
+
+
+/* ════════════════════════════════════════════════════════
+   ANIMATED BACKGROUND EFFECTS
+   Fixed layer behind all content (pointer-events: none)
+   Keeps the existing gradient; adds depth + life.
+   ════════════════════════════════════════════════════════ */
+
+.bg-effects {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Floating hearts ─────────────────────────────────── */
+.floating-hearts span {
+  position: absolute;
+  bottom: -40px;
+  color: rgba(219,39,119,0.10);
+  font-size: 1.4rem;
+  animation: floatHeart var(--fh-dur, 16s) linear var(--fh-del, 0s) infinite;
+}
+.floating-hearts span:nth-child(1)  { left:  8%; --fh-dur:14s; --fh-del:0s;  font-size:1.1rem; }
+.floating-hearts span:nth-child(2)  { left: 22%; --fh-dur:18s; --fh-del:3s;  font-size:1.6rem; }
+.floating-hearts span:nth-child(3)  { left: 40%; --fh-dur:13s; --fh-del:7s;  font-size:1rem;   }
+.floating-hearts span:nth-child(4)  { left: 60%; --fh-dur:20s; --fh-del:1s;  font-size:1.4rem; }
+.floating-hearts span:nth-child(5)  { left: 78%; --fh-dur:15s; --fh-del:5s;  font-size:0.9rem; }
+.floating-hearts span:nth-child(6)  { left: 92%; --fh-dur:17s; --fh-del:9s;  font-size:1.2rem; }
+
+@keyframes floatHeart {
+  0%   { transform: translateY(0) rotate(0deg);   opacity: 0;    }
+  10%  { opacity: 0.10; }
+  90%  { opacity: 0.07; }
+  100% { transform: translateY(-110vh) rotate(360deg); opacity: 0; }
+}
+
+/* ── Slow radial pulse (thunder glow) ───────────────── */
+.thunder-glow {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 40% at 25% 20%, rgba(124,58,237,0.09), transparent 60%),
+    radial-gradient(ellipse 50% 35% at 75% 70%, rgba(219,39,119,0.07), transparent 55%);
+  animation: thunderPulse 9s ease-in-out infinite;
+}
+
+@keyframes thunderPulse {
+  0%,100% { opacity: 0.5; transform: scale(1);    }
+  50%      { opacity: 1;   transform: scale(1.06); }
+}
+
+/* ── Drifting wind lines ─────────────────────────────── */
+.wind-lines {
+  position: absolute;
+  inset: 0;
+}
+.wind-lines span {
+  position: absolute;
+  left: -60%;
+  width: 220%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255,255,255,0.06) 40%,
+    rgba(255,255,255,0.06) 60%,
+    transparent 100%
+  );
+  animation: windMove var(--wl-dur, 18s) linear var(--wl-del, 0s) infinite;
+}
+.wind-lines span:nth-child(1) { top: 18%; --wl-dur:18s; --wl-del:0s;  }
+.wind-lines span:nth-child(2) { top: 38%; --wl-dur:24s; --wl-del:6s;  height:1.5px; }
+.wind-lines span:nth-child(3) { top: 62%; --wl-dur:20s; --wl-del:11s; }
+.wind-lines span:nth-child(4) { top: 80%; --wl-dur:15s; --wl-del:4s;  }
+
+@keyframes windMove {
+  from { transform: translateX(0);    }
+  to   { transform: translateX(100%); }
 }
