@@ -1474,6 +1474,164 @@ function fisherYates(arr) {
   return a;
 }
 
+// ════════════════════════════════════════════════════════════
+// HERO — Anti-Gravity Floating Image Gallery
+//
+// Populates #heroFloatingGallery with 28 images drawn from
+// local assets/discovery/ folders.  Each image gets:
+//   • a randomised position on a sparse grid (avoids clumping)
+//   • a random size between 110px and 185px wide
+//   • individual CSS custom props for animation timing and rotation
+//   • staggered animationDelay for a natural wave start
+//
+// Mouse parallax: each image moves at a unique speed (depth
+// layers 1–5) toward the cursor centre, capped at ±18px.
+// ════════════════════════════════════════════════════════════
+function initHeroGallery() {
+  const gallery = document.getElementById("heroFloatingGallery");
+  if (!gallery) return;
+
+  // Source images — drawn from ALL local category folders
+  const HERO_IMAGES = [
+    "assets/discovery/cars/car1.jpg",
+    "assets/discovery/cars/car7.jpg",
+    "assets/discovery/cars/car14.jpg",
+    "assets/discovery/cars/car22.jpg",
+    "assets/discovery/bikes/bike2.jpg",
+    "assets/discovery/bikes/bike10.jpg",
+    "assets/discovery/bikes/bike20.jpg",
+    "assets/discovery/anime/anime1.jpg",
+    "assets/discovery/anime/anime8.jpg",
+    "assets/discovery/anime/anime16.jpg",
+    "assets/discovery/anime/anime24.jpg",
+    "assets/discovery/accessories/accessories3.jpg",
+    "assets/discovery/accessories/accessories12.jpg",
+    "assets/discovery/accessories/accessories22.jpg",
+    "assets/discovery/architecture/architecture4.jpg",
+    "assets/discovery/architecture/architecture14.jpg",
+    "assets/discovery/fashion/fashion3.jpg",
+    "assets/discovery/fashion/fashion13.jpg",
+    "assets/discovery/nature/nature5.jpg",
+    "assets/discovery/nature/nature15.jpg",
+    "assets/discovery/scenery/scenery4.jpg",
+    "assets/discovery/scenery/scenery16.jpg",
+    "assets/discovery/scenery/scenery26.jpg",
+    "assets/discovery/superhero/superhero5.jpg",
+    "assets/discovery/superhero/superhero15.jpg",
+    "assets/discovery/gaming/gaming6.jpg",
+    "assets/discovery/food/food8.jpg",
+    "assets/discovery/workspace/workspace7.jpg",
+  ];
+
+  // Opacity tier — slightly brighter for "closer" images
+  const OPACITIES = [0.10, 0.12, 0.14, 0.11, 0.13];
+
+  // 5-column × 6-row sparse grid positions (percent)
+  const COLS = [4, 21, 40, 59, 78];
+  const ROWS = [3, 20, 38, 56, 72, 86];
+  const positions = [];
+  for (const r of ROWS)
+    for (const c of COLS)
+      positions.push({ x: c + (Math.random() * 10 - 5), y: r + (Math.random() * 8 - 4) });
+
+  // Shuffle positions
+  for (let i = positions.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [positions[i], positions[j]] = [positions[j], positions[i]];
+  }
+
+  HERO_IMAGES.forEach((imgSrc, i) => {
+    const img   = document.createElement("img");
+    img.src     = imgSrc;
+    img.alt     = "";
+    img.loading = "lazy";
+    img.className = "hero-float-img";
+    img.dataset.parallaxLayer = (i % 5) + 1;   // 1 = slowest, 5 = fastest
+
+    const pos  = positions[i % positions.length];
+    const w    = 110 + (i % 5) * 15;            // 110 → 170 px wide
+    const h    = Math.round(w * 1.32);
+    const dur  = 16 + (i % 7) * 1.4;
+    const del  = (i * 1.1) % 9;
+    const rotations = [
+      [-4, 2, 6, -3, 5],
+      [-6, 3, -1, 4, -5],
+      [2, -5, 7, -2, 4],
+      [-3, 6, -4, 2, -6],
+      [5, -2, 3, -7, 4],
+    ][i % 5];
+
+    img.style.cssText = [
+      `left: ${pos.x}%`,
+      `top:  ${pos.y}%`,
+      `width: ${w}px`,
+      `height: ${h}px`,
+      `opacity: ${OPACITIES[i % OPACITIES.length]}`,
+      `--ag-dur: ${dur}s`,
+      `--ag-del: ${del}s`,
+      `--r0: ${rotations[0]}deg`,
+      `--r1: ${rotations[1]}deg`,
+      `--r2: ${rotations[2]}deg`,
+      `--r3: ${rotations[3]}deg`,
+      `--r4: ${rotations[4]}deg`,
+    ].join("; ");
+
+    gallery.appendChild(img);
+  });
+
+  // Mouse parallax — moves images toward cursor, depth-layered
+  let _mx = 0, _my = 0, _rafPending = false;
+
+  window.addEventListener("mousemove", e => {
+    _mx = e.clientX;
+    _my = e.clientY;
+    if (!_rafPending) {
+      _rafPending = true;
+      requestAnimationFrame(() => {
+        const cx = window.innerWidth  / 2;
+        const cy = window.innerHeight / 2;
+        gallery.querySelectorAll(".hero-float-img").forEach(img => {
+          const layer = parseInt(img.dataset.parallaxLayer) || 1;
+          const speed = layer * 0.012;
+          const px    = (cx - _mx) * speed;
+          const py    = (cy - _my) * speed;
+          // Clamp to ±18px so far images don't slide off screen
+          img.style.transform = `translate(${Math.max(-18, Math.min(18, px))}px, ${Math.max(-18, Math.min(18, py))}px)`;
+        });
+        _rafPending = false;
+      });
+    }
+  });
+}
+
+
+// Auth page mouse parallax (called from login.html / signup.html)
+// Exported on window so inline scripts can call it.
+window.initAuthParallax = function(selector) {
+  const imgs = document.querySelectorAll(selector);
+  if (!imgs.length) return;
+  let _mx = 0, _my = 0, _raf = false;
+  window.addEventListener("mousemove", e => {
+    _mx = e.clientX; _my = e.clientY;
+    if (!_raf) {
+      _raf = true;
+      requestAnimationFrame(() => {
+        const cx = window.innerWidth  / 2;
+        const cy = window.innerHeight / 2;
+        imgs.forEach((img, i) => {
+          const speed = ((i % 6) + 1) * 0.008;
+          const px = Math.max(-15, Math.min(15, (cx - _mx) * speed));
+          const py = Math.max(-15, Math.min(15, (cy - _my) * speed));
+          img.style.transform = `translate(${px}px, ${py}px)`;
+        });
+        _raf = false;
+      });
+    }
+  });
+};
+
+
+
 // ── All curated ideas for one category (every image, no cap) ──
 // IDs use a hash of the URL so they are globally unique and
 // never collide across categories, even if char codes match.
@@ -2893,6 +3051,9 @@ function autoDetectCategory(text) {
 document.addEventListener("DOMContentLoaded", async () => {
   // Decay preference weights slightly each session
   UserPrefs.decay();
+
+  // Hero floating gallery (anti-gravity effect)
+  initHeroGallery();
 
   // Generate category chips from actual _curatedCache keys
   // (runs after _curatedCache IIFE has already executed)
