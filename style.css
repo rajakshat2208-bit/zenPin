@@ -2319,9 +2319,13 @@ body  { font-family: var(--font-body); }
 }
 
 /* ════════════════════════════════════════════════════════
-   HERO — ANTI-GRAVITY FLOATING IMAGE GALLERY
-   Sits behind all hero text/buttons (z-index: 0).
-   Images drift, rotate and respond to mouse parallax.
+   HERO — THREE-LAYER DEPTH GALLERY
+   Layer 0 (back):   large, heavy blur, very low opacity — set via JS
+   Layer 1 (mid):    medium, slight blur, mid opacity
+   Layer 2 (front):  small, sharp, highest opacity, edge-only positions
+   Each layer has its own animation name and speed.
+   Parallax uses a CSS custom property --px/--py so it
+   composites with the keyframe transform (no override).
    ════════════════════════════════════════════════════════ */
 
 .hero-floating-gallery {
@@ -2332,29 +2336,60 @@ body  { font-family: var(--font-body); }
   z-index: 0;
 }
 
-.hero-float-img {
+/* ── Layer 0 — back ──────────────────────────────────── */
+.hfg-back {
+  position: absolute;
+  object-fit: cover;
+  border-radius: 28px;
+  will-change: transform;
+  animation: hfgDriftBack var(--d, 28s) ease-in-out var(--dl, 0s) infinite alternate;
+}
+@keyframes hfgDriftBack {
+  0%   { transform: translate(var(--px,0px), var(--py,0px)) translateY(0px)   rotate(var(--ra,-3deg)) scale(1); }
+  50%  { transform: translate(var(--px,0px), var(--py,0px)) translateY(-22px) rotate(var(--rb, 2deg)) scale(1.03); }
+  100% { transform: translate(var(--px,0px), var(--py,0px)) translateY(-38px) rotate(var(--ra,-3deg)) scale(1.01); }
+}
+
+/* ── Layer 1 — mid ───────────────────────────────────── */
+.hfg-mid {
   position: absolute;
   object-fit: cover;
   border-radius: 22px;
-  opacity: 0;                 /* JS sets individual opacity */
-  filter: blur(0.8px) saturate(0.9);
-  box-shadow: 0 20px 48px rgba(0,0,0,0.22);
   will-change: transform;
-  transition: transform 0.12s linear;   /* smooth parallax */
-  animation: antiGravityFloat var(--ag-dur, 20s) ease-in-out var(--ag-del, 0s) infinite alternate;
+  animation: hfgDriftMid var(--d, 22s) ease-in-out var(--dl, 0s) infinite alternate;
+}
+@keyframes hfgDriftMid {
+  0%   { transform: translate(var(--px,0px), var(--py,0px)) translateY(0px)   translateX(0px)   rotate(var(--ra,-4deg)) scale(1); }
+  33%  { transform: translate(var(--px,0px), var(--py,0px)) translateY(-18px) translateX(8px)   rotate(var(--rb, 3deg)) scale(1.04); }
+  66%  { transform: translate(var(--px,0px), var(--py,0px)) translateY(-30px) translateX(-9px)  rotate(var(--ra,-2deg)) scale(1.02); }
+  100% { transform: translate(var(--px,0px), var(--py,0px)) translateY(-14px) translateX(6px)   rotate(var(--rb, 4deg)) scale(1.03); }
 }
 
-@keyframes antiGravityFloat {
-  0%   { transform: translateY(0px)   translateX(0px)   rotate(var(--r0,-4deg)) scale(1);    }
-  25%  { transform: translateY(-18px) translateX(10px)  rotate(var(--r1, 2deg)) scale(1.03); }
-  50%  { transform: translateY(-38px) translateX(-12px) rotate(var(--r2, 6deg)) scale(1.05); }
-  75%  { transform: translateY(-14px) translateX(11px)  rotate(var(--r3,-3deg)) scale(1.02); }
-  100% { transform: translateY(-44px) translateX(-8px)  rotate(var(--r4, 5deg)) scale(1.06); }
+/* ── Layer 2 — front ─────────────────────────────────── */
+.hfg-front {
+  position: absolute;
+  object-fit: cover;
+  border-radius: 18px;
+  will-change: transform;
+  animation: hfgDriftFront var(--d, 18s) ease-in-out var(--dl, 0s) infinite alternate;
 }
+@keyframes hfgDriftFront {
+  0%   { transform: translate(var(--px,0px), var(--py,0px)) translateY(0px)   rotate(var(--ra,-5deg)) scale(1); }
+  40%  { transform: translate(var(--px,0px), var(--py,0px)) translateY(-12px) rotate(var(--rb, 4deg)) scale(1.05); }
+  100% { transform: translate(var(--px,0px), var(--py,0px)) translateY(-24px) rotate(var(--ra,-3deg)) scale(1.02); }
+}
+
+/* Hero body content sits above gallery */
+.hero-body { position: relative; z-index: 2; }
+
+/* Clear safe zone — cards placed in this region get display:none
+   This is enforced in JS via position constraints, not CSS */
 
 /* ════════════════════════════════════════════════════════
-   AUTH PAGES — ANTI-GRAVITY FLOATING IMAGE GALLERY
-   Same feel as hero, used on login.html + signup.html.
+   AUTH PAGES — THEMED FLOATING GALLERY
+   Login:  darker purple/blue/cyber — uses cars, bikes, gaming, anime
+   Signup: softer pink/peach/purple  — uses fashion, accessories, scenery, interior
+   Both have their own CSS class so they never conflict.
    ════════════════════════════════════════════════════════ */
 
 .auth-floating-gallery {
@@ -2365,36 +2400,30 @@ body  { font-family: var(--font-body); }
   z-index: 0;
 }
 
-.auth-float-img {
+.afg-card {
   position: absolute;
   object-fit: cover;
-  border-radius: 24px;
-  filter: blur(1px) saturate(0.85);
-  box-shadow: 0 25px 60px rgba(0,0,0,0.20);
   will-change: transform;
-  transition: transform 0.12s linear;
-  animation: authAntiGravity var(--aa-dur, 22s) ease-in-out var(--aa-del, 0s) infinite alternate;
+  box-shadow: 0 24px 56px rgba(0,0,0,0.28);
+  animation: afgDrift var(--d,24s) ease-in-out var(--dl,0s) infinite alternate;
 }
 
-@keyframes authAntiGravity {
-  0%   { transform: translateY(0px)   translateX(0px)   rotate(var(--r0,-5deg)) scale(1);    }
-  25%  { transform: translateY(-28px) translateX(13px)  rotate(var(--r1, 4deg)) scale(1.03); }
-  50%  { transform: translateY(-50px) translateX(-15px) rotate(var(--r2,-2deg)) scale(1.05); }
-  75%  { transform: translateY(-18px) translateX(9px)   rotate(var(--r3, 5deg)) scale(1.02); }
-  100% { transform: translateY(-58px) translateX(-10px) rotate(var(--r4,-4deg)) scale(1.06); }
+@keyframes afgDrift {
+  0%   { transform: translate(var(--px,0px), var(--py,0px)) translateY(0px)   rotate(var(--ra,-4deg)) scale(1); }
+  50%  { transform: translate(var(--px,0px), var(--py,0px)) translateY(-28px) rotate(var(--rb, 3deg)) scale(1.03); }
+  100% { transform: translate(var(--px,0px), var(--py,0px)) translateY(-48px) rotate(var(--ra,-2deg)) scale(1.02); }
 }
 
-/* Subtle blur overlay between gallery and auth card */
 .auth-bg-overlay {
   position: fixed;
   inset: 0;
   z-index: 1;
-  backdrop-filter: blur(5px);
-  background: rgba(10, 8, 20, 0.30);
   pointer-events: none;
 }
 
-/* Hero body + auth card sit above galleries */
-.hero-body   { position: relative; z-index: 2; }
-.auth-card,
-.auth-wrap   { position: relative; z-index: 5; }
+/* Login overlay — dark purple/blue tint */
+.auth-overlay-login  { background: rgba(8, 6, 22, 0.52); backdrop-filter: blur(4px); }
+/* Signup overlay — softer warm tint */
+.auth-overlay-signup { background: rgba(14, 6, 20, 0.44); backdrop-filter: blur(3px); }
+
+.auth-card, .auth-wrap { position: relative; z-index: 5; }
