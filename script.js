@@ -571,7 +571,7 @@ async function initDashboard() {
     const trendGrid = document.getElementById("dashTrendingGrid");
     if (trendGrid) {
       const cats = Object.keys(CAT_CONFIG).sort(() => Math.random() - 0.5).slice(0, 3);
-      const ideas = cats.flatMap(c => getLocalDiscovery(c, 1)).slice(0, 12);
+      const ideas = cats.flatMap(c => getCuratedForCategory(c, 8)).slice(0, 24);  // use local curated, no slice(0,12)
       renderGrid(trendGrid, ideas);
     }
     return;
@@ -1685,9 +1685,21 @@ function initHeroGallery() {
     });
   });
 
-  // Hide gallery on mobile (saves paint budget, cards would overlap text)
+  // On mobile: keep gallery but use far fewer, smaller cards
   if (window.matchMedia("(max-width: 640px)").matches) {
-    gallery.style.display = "none";
+    // Remove all but 6 back-layer cards to keep the effect on mobile
+    const allImgs = Array.from(gallery.querySelectorAll(".hero-float-img, .hfg-back, .hfg-mid, .hfg-front"));
+    // Keep only back-layer cards (largest blur = safest on mobile)
+    const backCards = Array.from(gallery.querySelectorAll(".hfg-back")).slice(0, 6);
+    allImgs.forEach(img => {
+      if (!backCards.includes(img)) img.remove();
+    });
+    // Make surviving cards smaller and more opaque for mobile legibility
+    backCards.forEach((img, i) => {
+      img.style.width  = "90px";
+      img.style.height = "118px";
+      img.style.opacity = "0.07";
+    });
   }
 }
 
