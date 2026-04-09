@@ -1392,7 +1392,7 @@ const _curatedCache = (() => {
     "pets":         seq("pets",         "pet",          25),
     "nature":       seq("nature",       "nature",       25),
     "architecture": seq("architecture", "architecture", 25),
-    "accessories":  seq("accessories",  "accessories",  25), // key=accessories
+    "accessories":  seq("accessories",  "accessory",   25), // files: accessory1.jpg…
     "art":          seq("art",          "art",          30), // art/ folder
     "interior":     seq("interior",     "interior",     25), // Interior Design → interior
     // ── Activate additional folders as you upload them ─────
@@ -1582,8 +1582,8 @@ function initHeroGallery() {
       imgPool: ALL,
       minW: 190, maxW: 240,
       ratio: 1.30,
-      minOp: 0.065, maxOp: 0.085,
-      blur:  '8px',
+      minOp: 0.18,  maxOp: 0.26,
+      blur:  '2px',
       radius: '30px',
       minDur: 26, maxDur: 34,
       parallaxScale: 0.006,
@@ -1596,8 +1596,8 @@ function initHeroGallery() {
       imgPool: ALL,
       minW: 140, maxW: 175,
       ratio: 1.30,
-      minOp: 0.11, maxOp: 0.14,
-      blur:  '1.5px',
+      minOp: 0.22, maxOp: 0.30,
+      blur:  '0.5px',
       radius: '22px',
       minDur: 20, maxDur: 26,
       parallaxScale: 0.010,
@@ -1610,7 +1610,7 @@ function initHeroGallery() {
       imgPool: ALL,
       minW: 96, maxW: 126,
       ratio: 1.32,
-      minOp: 0.16, maxOp: 0.20,
+      minOp: 0.28, maxOp: 0.38,
       blur:  '0px',
       radius: '16px',
       minDur: 16, maxDur: 21,
@@ -1685,21 +1685,15 @@ function initHeroGallery() {
     });
   });
 
-  // On mobile: keep gallery but use far fewer, smaller cards
+  // On mobile: 3 mid + 3 back cards — visible and premium
   if (window.matchMedia("(max-width: 640px)").matches) {
-    // Remove all but 6 back-layer cards to keep the effect on mobile
-    const allImgs = Array.from(gallery.querySelectorAll(".hero-float-img, .hfg-back, .hfg-mid, .hfg-front"));
-    // Keep only back-layer cards (largest blur = safest on mobile)
-    const backCards = Array.from(gallery.querySelectorAll(".hfg-back")).slice(0, 6);
-    allImgs.forEach(img => {
-      if (!backCards.includes(img)) img.remove();
-    });
-    // Make surviving cards smaller and more opaque for mobile legibility
-    backCards.forEach((img, i) => {
-      img.style.width  = "90px";
-      img.style.height = "118px";
-      img.style.opacity = "0.07";
-    });
+    const allMobile = Array.from(gallery.querySelectorAll(".hfg-back, .hfg-mid, .hfg-front"));
+    const midM  = Array.from(gallery.querySelectorAll(".hfg-mid")).slice(0, 3);
+    const backM = Array.from(gallery.querySelectorAll(".hfg-back")).slice(0, 3);
+    const keepM = new Set([...midM, ...backM]);
+    allMobile.forEach(img => { if (!keepM.has(img)) img.remove(); });
+    midM.forEach(img  => { img.style.cssText += ";width:84px;height:110px;opacity:0.28;filter:blur(0px) saturate(0.9)"; });
+    backM.forEach(img => { img.style.cssText += ";width:100px;height:130px;opacity:0.18;filter:blur(1px) saturate(0.85)"; });
   }
 }
 
@@ -1781,9 +1775,9 @@ window.buildAuthGallery = function(theme) {
     // depth tiers
     const isFar = i < 7;
     const opacity = isFar
-      ? (0.07 + Math.random() * 0.04)
-      : (0.12 + Math.random() * 0.06);
-    const blur    = isFar ? '6px' : (Math.random() > 0.5 ? '1.5px' : '0px');
+      ? (0.14 + Math.random() * 0.08)
+      : (0.22 + Math.random() * 0.10);
+    const blur    = isFar ? '2px' : '0px';
     const dur     = 22 + Math.random() * 12;
     const del     = Math.random() * 14;
     const ra      = -(3 + Math.random() * 5);
@@ -3599,23 +3593,31 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // ── Edit Profile ──────────────────────────────────────────
   async function openEditProfile() {
-    // If user object isn't cached locally, fetch it from the backend first.
-    // This handles the case where a token exists but zenpin_user wasn't set.
+    // Open modal immediately — user sees feedback right away
+    const m = $("editProfileModal");
+    if (!m) { toast("Profile editor not available", true); return; }
+    if ($("epError")) $("epError").textContent = "";
+    m.classList.add("open");
+
+    // Get user data — localStorage first, then /auth/me if missing
     let user = getUser();
     if (!user && isLoggedIn()) {
+      if ($("epUsername")) $("epUsername").placeholder = "Loading…";
       try {
         user = await apiFetch("GET", "/auth/me");
         if (user) localStorage.setItem("zenpin_user", JSON.stringify(user));
-      } catch (_) {}
+      } catch (_) {
+        if ($("epError")) $("epError").textContent = "Could not load profile.";
+        return;
+      }
     }
     if (!user) {
-      toast("Sign in to edit your profile", true);
+      if ($("epError")) $("epError").textContent = "Please sign in to edit your profile.";
       return;
     }
-    const m = $("editProfileModal");
-    if (!m) return;
-    // Pre-fill all fields from stored user object
-    if ($("epUsername"))     $("epUsername").value     = user.username || "";
+
+    // Pre-fill all fields
+    if ($("epUsername"))     { $("epUsername").value = user.username || ""; $("epUsername").placeholder = "your username"; }
     if ($("epBio"))          $("epBio").value          = user.bio      || "";
     if ($("epBioCount"))     $("epBioCount").textContent = (user.bio || "").length;
     if ($("epAvatarPreview")) $("epAvatarPreview").textContent = (user.username || "?")[0].toUpperCase();
@@ -3623,10 +3625,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const sl = user.social_links || {};
     if ($("epInstagram"))    $("epInstagram").value    = sl.instagram || "";
     if ($("epTwitter"))      $("epTwitter").value      = sl.twitter   || "";
-    // Refresh font picker
     if (window.TypographySettings) TypographySettings.renderPicker("fontPickerWrap");
-    if ($("epError"))        $("epError").textContent = "";
-    m.classList.add("open");
   }
 
   $("editProfileBtn")?.addEventListener("click", openEditProfile);
