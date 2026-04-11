@@ -251,12 +251,16 @@ function updateNavbar() {
       }
     }
     if (logoutBtn) logoutBtn.onclick = () => {
-      localStorage.removeItem("token");
+      // Remove ALL possible token keys (old + new) to ensure clean logout
+      localStorage.removeItem("zenpin_token");
       localStorage.removeItem("zenpin_user");
-      S.savedIds.clear(); S.likedIds.clear();
+      localStorage.removeItem("token");   // legacy key
+      localStorage.removeItem("user");    // legacy key
+      S.savedIds.clear();
+      S.likedIds.clear();
       updateNavbar();
-      go("home");
-      toast("Logged out. See you soon!");
+      navigate("home");
+      toast("Logged out. See you soon! 👋");
     };
   } else {
     if (loginBtn) loginBtn.style.display = "flex";
@@ -330,7 +334,7 @@ function cardHTML(idea, idx) {
       alt="${escHtml(idea.title)}"
       data-fb1="${picsumFb}"
       data-fb2="${svgFb}"
-      onerror="(function(el){if(!el._e1){el._e1=1;el.src=el.dataset.fb1;}else if(!el._e2){el._e2=1;el.src=el.dataset.fb2;el.onerror=null;}})(this)"
+      onerror="(function(el){if(!el._e1){el._e1=1;el.src=el.dataset.fb1||el.dataset.fb2;}else if(!el._e2){el._e2=1;el.src=el.dataset.fb2;el.onerror=null;}else{var c=el.closest('.idea-card');if(c)c.style.display='none';}})(this)"
     />
     ${sourceBadge}
     <div class="card-static-cat">${idea.category}</div>
@@ -693,6 +697,7 @@ function go(page) {
                   dashboard:initDashboard };
   (inits[page] || (() => {}))();
 }
+window.navigate = go;  // alias — some code uses navigate(), others use go()
 
 // ─────────────────────────────────────────────────────────────
 // DISCOVERY — real category-matched images (no API key needed)
@@ -903,45 +908,69 @@ function makePlaceholder(category, idx, title) {
 // null = no folder uploaded yet → Picsum fallback.
 // ════════════════════════════════════════════════════════════
 const CATEGORY_MAP = {
-  "cars":               "cars",
-  "car":                "cars",
-  "bikes":              "bikes",
-  "bike":               "bikes",
-  "motorcycle":         "bikes",
-  "anime":              "anime",
-  "gaming":             "gaming",
-  "game":               "gaming",
-  "food":               "food",
-  "fashion":            "fashion",
-  "nature":             "nature",
-  "wildlife":           "nature",
-  "architecture":       "architecture",
-  "building":           "architecture",
-  "workspace":          "workspace",
-  "desk":               "workspace",
-  "pets":               "pets",
-  "pet":                "pets",
-  "scenery":            "scenery",
-  "landscape":          "scenery",
-  "travel":             "scenery",
-  "art":                "art",
-  "interior design":    "interior",
-  "interior":           "interior",
+  // ── Cars ───────────────────────────────────────────────────
+  "cars": "cars", "car": "cars", "Cars": "cars",
+
+  // ── Bikes (folder on disk is "Bikes" with capital B) ───────
+  "bikes": "bikes", "bike": "bikes", "Bikes": "bikes",
+  "motorcycle": "bikes", "Motorbike": "bikes",
+
+  // ── Anime ──────────────────────────────────────────────────
+  "anime": "anime", "Anime": "anime", "manga": "anime",
+
+  // ── Gaming ─────────────────────────────────────────────────
+  "gaming": "gaming", "game": "gaming", "Gaming": "gaming",
+
+  // ── Food ───────────────────────────────────────────────────
+  "food": "food", "Food": "food",
+
+  // ── Fashion ────────────────────────────────────────────────
+  "fashion": "fashion", "Fashion": "fashion",
+
+  // ── Nature ─────────────────────────────────────────────────
+  "nature": "nature", "Nature": "nature", "wildlife": "nature",
+
+  // ── Architecture ───────────────────────────────────────────
+  "architecture": "architecture", "Architecture": "architecture",
+  "building": "architecture",
+
+  // ── Workspace ──────────────────────────────────────────────
+  "workspace": "workspace", "Workspace": "workspace", "desk": "workspace",
+
+  // ── Pets ───────────────────────────────────────────────────
+  "pets": "pets", "Pets": "pets", "pet": "pets",
+
+  // ── Scenery ────────────────────────────────────────────────
+  "scenery": "scenery", "Scenery": "scenery",
+  "landscape": "scenery", "travel": "scenery", "Travel": "scenery",
+
+  // ── Art ────────────────────────────────────────────────────
+  "art": "art", "Art": "art",
+
+  // ── Interior Design ────────────────────────────────────────
+  "interior design": "interior", "Interior Design": "interior",
+  "interior": "interior", "Interior": "interior",
+
+  // ── Ladies Accessories ─────────────────────────────────────
   "ladies accessories": "accessories",
-  "accessories":        "accessories",
-  "accessory":          "accessories",
-  "superheroes":        "superhero",
-  "superhero":          "superhero",
-  "hero":               "superhero",
-  // Direct mappings for all uploaded folders
-  "tech":               "tech",
-  "tattoos":            "tattoos",
-  "plants":             "plants",
-  "flowers":            "flowers",
-  "fitness":            "fitness",
-  "music":              "music",
-  "drinks":             "drinks",
-  "cigarettes":         "cigarettes",
+  "Ladies Accessories": "accessories",
+  "accessories": "accessories", "Accessories": "accessories",
+  "accessory": "accessories",
+
+  // ── Superheroes ────────────────────────────────────────────
+  "superheroes": "superhero", "Superheroes": "superhero",
+  "superhero": "superhero", "Superhero": "superhero",
+  "hero": "superhero",
+
+  // ── Additional folders ─────────────────────────────────────
+  "tech": "tech", "Tech": "tech",
+  "tattoos": "tattoos", "Tattoos": "tattoos",
+  "plants": "plants", "Plants": "plants",
+  "flowers": "flowers", "Flowers": "flowers",
+  "fitness": "fitness", "Fitness": "fitness",
+  "music": "music", "Music": "music",
+  "drinks": "drinks", "Drinks": "drinks",
+  "cigarettes": "cigarettes",
 };
 
 // ════════════════════════════════════════════════════════════
@@ -1056,83 +1085,71 @@ function scoreIdea(idea) {
 //    user upload → Picsum (stable seed, never breaks)
 // ════════════════════════════════════════════════════════════
 function getLocalImage(idea) {
-  // Null guard — always return a valid string, never undefined
+  // Always return a valid string — never undefined or null
   if (!idea) return `https://picsum.photos/seed/0/400/600`;
-  const raw = (idea.category || "scenery").toLowerCase().trim();
-  const key = CATEGORY_MAP[raw];
 
-  // If key exists and cache has URLs for it, use them.
-  // key may be undefined (not in CATEGORY_MAP) — treat same as null.
-  if (key && key !== "null") {
+  const raw = String(idea.category || "").trim();
+
+  // Resolve category → cache key.
+  // Try exact match first (handles title-case like "Bikes"), then lowercase.
+  const key =
+    CATEGORY_MAP[raw] ||
+    CATEGORY_MAP[raw.toLowerCase()] ||
+    null;
+
+  if (key) {
     const urls = _curatedCache[key];
     if (urls && urls.length > 0) {
-      const base  = Math.abs(idea.id);
-      const score = scoreIdea(idea);
-      const saves = idea.saves_count || idea.saves || 0;
-      const likes = idea.likes_count || idea.likes || 0;
+      // Filter out Windows copy-artefacts (e.g. "bike13 (2).jpg")
+      const safeUrls = urls.filter(u =>
+        u &&
+        !u.includes(" (1)") &&
+        !u.includes(" (2)") &&
+        !u.includes(" copy") &&
+        !u.toLowerCase().includes("copy")
+      );
 
-      // ── Choose the pool and split ──────────────────────────
-      const aesthetic = AESTHETIC_IMAGES[key] || [];
-      const featured  = FEATURED_IMAGES[key]  || [];
+      if (safeUrls.length > 0) {
+        // Variety guard — avoid back-to-back repeats of the same image
+        const base = Math.abs(Number(idea.id) || 0);
+        let idx = base % safeUrls.length;
 
-      const trending = score > 1000 || saves > 1000 || likes > 500;
-      const popular  = !trending && score >= 200;
-
-      let pool, split;
-      if (trending && aesthetic.length > 0) {
-        pool  = aesthetic;   // 90% aesthetic, 10% featured
-        split = 9;
-      } else if (popular && featured.length > 0) {
-        pool  = featured;    // 80% featured, 20% full
-        split = 8;
-      } else {
-        pool  = featured;    // 70% featured, 30% full
-        split = 7;
-      }
-
-      let idx;
-      if (pool.length > 0 && (base % 10) < split) {
-        const fi = pool[base % pool.length] - 1;   // 1-based → 0-based
-        idx = Math.min(Math.max(fi, 0), urls.length - 1);
-      } else {
-        idx = base % urls.length;
-      }
-
-      // ── Variety guard — no back-to-back repeats ────────────
-      if (_lastUsed[key] === urls[idx] && urls.length > 1) {
-        idx = (idx + 1) % urls.length;
-      }
-
-      // ── Infinite scroll boost — prefer unseen images ───────
-      if (_seenUrls.size > 0 && urls.length > _seenUrls.size) {
-        let attempts = 0;
-        while (_seenUrls.has(urls[idx]) && attempts < urls.length) {
-          idx = (idx + 1) % urls.length;
-          attempts++;
+        if (_lastUsed[key] === safeUrls[idx] && safeUrls.length > 1) {
+          idx = (idx + 1) % safeUrls.length;
         }
-      }
 
-      const chosen = urls[idx];
-      _lastUsed[key] = chosen;
-      _seenUrls.add(chosen);
-      return chosen;
+        // Prefer unseen images during infinite scroll
+        if (_seenUrls.size > 0 && safeUrls.length > _seenUrls.size) {
+          let attempts = 0;
+          while (_seenUrls.has(safeUrls[idx]) && attempts < safeUrls.length) {
+            idx = (idx + 1) % safeUrls.length;
+            attempts++;
+          }
+        }
+
+        const chosen = safeUrls[idx];
+        _lastUsed[key] = chosen;
+        _seenUrls.add(chosen);
+        return chosen;
+      }
     }
   }
 
-  // User-uploaded image (creator post — not an API URL)
+  // Creator post with a real image URL (not an API/placeholder URL)
   const existing = idea.image_url || "";
   if (
     existing &&
     !existing.includes("loremflickr") &&
     !existing.includes("unsplash")    &&
     !existing.includes("pexels")      &&
-    !existing.includes("pixabay")
+    !existing.includes("pixabay")     &&
+    !existing.includes("picsum")
   ) {
     return existing;
   }
 
-  // Stable Picsum for categories with no uploaded folder
-  return `https://picsum.photos/seed/${Math.abs(idea.id)}/400/600`;
+  // Final fallback — stable Picsum per-idea (never a broken path)
+  return `https://picsum.photos/seed/${Math.abs(Number(idea.id) || 0)}/400/600`;
 }
 
 // Called by renderGrid before each full repaint.
@@ -1381,7 +1398,7 @@ const _curatedCache = (() => {
   const cache = {
     // ── Uploaded folders (active) ──────────────────────────
     "cars":         seq("cars",         "car",          30),
-    "bikes":        seq("bikes",        "bike",         30),
+    "bikes":        seq("Bikes",        "bike",         30), // folder=Bikes (capital B on GitHub Pages)
     "anime":        seq("anime",        "anime",        30),
     "gaming":       seq("gaming",       "gaming",       28),
     "scenery":      seq("scenery",      "scenery",      30),
@@ -1392,7 +1409,7 @@ const _curatedCache = (() => {
     "pets":         seq("pets",         "pet",          25),
     "nature":       seq("nature",       "nature",       25),
     "architecture": seq("architecture", "architecture", 25),
-    "accessories":  seq("accessories",  "accessory",   25), // files: accessory1.jpg…
+    "accessories":  seq("accessories",  "accessory",   30), // files: accessory1.jpg…accessory30.jpg
     "art":          seq("art",          "art",          30), // art/ folder
     "interior":     seq("interior",     "interior",     25), // Interior Design → interior
     // ── Activate additional folders as you upload them ─────
@@ -1416,13 +1433,15 @@ const _curatedCache = (() => {
     .then(data => {
       if (!data) return;
       let added = 0;
+      // FOLDER_KEY: disk folder name → _curatedCache key (NOT display label)
       const FOLDER_KEY = {
-        "accessories":   "ladies accessories",
-        "interior":      "interior design",
-        "interior_design": "interior design",
-        "superhero":     "superheroes",
-        "superheroes":   "superheroes",
-        "aesthetic":     "art",
+        "accessories":      "accessories",   // folder=accessories → key=accessories ✓
+        "ladies_accessories":"accessories",
+        "interior":         "interior",
+        "interior_design":  "interior",
+        "superhero":        "superhero",     // folder=superhero → key=superhero ✓
+        "superheroes":      "superhero",
+        "aesthetic":        "art",
       };
       for (const [folder, urls] of Object.entries(data)) {
         if (folder.startsWith("_") || !Array.isArray(urls) || !urls.length) continue;
@@ -2025,11 +2044,11 @@ async function initHome() {
 
   const cat = S.filter && S.filter !== "all" ? S.filter.toLowerCase() : null;
 
-  // Reset scroll pointer and cached dataset every (re)init.
-  // Without this, getAllLocalIdeas() returns stale all-category data
-  // even when a single-category filter is active.
+  // Reset scroll pointer, cached dataset, and image variety state on every init.
   S.loaded = 0;
   resetLocalDataset();
+  resetImageVariety();  // clear _lastUsed so variety guard doesn't repeat images
+  _seenUrls.clear();    // clear seen-URL set so infinite scroll gets fresh images
 
   // ── Step 1: Build local dataset ──────────────────────────────
   let localIdeas;
@@ -2074,9 +2093,18 @@ async function initHome() {
           idea.image_url = getLocalImage(idea);
         }
       }
-      // Merge: local curated ideas (already in S.allIdeas) + DB creator posts
-      // dedupe() ensures local images are never replaced by DB entries
-      const merged = dedupe([...S.allIdeas, ...dbIdeas]);
+      // When a category filter is active, only blend DB ideas for that category.
+      // This prevents wrong-category DB ideas from appearing in filtered views.
+      const filteredDb = cat
+        ? dbIdeas.filter(idea => {
+            const raw = String(idea.category || "").trim();
+            const key = CATEGORY_MAP[raw] || CATEGORY_MAP[raw.toLowerCase()] || raw.toLowerCase();
+            const activeKey = CATEGORY_MAP[cat] || cat;
+            return key === activeKey;
+          })
+        : dbIdeas;
+
+      const merged = dedupe([...S.allIdeas, ...filteredDb]);
 
       console.log(`[ZenPin] Local: ${S.allIdeas.length}, DB: ${dbIdeas.length}, Final: ${merged.length}`);
 
@@ -2525,12 +2553,21 @@ Be conversational but expert. Use **bold** and bullets. Stay under 200 words.`,
       if (_chatHistory.length > 20) _chatHistory = _chatHistory.slice(-20);
 
       // Format markdown-lite: **bold**, bullet points
+      // Guard: never show empty reply
+      if (!reply || reply.trim().length < 2) {
+        reply = "I searched ZenPin but couldn't find a specific answer for that. " +
+                "Try browsing the Explore page or refining your question.";
+      }
+
       const formatted = reply
         .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+        .replace(/^## (.+)$/gm, "<strong>$1</strong>")
+        .replace(/^### (.+)$/gm, "<strong>$1</strong>")
         .replace(/\n- /g, "<br>• ")
+        .replace(/\n\d+\. /g, m => "<br>" + m.trim() + " ")
         .replace(/\n/g, "<br>");
 
-      // Render AI reply
+      // Render AI reply (text always comes before images)
       appendMsg("assistant", formatted);
 
       // If research returned relevant ZenPin cards, show them inline
@@ -2560,8 +2597,11 @@ Be conversational but expert. Use **bold** and bullets. Stay under 200 words.`,
 
     } catch (err) {
       $("aiTyping")?.remove();
-      appendMsg("assistant", "Sorry, I couldn't connect right now. Try again in a moment.");
-      console.error("AI research error:", err);
+      const errMsg = err?.message?.includes("Failed to fetch") || err?.message?.includes("NetworkError")
+        ? "Server is waking up — please try again in 10 seconds. ☕"
+        : "I had trouble processing that. Could you try rephrasing your question?";
+      appendMsg("assistant", errMsg);
+      console.error("AI chat error:", err);
     } finally {
       sendBtn.disabled = false;
       chatInput.focus();
@@ -3014,7 +3054,11 @@ function handleFilter(e, page) {
   resetLocalDataset();
   S.loaded = 0;
   // Explicitly choosing a category = strong intent signal (+2 weight)
-  if (S.filter && S.filter !== "all") UserPrefs.bump(S.filter, 2);
+  if (S.filter && S.filter !== "all") {
+    // Bump on the normalized cache key so weights accumulate correctly
+    const _bumpKey = CATEGORY_MAP[S.filter] || CATEGORY_MAP[S.filter.toLowerCase()] || S.filter;
+    UserPrefs.bump(_bumpKey, 2);
+  }
   if (page === "home")    initHome();
   if (page === "explore") initExplore();
 }
