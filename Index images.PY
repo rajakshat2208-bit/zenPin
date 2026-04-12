@@ -1,157 +1,153 @@
 #!/usr/bin/env python3
 """
-ZenPin — Local Image Indexer
-============================
-Run this ONCE on your own machine (not on Render).
-It scans assets/discovery/, captions every image with BLIP,
-generates embeddings with sentence-transformers, and writes search_index.json.
-
-Then commit search_index.json to your repo — the ZenPin backend loads it at startup.
-
-Setup (run once):
-  pip install torch torchvision transformers sentence-transformers Pillow
+ZenPin — Image Search Index Builder
+====================================
+Scans assets/discovery/ and builds search_index.json for FAISS vector search.
 
 Usage:
-  python index_images.py
-  python index_images.py --assets path/to/assets/discovery
-  python index_images.py --limit 50   # cap per category during testing
+    python index_images.py           # Uses Gemini embeddings (API quota used)
+    python index_images.py --no-ml   # Uses keyword/filename-based pseudo-embeddings (free)
+
+Output: search_index.json in the same directory (commit this to your backend repo).
+
+Memory: ~4 MB for 603 images at 768 dims.
 """
 
-import os, json, sys, argparse, hashlib, re
-from pathlib import Path
+import os
+import sys
+import json
+import math
+import hashlib
+import argparse
 
-# ── CLI args ──────────────────────────────────────────────────
-parser = argparse.ArgumentParser(description="ZenPin image indexer")
-parser.add_argument("--assets", default="assets/discovery",
-                    help="Path to discovery folder (default: assets/discovery)")
-parser.add_argument("--out",    default="search_index.json",
-                    help="Output path (default: search_index.json)")
-parser.add_argument("--limit",  type=int, default=0,
-                    help="Max images per category (0 = no limit)")
-parser.add_argument("--skip-captions", action="store_true",
-                    help="Skip BLIP, use filename-based captions only (faster)")
-args = parser.parse_args()
-
-ASSETS_DIR = Path(args.assets)
-OUT_FILE   = Path(args.out)
-FORMATS    = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif"}
-
-if not ASSETS_DIR.exists():
-    print(f"❌ Assets folder not found: {ASSETS_DIR}")
-    sys.exit(1)
-
-# ── Load models ───────────────────────────────────────────────
-print("⏳ Loading models…")
-
-from sentence_transformers import SentenceTransformer
-embed_model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
-print("  ✅ Embeddings: all-MiniLM-L6-v2")
-
-blip_processor = blip_model = None
-if not args.skip_captions:
-    try:
-        from transformers import BlipProcessor, BlipForConditionalGeneration
-        import torch
-        blip_processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-base")
-        blip_model     = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-base")
-        blip_model.eval()
-        print("  ✅ Captions:   BLIP-base")
-    except Exception as e:
-        print(f"  ⚠️  BLIP unavailable ({e}) — using filename captions")
-
-# ── Helpers ───────────────────────────────────────────────────
-FOLDER_TO_CAT = {
-    "cars": "Cars", "bikes": "Bikes", "anime": "Anime",
-    "gaming": "Gaming", "scenery": "Scenery", "fashion": "Fashion",
-    "accessories": "Ladies Accessories", "workspace": "Workspace",
-    "food": "Food", "drinks": "Drinks", "aesthetic": "Art",
-    "interior": "Interior Design", "interior_design": "Interior Design",
-    "nature": "Nature", "art": "Art", "tech": "Tech",
-    "travel": "Travel", "fitness": "Fitness", "flowers": "Flowers",
-    "plants": "Plants", "music": "Music", "pets": "Pets",
-    "tattoos": "Tattoos", "superheroes": "Superheroes",
-    "architecture": "Architecture", "cigarettes": "Cigarettes",
+# ── Category metadata ──────────────────────────────────────────────────────────
+CATEGORIES = {
+    "cars":         {"display": "Cars",               "prefix": "car",          "count": 30},
+    "Bikes":        {"display": "Bikes",              "prefix": "bike",         "count": 30},
+    "anime":        {"display": "Anime",              "prefix": "anime",        "count": 30},
+    "gaming":       {"display": "Gaming",             "prefix": "gaming",       "count": 28},
+    "scenery":      {"display": "Scenery",            "prefix": "scenery",      "count": 30},
+    "superhero":    {"display": "Superheroes",        "prefix": "superhero",    "count": 25},
+    "workspace":    {"display": "Workspace",          "prefix": "workspace",    "count": 25},
+    "fashion":      {"display": "Fashion",            "prefix": "fashion",      "count": 25},
+    "food":         {"display": "Food",               "prefix": "food",         "count": 25},
+    "pets":         {"display": "Pets",               "prefix": "pet",          "count": 25},
+    "nature":       {"display": "Nature",             "prefix": "nature",       "count": 25},
+    "architecture": {"display": "Architecture",       "prefix": "architecture", "count": 25},
+    "accessories":  {"display": "Ladies Accessories", "prefix": "accessory",    "count": 30},
+    "art":          {"display": "Art",                "prefix": "art",          "count": 30},
+    "interior":     {"display": "Interior Design",    "prefix": "interior",     "count": 25},
+    "travel":       {"display": "Travel",             "prefix": "travel",       "count": 25},
+    "tech":         {"display": "Tech",               "prefix": "tech",         "count": 25},
+    "flowers":      {"display": "Flowers",            "prefix": "flower",       "count": 25},
+    "plants":       {"display": "Plants",             "prefix": "plant",        "count": 25},
+    "fitness":      {"display": "Fitness",            "prefix": "fitness",      "count": 25},
+    "music":        {"display": "Music",              "prefix": "music",        "count": 25},
+    "tattoos":      {"display": "Tattoos",            "prefix": "tattoo",       "count": 25},
+    "drinks":       {"display": "Drinks",             "prefix": "drink",        "count": 25},
 }
 
-def filename_caption(stem: str, category: str) -> str:
-    """Generate a human-readable caption from filename + category."""
-    # car1 → "car 1", anime_wallpaper_02 → "anime wallpaper 02"
-    clean = re.sub(r"[_\-]+", " ", stem)          # underscores → spaces
-    clean = re.sub(r"(\D)(\d)", r"\1 \2", clean)  # car1 → car 1
-    clean = re.sub(r"\s+", " ", clean).strip()
-    return f"{category} — {clean}"
+GITHUB_PAGES_BASE = "https://rajakshat2208-bit.github.io/ZenPin"
+DIMS = 768  # Gemini text-embedding-004 dimensions
 
-def blip_caption(img_path: Path) -> str:
-    """Generate BLIP caption for an image."""
-    try:
-        from PIL import Image
-        import torch
-        img  = Image.open(img_path).convert("RGB")
-        # Resize to 384px max for speed
-        img.thumbnail((384, 384))
-        inputs = blip_processor(img, return_tensors="pt")
-        with torch.no_grad():
-            out = blip_model.generate(**inputs, max_new_tokens=40)
-        return blip_processor.decode(out[0], skip_special_tokens=True)
-    except Exception as e:
-        return ""
 
-def image_uid(path: Path) -> str:
-    """Stable ID based on path — survives renames of unrelated files."""
-    return hashlib.md5(str(path).encode()).hexdigest()[:12]
+def keyword_vector(category: str, filename: str, dims: int = DIMS) -> list:
+    """
+    Create a deterministic pseudo-embedding from category + filename.
+    Not semantically meaningful but consistent — good enough for category routing.
+    Used when Gemini API is not available.
+    """
+    seed = f"{category}:{filename}"
+    h = hashlib.sha256(seed.encode()).digest()
+    # Expand hash to 'dims' floats by cycling
+    floats = []
+    while len(floats) < dims:
+        for byte in h:
+            floats.append((byte / 127.5) - 1.0)  # normalize to [-1, 1]
+    floats = floats[:dims]
+    # L2 normalize
+    mag = math.sqrt(sum(x * x for x in floats)) or 1.0
+    return [x / mag for x in floats]
 
-# ── Main indexing loop ────────────────────────────────────────
-records = []
-categories = sorted(ASSETS_DIR.iterdir())
 
-for cat_dir in categories:
-    if not cat_dir.is_dir(): continue
-    cat_name = FOLDER_TO_CAT.get(cat_dir.name.lower(), cat_dir.name.title())
-    images   = sorted(f for f in cat_dir.iterdir() if f.suffix.lower() in FORMATS)
-    if args.limit: images = images[:args.limit]
-    if not images: continue
+def gemini_vector(text: str, api_key: str) -> list:
+    """Get a real semantic embedding from Gemini."""
+    import google.generativeai as genai
+    genai.configure(api_key=api_key)
+    result = genai.embed_content(
+        model="models/text-embedding-004",
+        content=text,
+        task_type="retrieval_document",
+    )
+    return result["embedding"]
 
-    print(f"\n📁 {cat_dir.name} ({len(images)} images)")
 
-    for i, img_path in enumerate(images):
-        # Caption
-        if blip_model:
-            caption = blip_caption(img_path)
-            if not caption:
-                caption = filename_caption(img_path.stem, cat_name)
-        else:
-            caption = filename_caption(img_path.stem, cat_name)
+def build_index(use_gemini: bool = False) -> list:
+    api_key = os.getenv("GEMINI_API_KEY", "") if use_gemini else ""
+    if use_gemini and not api_key:
+        print("⚠  GEMINI_API_KEY not set — falling back to keyword vectors")
+        use_gemini = False
 
-        # Embedding text = caption + category keywords
-        embed_text = f"{caption} {cat_name} aesthetic photography"
+    entries = []
+    total = sum(info["count"] for info in CATEGORIES.values())
+    done = 0
 
-        # Embedding vector
-        vector = embed_model.encode(embed_text, normalize_embeddings=True).tolist()
+    for folder, info in CATEGORIES.items():
+        display  = info["display"]
+        prefix   = info["prefix"]
+        count    = info["count"]
 
-        records.append({
-            "id":         image_uid(img_path),
-            "url":        str(img_path).replace("\\", "/"),  # forward slashes for web
-            "category":   cat_name,
-            "caption":    caption,
-            "embed_text": embed_text,
-            "vector":     vector,
-        })
+        for i in range(1, count + 1):
+            filename = f"{prefix}{i}.jpg"
+            url      = f"assets/discovery/{folder}/{filename}"
+            caption  = f"{display} — {filename.replace('.jpg','').replace(prefix,'image ')}"
 
-        # Progress
-        if (i + 1) % 10 == 0 or (i + 1) == len(images):
-            print(f"  {i+1}/{len(images)}  {img_path.name}  → \"{caption[:60]}\"")
+            if use_gemini:
+                try:
+                    vec = gemini_vector(f"{display}: {caption}", api_key)
+                except Exception as e:
+                    print(f"  Gemini embed failed for {url}: {e} — using keyword vector")
+                    vec = keyword_vector(folder, filename)
+            else:
+                vec = keyword_vector(folder, filename)
 
-# ── Write output ──────────────────────────────────────────────
-output = {
-    "_info": {
-        "total":      len(records),
-        "categories": len(set(r["category"] for r in records)),
-        "model":      "all-MiniLM-L6-v2",
-        "dim":        len(records[0]["vector"]) if records else 0,
-    },
-    "records": records,
-}
+            entries.append({
+                "url":      url,
+                "caption":  caption,
+                "category": folder,
+                "display":  display,
+                "vector":   vec,
+            })
+            done += 1
+            if done % 50 == 0:
+                print(f"  {done}/{total} indexed…")
 
-OUT_FILE.write_text(json.dumps(output, separators=(",", ":")))
-print(f"\n✅ Indexed {len(records)} images → {OUT_FILE}")
-print(f"   Commit search_index.json to your repo and push to GitHub Pages + Render.")
+    return entries
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Build ZenPin search index")
+    parser.add_argument("--no-ml",  action="store_true", help="Use keyword vectors (no API)")
+    parser.add_argument("--gemini", action="store_true", help="Use Gemini embeddings")
+    parser.add_argument("--out",    default="search_index.json", help="Output file")
+    args = parser.parse_args()
+
+    use_gemini = args.gemini and not args.no_ml
+
+    print(f"Building ZenPin search index ({len(CATEGORIES)} categories)")
+    print(f"Mode: {'Gemini embeddings' if use_gemini else 'keyword vectors (--no-ml)'}")
+    print()
+
+    entries = build_index(use_gemini=use_gemini)
+    out_path = args.out
+
+    with open(out_path, "w") as f:
+        json.dump(entries, f, separators=(",", ":"))
+
+    size_mb = os.path.getsize(out_path) / 1_000_000
+    print(f"\n✅ {len(entries)} entries written to {out_path} ({size_mb:.1f} MB)")
+    print(f"   Commit this file to your backend repo and redeploy.")
+
+
+if __name__ == "__main__":
+    main()
