@@ -1958,7 +1958,7 @@ const CAT_ICONS = {
 const CACHE_KEY_TO_FILTER = {
   "cars":         "Cars",
   "bikes":        "Bikes",
-  "anime":        "Anime",
+  "anime":        "anime",
   "gaming":       "Gaming",
   "scenery":      "Scenery",
   "superhero":    "Superheroes",
@@ -1971,15 +1971,6 @@ const CACHE_KEY_TO_FILTER = {
   "accessories":  "Ladies Accessories",
   "art":          "Art",
   "interior":     "Interior Design",
-  // Newly activated categories
-  "travel":       "Travel",
-  "tech":         "Tech",
-  "flowers":      "Flowers",
-  "plants":       "Plants",
-  "fitness":      "Fitness",
-  "music":        "Music",
-  "tattoos":      "Tattoos",
-  "drinks":       "Drinks",
 };
 
 function generateCategoryChips(containerId) {
