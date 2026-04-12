@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: zenpin-api
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT --workers 1
+    healthCheckPath: /warmup
+    envVars:
+      - key: JWT_SECRET
+        generateValue: true
+      - key: GEMINI_API_KEY
+        sync: false          # set manually in Render dashboard
+      - key: OPENAI_API_KEY
+        sync: false          # optional fallback
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false          # your Gmail address
+      - key: SMTP_PASS
+        sync: false          # Gmail app password (16 chars)
+      - key: FROM_EMAIL
+        sync: false          # usually same as SMTP_USER
