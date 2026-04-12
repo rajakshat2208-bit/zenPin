@@ -1178,16 +1178,42 @@ def send_otp(body: OTPRequestBody):
         "attempts":   0,
     }
 
-    # ── TODO: send real email here ───────────────────────────────
-    # import smtplib
-    # ...send OTP to email...
-    # ─────────────────────────────────────────────────────────────
+    # ── Send email via SMTP (free — Gmail, Brevo, Mailjet all work) ─────
+    sent = False
+    SMTP_HOST = os.getenv("SMTP_HOST", "")          # e.g. smtp.gmail.com
+    SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+    SMTP_USER = os.getenv("SMTP_USER", "")          # your Gmail / SMTP user
+    SMTP_PASS = os.getenv("SMTP_PASS", "")          # app password (not your login pw)
+    FROM_ADDR = os.getenv("FROM_EMAIL", SMTP_USER)
 
-    print(f"[OTP] Generated for {email}: {otp}")   # visible in Render logs for testing
+    if SMTP_HOST and SMTP_USER and SMTP_PASS:
+        try:
+            import smtplib
+            from email.mime.text import MIMEText
+            body_text = (
+                f"Your ZenPin sign-in code is: {otp}\n\n"
+                f"This code expires in {OTP_TTL // 60} minutes.\n"
+                f"If you did not request this, ignore this email."
+            )
+            msg_email = MIMEText(body_text)
+            msg_email["Subject"] = f"ZenPin — your sign-in code: {otp}"
+            msg_email["From"]    = FROM_ADDR
+            msg_email["To"]      = email
+            with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as smtp:
+                smtp.ehlo()
+                smtp.starttls()
+                smtp.login(SMTP_USER, SMTP_PASS)
+                smtp.sendmail(FROM_ADDR, [email], msg_email.as_string())
+            sent = True
+            print(f"[OTP] Email sent to {email}")
+        except Exception as smtp_err:
+            print(f"[OTP] SMTP failed: {smtp_err} — falling back to demo mode")
+    print(f"[OTP] Generated for {email} (sent={sent})")
 
     return {
-        "message":  "OTP sent. Check your email.",
-        "demo_otp": otp,          # REMOVE this line before going live
+        "message":    "Code sent to your email." if sent else "OTP ready (demo — SMTP not configured)",
+        "demo_otp":   None if sent else otp,    # Hidden when real email sent; visible for local testing
+        "email_sent": sent,
         "expires_in": OTP_TTL,
     }
 
@@ -2023,17 +2049,23 @@ async def ai_chat(
         context = f"ZenPin content related to this query {src_note}:\n" + "\n".join(ctx_lines)
 
     SYSTEM = (
-        "You are ZenPin AI — a creative expert combining the intelligence of ChatGPT with the visual "
-        "focus of Pinterest. You help users discover ideas, compare options and explore aesthetic trends.\n\n"
+        "You are ZenPin AI — a creative discovery assistant combining ChatGPT-level reasoning "
+        "with Pinterest-style visual curation. You help users find ideas, analyse aesthetics, "
+        "and get craft/design guidance — all centred on ZenPin's own image library.\n\n"
+        "Capabilities:\n"
+        "- Answer craft, design and DIY questions with expert depth\n"
+        "- Analyse uploaded images and suggest improvements or styles\n"
+        "- Search ZenPin's library (cars, bikes, anime, fashion, interior, accessories, "
+        "nature, architecture, gaming, food, fitness, art, music, scenery, etc.)\n"
+        "- Compare visual options and give direct, opinionated answers\n"
+        "- Return ONLY images that exist in ZenPin — never invent URLs\n\n"
         "Rules:\n"
-        "- Give specific, expert-level answers with genuine insight\n"
-        "- For comparison questions (e.g. which bike looks better at night), give a direct answer first, "
-        "then explain why, then reference relevant images from the ZenPin feed\n"
-        "- Use **bold** for key terms and bullet points for lists\n"
-        "- Keep responses under 220 words — high-signal, no filler\n"
-        "- When ZenPin content is in context, naturally reference 1-2 specific items\n"
-        "- Topics: cars, bikes, anime, fashion, interior design, gaming, nature, architecture, "
-        "accessories, food, travel, fitness, music, art and all creative culture"
+        "- Lead with a direct answer (1-2 sentences), then explanation, then image refs\n"
+        "- Use **bold** for key terms, bullet points for lists or steps\n"
+        "- Under 220 words — dense and useful, no filler\n"
+        "- If asked for images, reference the ZenPin cards shown below your answer\n"
+        "- If no relevant content exists, say so clearly — never hallucinate images\n"
+        "- For craft questions: list materials, steps, difficulty level"
     )
 
     # Build messages with history (last 8 turns for context window efficiency)
