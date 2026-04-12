@@ -3650,13 +3650,17 @@ document.addEventListener("DOMContentLoaded", async () => {
       try {
         user = await apiFetch("GET", "/auth/me");
         if (user) localStorage.setItem("zenpin_user", JSON.stringify(user));
-      } catch (_) {
-        if ($("epError")) $("epError").textContent = "Could not load profile.";
-        return;
+      } catch (fetchErr) {
+        // Render cold start — show warning but keep modal open for retry
+        if ($("epError")) $("epError").textContent =
+          "Profile load failed (server waking up). You can still edit and save.";
+        // Don't return — fall through so user can see the modal
       }
     }
     if (!user) {
-      if ($("epError")) $("epError").textContent = "Please sign in to edit your profile.";
+      // No token at all — show message but keep modal visible
+      if ($("epError")) $("epError").textContent = "Sign in first to edit your profile.";
+      // Still don't close — user sees the modal with the error
       return;
     }
 
