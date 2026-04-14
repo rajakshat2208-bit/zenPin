@@ -1372,7 +1372,7 @@ const _curatedCache = (() => {
     // ── Uploaded folders (active) ──────────────────────────
     "cars":         seq("cars",         "car",          30),
     "bikes":        seq("Bikes",        "bike",         30), // folder=Bikes (capital B on GitHub Pages)
-    "anime":        seq("anime",        "anime",        30),
+    "anime":        seq("anime",        "anime",        27), // 27 confirmed files (anime28-30 not present)
     "gaming":       seq("gaming",       "gaming",       28),
     "scenery":      seq("scenery",      "scenery",      30),
     "superhero":    seq("superhero",    "superhero",    25), // key=superhero (matches CATEGORY_MAP)
@@ -1994,6 +1994,14 @@ function hasCurated(category) {
 // ─────────────────────────────────────────────────────────────
 // PAGE: HOME
 // ─────────────────────────────────────────────────────────────
+function _updateEndSentinel() {
+  const btn      = $("loadMoreBtn");
+  const sentinel = $("endOfFeedMsg");
+  const atEnd    = S.loaded >= S.allIdeas.length;
+  if (btn) btn.style.display = atEnd ? "none" : "";
+  if (sentinel) sentinel.style.display = atEnd && S.allIdeas.length > 0 ? "block" : "none";
+}
+
 async function initHome() {
   const grid = $("homeGrid");
   if (!grid) return;
@@ -4542,13 +4550,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   let _loadingMore = false;   // prevent concurrent fetches
 
   // Show/hide end-of-feed message and load-more button
-  function _updateEndSentinel() {
-    const btn      = $("loadMoreBtn");
-    const sentinel = $("endOfFeedMsg");
-    const atEnd    = S.loaded >= S.allIdeas.length;
-    if (btn) btn.style.display = atEnd ? "none" : "";
-    if (sentinel) sentinel.style.display = atEnd && S.allIdeas.length > 0 ? "block" : "none";
-  }
+
 
   async function loadMoreIdeas() {
     if (_loadingMore) return;
