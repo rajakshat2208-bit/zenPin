@@ -2838,334 +2838,496 @@ const FALLBACK_BRAIN = [
     a: "ZenPin uses a dark, premium aesthetic by default. Theme settings may be available in your profile settings." },
 ];
 
+
+// ── AI fallback brain (module-level so brainLookup can access it) ──
+// ── 100-entry fallback knowledge base ──────────────────────
+// Matched when backend is unavailable or for common questions.
+// Keys are lowercase stripped strings; values are {text, category?}.
+const BRAIN = [
+// ── Greetings ──────────────────────────────────────────────────
+{k:["how are you","how r you","how are u","how you doing","how r u"],
+ r:"I'm doing great! Ready to help you discover new ideas. 🎨"},
+{k:["hi","hello","hey","hiya","sup","yo","hola","howdy","greetings","what's up","whats up"],
+ r:"Hey! 👋 I'm ZenPin AI. Ask me about bikes, anime, fashion, interior design or anything creative!"},
+{k:["good morning","morning"],
+ r:"Good morning! ☀️ Ready to explore some beautiful ideas today?"},
+{k:["good evening","good night","goodnight"],
+ r:"Good evening! 🌙 Perfect time to browse some inspiring ideas. What are you looking for?"},
+{k:["good afternoon","afternoon"],
+ r:"Good afternoon! 🌤️ Hope your day is going well. What creative ideas can I help you find?"},
+{k:["bye","goodbye","see you","cya","later","take care"],
+ r:"See you later! 👋 Come back anytime for more inspiration. Happy creating!"},
+{k:["thank you","thanks","thankyou","thx","ty","appreciate it"],
+ r:"You're welcome! 😊 Happy to help. Let me know if you need more ideas!"},
+{k:["ok","okay","cool","nice","great","awesome","perfect","got it"],
+ r:"Great! 🎉 Anything else you'd like to explore on ZenPin?"},
+
+// ── Identity ───────────────────────────────────────────────────
+{k:["who are you","what are you","what is zenpin ai","tell me about yourself","introduce yourself"],
+ r:"I'm ZenPin AI 🤖 — your creative assistant for discovering images, getting design inspiration, exploring craft ideas and finding aesthetic content across categories like bikes, anime, fashion, interior design and more!"},
+{k:["what can you do","what do you do","help me","how can you help","your capabilities"],
+ r:"I can: 🔍 Search ZenPin's image library, 🎨 Answer design and craft questions, 💡 Give fashion, anime, bike or interior tips, 🖼️ Show matching images from our collection, and 💬 Chat about creative topics!"},
+{k:["are you ai","are you a bot","are you real","are you human","are you chatgpt"],
+ r:"I'm ZenPin AI — a creative assistant built specifically for this platform. I'm not ChatGPT, but I'm here to help you discover ideas and get design inspiration! 🌟"},
+{k:["what is zenpin","tell me about zenpin","what does zenpin do"],
+ r:"ZenPin is a visual discovery platform — like Pinterest but with curated collections of bikes, anime, fashion, interior design, art, cars and more. You can browse, save, and get AI-powered ideas! 📌"},
+
+// ── Image search ───────────────────────────────────────────────
+{k:["show bike ideas","bike ideas","show me bikes","bike images","motorcycle ideas"],
+ r:"Here are some amazing bike ideas from ZenPin! 🏍️ From sport bikes to cruisers, there's something for every rider.",
+ cat:"bikes"},
+{k:["show black bike","black motorcycle","dark bike"],
+ r:"Here are some sleek dark motorcycle images from ZenPin! 🖤 Perfect for that edgy aesthetic.",
+ cat:"bikes"},
+{k:["show car ideas","car ideas","car images","show me cars","supercar","sports car ideas"],
+ r:"Check out these stunning car images from ZenPin! 🚗 From supercars to classics.",
+ cat:"cars"},
+{k:["show anime ideas","anime ideas","anime images","anime wallpaper","anime room"],
+ r:"Here are some incredible anime ideas from ZenPin! 🌸 From dark neon scenes to cherry blossom aesthetics.",
+ cat:"anime"},
+{k:["show fashion ideas","fashion ideas","outfit ideas","clothing ideas","style ideas"],
+ r:"Here are some gorgeous fashion ideas from ZenPin! 👗 Trending styles and outfit inspiration.",
+ cat:"fashion"},
+{k:["show accessories","accessories ideas","jewelry ideas","bag ideas","show me jewelry"],
+ r:"Here are some beautiful accessory ideas from ZenPin! 💍 From jewelry to bags and beyond.",
+ cat:"accessories"},
+{k:["show interior","room ideas","interior design ideas","home decor ideas","bedroom ideas","living room ideas"],
+ r:"Here are some stunning interior design ideas from ZenPin! 🏠 From minimalist to cozy aesthetics.",
+ cat:"interior"},
+{k:["show architecture","building ideas","architecture ideas","house design"],
+ r:"Here are some breathtaking architecture ideas from ZenPin! 🏛️ From modern to classic structures.",
+ cat:"architecture"},
+{k:["show art ideas","art ideas","digital art ideas","painting ideas","artwork"],
+ r:"Here are some amazing art ideas from ZenPin! 🎨 From digital illustrations to traditional paintings.",
+ cat:"art"},
+{k:["show food ideas","food ideas","recipe ideas","food styling","plating ideas"],
+ r:"Here are some delicious food styling ideas from ZenPin! 🍽️ Perfect for food photographers and chefs.",
+ cat:"food"},
+{k:["show gaming setup","gaming room ideas","pc setup ideas","gaming desk","esports setup"],
+ r:"Here are some epic gaming setup ideas from ZenPin! 🎮 RGB, ultrawide and pro-level setups.",
+ cat:"gaming"},
+{k:["show nature","nature ideas","landscape ideas","outdoor photography","nature photography"],
+ r:"Here are some breathtaking nature ideas from ZenPin! 🌿 From forests to mountain vistas.",
+ cat:"nature"},
+{k:["show pets","cute pets","pet ideas","dog pictures","cat pictures"],
+ r:"Here are some adorable pet ideas from ZenPin! 🐾 Cats, dogs and furry friends galore.",
+ cat:"pets"},
+{k:["show scenery","scenery ideas","travel photos","beautiful places","scenic views"],
+ r:"Here are some stunning scenery photos from ZenPin! 🌅 Beautiful landscapes from around the world.",
+ cat:"scenery"},
+{k:["show superhero","superhero ideas","marvel ideas","dc comics ideas","batman","spiderman"],
+ r:"Here are some epic superhero ideas from ZenPin! 🦸 From Marvel to DC universe.",
+ cat:"superhero"},
+{k:["show workspace","desk setup","office ideas","home office","work setup"],
+ r:"Here are some clean workspace setups from ZenPin! 💻 Productive and aesthetic desk setups.",
+ cat:"workspace"},
+
+// ── Design & craft ─────────────────────────────────────────────
+{k:["design clothes","how to design clothes","clothing design","how can i design cloth","design an outfit"],
+ r:"To design clothes: 1️⃣ Start with a sketch of your silhouette. 2️⃣ Choose a color palette (2-3 colors max). 3️⃣ Select fabric — cotton for casual, silk for elegant. 4️⃣ Add details like buttons, zippers or embroidery. 5️⃣ Make a pattern or find a template online. Try browsing ZenPin's Fashion category for visual inspiration! 👗"},
+{k:["anime room ideas","how to make anime room","anime bedroom","anime aesthetic room"],
+ r:"For an anime room aesthetic: 🌸 Use dark walls (navy/black) with neon accent lighting. Add anime posters and figure displays. Install LED strips behind your desk. Use sakura fairy lights for ambiance. Check ZenPin's Anime collection for specific ideas!",
+ cat:"anime"},
+{k:["fashion tips","style tips","how to dress better","dressing tips","outfit tips"],
+ r:"Fashion tips: 👗 1. Build a capsule wardrobe (10 versatile pieces). 2. Wear neutral colors as a base. 3. Add one statement piece per outfit. 4. Dress for your body shape. 5. Invest in good shoes — they elevate any look. 6. Accessorize minimally but intentionally!"},
+{k:["interior design tips","how to decorate room","room decoration tips","how to make room look good"],
+ r:"Interior design tips: 🏠 1. Follow the 60-30-10 color rule. 2. Mix textures (wood, fabric, metal). 3. Use mirrors to make small rooms appear larger. 4. Layer lighting (ambient + task + accent). 5. Add plants for life and freshness. 6. Declutter first — good design starts with clean space!"},
+{k:["workspace tips","how to setup desk","desk setup tips","productive workspace","office setup tips"],
+ r:"Workspace setup tips: 💻 1. Monitor at eye level (use a stand). 2. Good chair = back health. 3. External keyboard and mouse for comfort. 4. Warm lighting to reduce eye strain. 5. Cable management makes it look professional. 6. Add a plant for focus. ZenPin's Workspace category has amazing setups!",
+ cat:"workspace"},
+{k:["photography tips","how to take better photos","photo tips","photo ideas"],
+ r:"Photography tips: 📸 1. Use the rule of thirds. 2. Shoot in golden hour (sunrise/sunset). 3. Look for leading lines and natural frames. 4. Keep backgrounds simple. 5. Edit lightly — enhance, don't overprocess. 6. Shoot in RAW if your camera supports it!"},
+{k:["color palette ideas","color combination","color scheme","best color combinations"],
+ r:"Popular color palettes: 🎨 1. Monochromatic (shades of one color) — elegant. 2. Complementary (opposites on color wheel) — energetic. 3. Triadic (3 evenly spaced colors) — vibrant. 4. Earth tones — warm and timeless. 5. Pastel + white — soft and minimal. Try using Coolors.co to generate palettes!"},
+{k:["diy craft ideas","craft ideas","creative diy","handmade ideas","craft project"],
+ r:"DIY craft ideas: ✂️ 1. Macramé wall hangings (rope art). 2. Resin jewelry making. 3. Candle pouring with essential oils. 4. Embroidery on denim jackets. 5. Terrarium building. 6. Hand-painted plant pots. 7. Collage art using magazine cutouts. Browse ZenPin for visual inspiration!"},
+{k:["minimalist style","minimalist design","minimalism tips","how to be minimalist"],
+ r:"Minimalist style guide: ⬜ 1. Choose quality over quantity. 2. Stick to a neutral color palette. 3. Remove anything without function or meaning. 4. Leave negative space (empty space is good!). 5. One focal point per room or outfit. 6. Hidden storage > visible clutter."},
+{k:["how to draw anime","draw anime character","anime drawing tips","drawing tips"],
+ r:"Anime drawing basics: ✏️ 1. Start with a circle for the head (larger than realistic proportions). 2. Eyes are large and expressive — the focal point. 3. Keep noses and mouths minimal. 4. Hair has volume and flows dramatically. 5. Study your favorite anime artist's style. 6. Practice with reference before drawing from imagination!"},
+
+// ── Car / bike specific ────────────────────────────────────────
+{k:["best bike color","bike color ideas","motorcycle color","what color bike"],
+ r:"Popular bike colors: 🏍️ **Matt Black** — timeless and aggressive. **Racing Red** — classic sport look. **Pearl White** — clean and premium. **Electric Blue** — eye-catching. **Burnt Orange** — vintage aesthetic. For night riding, darker colors look more dramatic under city lights!",
+ cat:"bikes"},
+{k:["best car color","car color ideas","what color car","car paint ideas"],
+ r:"Best car colors: 🚗 **Midnight Black** — sophisticated and always stylish. **Glacier White** — clean and premium resale value. **Metallic Grey** — modern and understated. **Racing Red** — passionate and sporty. **British Racing Green** — classic and distinctive. Choose based on your climate — dark colors show dust more!",
+ cat:"cars"},
+{k:["superbike","superbike ideas","sports bike","racing bike"],
+ r:"ZenPin has some incredible superbike images! 🏁 Check out our Bikes collection for sport bikes, naked bikes and café racers.",
+ cat:"bikes"},
+
+// ── Anime specific ─────────────────────────────────────────────
+{k:["anime aesthetic","anime wallpaper ideas","anime desktop","anime phone wallpaper"],
+ r:"Anime wallpaper aesthetics: 🌸 1. Dark city skylines (cyberpunk anime). 2. Cherry blossom forests. 3. Minimal character silhouettes. 4. Studio Ghibli landscapes. 5. Neon-lit street scenes. 6. Pastel kawaii characters. Browse ZenPin's Anime section for curated wallpaper ideas!",
+ cat:"anime"},
+{k:["best anime","favorite anime","top anime","recommend anime","anime recommendation"],
+ r:"I'm focused on visual inspiration rather than reviews, but for stunning aesthetics: Attack on Titan, Demon Slayer, Your Name, and Spirited Away all have incredible visual design! ZenPin's anime collection showcases similar aesthetics. 🎌"},
+
+// ── Fashion specific ───────────────────────────────────────────
+{k:["street style","streetwear","street fashion","urban fashion"],
+ r:"Streetwear essentials: 👟 Oversized hoodies, cargo pants, clean sneakers (Air Force 1s, Jordan 1s), graphic tees, and bucket hats. Layer with an open flannel or bomber jacket. Neutral base with one pop of color. ZenPin's Fashion section has great streetwear inspo!",
+ cat:"fashion"},
+{k:["boho style","bohemian fashion","boho fashion","boho look"],
+ r:"Boho style guide: 🌿 Flowy maxi dresses, earthy tones (terracotta, rust, cream), fringe details, layered jewelry, woven bags, and suede ankle boots. Add a wide-brim hat for the full look! Great for summer and festival season.",
+ cat:"fashion"},
+{k:["casual outfit","casual style","casual look","everyday outfit"],
+ r:"Casual outfit formula: 👕 Good jeans or chinos + clean t-shirt or polo + white sneakers = always works. Upgrade with a structured blazer over a t-shirt for smart-casual. Stick to max 3 colors per outfit for a cohesive look!"},
+
+// ── Login / account help ───────────────────────────────────────
+{k:["cannot login","can't login","login problem","login not working","sign in not working","cant sign in"],
+ r:"Login help: 🔑 1. Check your email address for typos. 2. Try the OTP (email code) option instead of password. 3. Clear browser cache and try again. 4. If the server is just waking up, wait 30 seconds and retry. Still stuck? Contact support via the profile page."},
+{k:["forgot password","reset password","password reset","forgot my password"],
+ r:"Password reset: 📧 Use the 'Sign in with code' option on the login page — enter your email and we'll send you a one-time code. No password needed! This is the fastest way back in."},
+{k:["how to register","how to sign up","create account","new account","signup help"],
+ r:"To create a ZenPin account: 1️⃣ Click Sign In in the navbar. 2️⃣ Click 'Create account' on the login page. 3️⃣ Enter your email address. 4️⃣ Enter the 6-digit code sent to your email. 5️⃣ Set your username — you're in! 🎉"},
+{k:["how to save image","save pin","how to save","bookmark image","save idea"],
+ r:"To save an image: Click the ❤️ icon on any image card while browsing. You can find all your saved ideas in your Profile → Saved section!"},
+{k:["how to upload","upload image","add my image","post image","share image"],
+ r:"To upload: Click the ✦ Create button in the navbar. You can upload an image, add a title, category and description. Your image will appear in the community feed!"},
+
+// ── Motivation / productivity ──────────────────────────────────
+{k:["motivate me","i need motivation","feeling lazy","no motivation","inspire me"],
+ r:"Here's some motivation: 🌟 Every great design started with someone who didn't know how. Start before you're ready. The best time to begin was yesterday — the second best time is right now. Browse ZenPin for visual fuel to get you started! 🔥"},
+{k:["productivity tips","how to be productive","focus tips","study tips","work tips"],
+ r:"Productivity tips: ⚡ 1. Use the Pomodoro technique (25 min work, 5 min break). 2. Single-task — multitasking kills focus. 3. Clear your workspace before starting. 4. Write tomorrow's top 3 tasks tonight. 5. Turn off notifications for 90-minute focus blocks!"},
+{k:["creativity tips","how to be more creative","boost creativity","creative block","creative ideas"],
+ r:"Boost creativity: 🧠 1. Browse visual inspiration daily (ZenPin is great for this!). 2. Keep a sketchbook or idea journal. 3. Constraints spark creativity — try a 10-minute challenge. 4. Walk and think — movement unlocks new ideas. 5. Combine two unrelated ideas and see what happens!"},
+
+// ── Errors / technical ─────────────────────────────────────────
+{k:["something went wrong","error","not working","broken","bug","issue"],
+ r:"Sorry about that! 😅 Try: 1. Hard refresh the page (Ctrl+Shift+R). 2. Clear browser cache. 3. Wait 30 seconds — the server may be waking up from sleep. 4. Try a different browser. If it persists, this is likely a temporary glitch!"},
+{k:["slow","loading slow","site is slow","takes long","server slow"],
+ r:"The site may be slow because the backend server is waking up from sleep mode (Render free tier sleeps after 15 min of inactivity). ⏱️ First request takes ~30 seconds. After that it runs normally! Refresh if needed."},
+{k:["blank screen","white screen","nothing showing","images not loading","images not appearing"],
+ r:"Images not loading? Try: 1. Hard refresh (Ctrl+Shift+R). 2. Check your internet connection. 3. Click on a category chip to force a reload. 4. Wait a moment — server may be starting up. If the issue persists, try another browser!"},
+
+// ── Misc ───────────────────────────────────────────────────────
+{k:["what's trending","trending ideas","popular ideas","what is popular","trending now"],
+ r:"Trending on ZenPin right now: 🔥 Dark academia aesthetics, neon bike setups, anime room decor, minimalist workspace designs, and bold fashion accessories! Browse the Explore section to see what's hot."},
+{k:["give me ideas","random idea","surprise me","something creative","inspiration"],
+ r:"Here's a creative challenge: 💡 Take one object near you and redesign it in a different style — minimalist, cyberpunk, vintage, or Japanese aesthetic. Or browse ZenPin's random category mix for unexpected inspiration! 🎲"},
+{k:["how to make mood board","moodboard","vision board","aesthetic board"],
+ r:"Create a mood board: 🎨 1. Choose a theme or emotion. 2. Collect 15-20 images that match. 3. Arrange by color and mood (similar tones together). 4. Add texture samples if physical. 5. Use Canva or ZenPin boards for digital mood boards. Your board should make you feel something instantly!"},
+{k:["zenpin features","features","what features","what does zenpin have"],
+ r:"ZenPin features: 📌 1. Image discovery across 15 curated categories. 2. Save and like images. 3. Create boards to organize ideas. 4. AI chat assistant (that's me!). 5. Image analysis — upload a photo for AI insights. 6. Collaborate with others. 7. Profile and portfolio!"},
+
+// ── More design / craft ────────────────────────────────────────
+{k:["architecture tips","how to appreciate architecture","best architectural styles"],
+ r:"Architecture styles: 🏛️ **Minimalist** — clean lines, open space. **Industrial** — raw materials, exposed metal/brick. **Art Deco** — ornate geometric patterns. **Brutalist** — raw concrete, bold mass. **Biophilic** — nature integrated into buildings. ZenPin\'s Architecture section has stunning examples!",
+ cat:"architecture"},
+{k:["food styling tips","how to style food","food photography","food presentation"],
+ r:"Food styling tips: 🍽️ 1. Use odd numbers (3, 5) of elements. 2. Create height and layers. 3. Use natural light from the side. 4. Add a colour contrast (green garnish on warm dishes). 5. Keep the hero ingredient front and centre. 6. Wipe plate edges clean before shooting!",
+ cat:"food"},
+{k:["home workout","workout at home","exercise at home","fitness tips","how to stay fit"],
+ r:"Home fitness essentials: 💪 1. Bodyweight routines (push-ups, squats, lunges). 2. Resistance bands — cheap and versatile. 3. 20-min HIIT 3x/week beats 1-hour slow cardio. 4. Track progress with photos not just weight. 5. Consistency beats intensity every time!"},
+{k:["cooking tips","how to cook better","improve cooking","kitchen tips"],
+ r:"Cooking tips: 🍳 1. Salt pasta water like the sea. 2. Let meat rest after cooking. 3. Mise en place — prep everything before cooking. 4. High heat for searing, low heat for simmering. 5. Acid (lemon, vinegar) brightens flavours at the end. 6. Taste as you cook, always!"},
+{k:["web design tips","website design","ui design tips","ux design","design a website"],
+ r:"Web design principles: 💻 1. Hierarchy — guide the eye to what matters. 2. White space is a design element, not wasted space. 3. Consistent colour palette (2-3 colours max). 4. Typography hierarchy: 3 sizes max. 5. Mobile-first design. 6. Load time matters — optimize images!"},
+{k:["social media tips","instagram tips","content tips","how to grow social media"],
+ r:"Social media tips: 📱 1. Consistent aesthetic across posts. 2. Post at peak times (varies by platform). 3. Engage before and after posting (30 min each). 4. Carousels outperform single images. 5. Use 3-5 very specific hashtags, not 30 generic ones. 6. Stories daily, feed 3-4x/week!"},
+{k:["startup ideas","business ideas","side hustle ideas","make money online"],
+ r:"Starter business ideas: 💼 1. Digital products (presets, templates, e-books). 2. Print-on-demand shop. 3. Social media management for local businesses. 4. Photography/content creation. 5. Handmade crafts on Etsy. 6. Online tutoring in your skill. Start small, validate before scaling!"},
+{k:["book recommendations","good books","must read books","recommend a book"],
+ r:"Creative/design books worth reading: 📚 **The Elements of Style** (writing), **Steal Like an Artist** (creativity), **Don\'t Make Me Think** (UX), **Thinking Fast and Slow** (psychology), **The Creative Habit** (design thinking). ZenPin is great for visual book cover inspiration too!"},
+{k:["what is interior design","interior design basics","how to design a room","room layout"],
+ r:"Interior design basics: 🏠 1. Choose a focal point (fireplace, statement wall, large art). 2. Follow the 60-30-10 colour rule. 3. Scale furniture to the room size. 4. Layer lighting (overhead + lamps + accent). 5. Mix textures for depth. 6. Add 1 unexpected element per room!",
+ cat:"interior"},
+{k:["color theory","colour theory","how colors work","color wheel","complementary colors"],
+ r:"Colour theory essentials: 🎨 **Complementary** = opposites on the wheel (most contrast). **Analogous** = neighbours (harmonious). **Triadic** = 3 evenly spaced (vibrant). **Warm colours** (red, orange, yellow) energise. **Cool colours** (blue, green, purple) calm. Use 60-30-10 for balance!"},
+{k:["how to style bookshelf","bookshelf ideas","shelf decor","bookshelf aesthetic"],
+ r:"Bookshelf styling tips: 📚 1. Group books by colour for visual harmony. 2. Mix books with objects (plants, candles, frames). 3. Leave empty space — not every inch needs filling. 4. Use bookends as art. 5. Lay some books horizontally as risers. 6. A plant on top adds life!",
+ cat:"interior"},
+{k:["mental health tips","feeling stressed","anxiety tips","how to relax","destress","calm down"],
+ r:"Quick reset tips: 🌿 1. Box breathing (4-4-4-4 counts). 2. 5-minute walk outside. 3. Journal one thing you\'re grateful for. 4. Disconnect from screens for 20 minutes. 5. A warm shower resets the nervous system. Visual inspiration helps too — browse ZenPin\'s Nature category! 🌊",
+ cat:"nature"},
+{k:["study tips","how to study better","focus while studying","study methods"],
+ r:"Study methods that work: 📖 1. **Active recall** — close book and write what you remember. 2. **Spaced repetition** — review at increasing intervals. 3. **Pomodoro** — 25 min focus, 5 min break. 4. Teach the concept to an imaginary person. 5. Handwrite key points — pen beats keyboard for retention!"},
+{k:["money tips","save money","how to save money","budget tips","financial tips"],
+ r:"Simple money tips: 💰 1. Track every expense for 30 days. 2. The 50-30-20 rule (needs-wants-savings). 3. Automate savings on payday. 4. Unsubscribe from unused services monthly. 5. 24-hour rule before non-essential purchases. 6. Learn one marketable skill per year!"},
+{k:["gift ideas","gift for her","gift for him","what to gift","present ideas"],
+ r:"Thoughtful gift ideas: 🎁 **For creators**: sketchbook + quality pens, Procreate subscription, photo book. **For homebody**: premium candle set, cosy throw, indoor plant. **For traveller**: packing cubes, camera accessories. **Universal**: personalised item, experience (class/event), book from their wishlist!"},
+{k:["get inspired","find inspiration","creative inspiration","where to find ideas"],
+ r:"Find inspiration everywhere: 💡 Browse ZenPin (you\'re already here! 🎉), walk around a new neighbourhood, visit a gallery or bookshop, scroll architecture/fashion hashtags, watch a documentary about an artist, read a coffee table book, or just sit quietly — inspiration often comes in silence!"},
+{k:["what is ai","how does ai work","explain ai","artificial intelligence"],
+ r:"AI simply explained: 🤖 AI learns patterns from data. When you ask me a question, I match it against things I\'ve been trained on or search ZenPin\'s content. I don\'t actually think like a human — I find the most useful response based on patterns. Think of me as a very fast pattern matcher with a creative twist!"},
+{k:["make my room cosy","cosy room","hygge aesthetic","warm room ideas","cosy home"],
+ r:"Cosy room essentials: 🕯️ 1. Warm-temperature bulbs (2700K). 2. Chunky knit throw + cushions. 3. Candles or fairy lights. 4. A soft rug underfoot. 5. Books within reach. 6. A warm drink station (kettle, mugs, tea). 7. One living plant. Less tech, more texture!",
+ cat:"interior"},
+{k:["dark academia","dark academia aesthetic","dark academia room"],
+ r:"Dark academia aesthetic: 📚 Deep wooden furniture, vintage books stacked everywhere, warm amber lighting, oil paintings or prints, leather notebooks, plaid or herringbone textiles, dried flowers, a globe or antique map. Colour palette: forest green, burgundy, cream, dark brown.",
+ cat:"interior"},
+{k:["cyberpunk aesthetic","cyberpunk room","neon aesthetic","futuristic room","neon lights"],
+ r:"Cyberpunk room aesthetic: 🌆 Neon LED strips (purple/blue/pink), dark walls, tech equipment with RGB, holograms or anime posters, dark glass shelving, sleek black furniture. Mix tech and decay — rough textures + high-tech gear. Great for gaming rooms!",
+ cat:"gaming"},
+{k:["cute room ideas","kawaii room","pink room","girly room ideas","aesthetic bedroom"],
+ r:"Cute aesthetic room ideas: 🌸 Pastel palette (pink, lavender, mint), cloud/star string lights, plushies and small figures, DIY wall art, mirror vanity with warm lighting, fluffy rugs, aesthetic photo wall with polaroids and fairy lights. ZenPin\'s Interior section has tons of inspo!",
+ cat:"interior"},
+{k:["plant care tips","indoor plants","best indoor plants","how to keep plants alive"],
+ r:"Easy indoor plants for beginners: 🌿 **Pothos** — nearly indestructible. **Snake plant** — thrives on neglect. **ZZ plant** — loves low light. **Aloe vera** — water once a month. **Spider plant** — propagates itself. Golden rule: most indoor plants die from overwatering, not under-watering!"},
+{k:["sunset photos","sunrise photos","golden hour photography","magic hour"],
+ r:"Golden hour photography tips: 🌅 Shoot within 1 hour of sunrise or sunset. Position subject backlit for a glow. Use a low angle. Expose for the sky, not the subject. Use lens flare intentionally. Warm up your white balance slightly in editing. Golden hour turns any location magical!",
+ cat:"scenery"},
+{k:["japanese aesthetic","wabi sabi","japanese interior","japandi","japanese design"],
+ r:"Japanese interior aesthetics: 🏯 **Wabi-sabi** — embrace imperfection (handmade ceramics, weathered wood). **Japandi** — Japanese + Scandinavian minimalism (low furniture, neutral palette). **Traditional** — shoji screens, tatami, bonsai. Key principle: every item should be functional AND beautiful.",
+ cat:"interior"},
+
+// ── Final 15 entries to complete 100-entry library ─────────────
+{k:["best gaming setup","build gaming setup","gaming room tour","rgb setup"],
+ r:"Gaming setup essentials: 🎮 Curved ultrawide monitor, mechanical keyboard, smooth mouse pad (full-desk), good headset, RGB strips behind the desk for ambiance. Ergonomics first — invest in a proper chair and monitor arm. ZenPin\'s Gaming section has amazing setup inspiration!",
+ cat:"gaming"},
+{k:["superhero costume","superhero cosplay","cosplay ideas","which superhero"],
+ r:"Superhero aesthetic picks: 🦸 **Black aesthetic** → Black Panther, Batman. **Futuristic** → Iron Man, Cyborg. **Mystic** → Doctor Strange, Scarlet Witch. **Classic** → Superman, Wonder Woman. ZenPin\'s Superhero collection has great visual references for any look!",
+ cat:"superhero"},
+{k:["pet photography","how to photograph pets","cute pet photos"],
+ r:"Pet photography tips: 🐾 1. Get down to their eye level. 2. Use natural light near a window. 3. Have someone distract them while you shoot. 4. Burst mode catches perfect expressions. 5. Focus on the eyes — always. 6. A favourite toy helps keep their attention!",
+ cat:"pets"},
+{k:["workspace productivity","clean desk","minimalist desk","desk aesthetic"],
+ r:"Minimal desk setup: 💻 Start with cable management. Single monitor + laptop stand combo. One plant (succulents for low maintenance). Notebook and pen always within reach. Remove everything that doesn\'t have a function. A clean desk = a clear mind. Browse ZenPin\'s Workspace section!",
+ cat:"workspace"},
+{k:["cafe aesthetic","coffee shop aesthetic","cafe vibe","study cafe"],
+ r:"Café aesthetic elements: ☕ Warm amber lighting, exposed brick or wood, small round tables, hanging plants, vintage mugs and menu boards. Reproduce at home: a dedicated coffee corner with a pour-over kettle, good beans, and a small plant. Instant café mood!",
+ cat:"interior"},
+{k:["nature walk ideas","outdoor ideas","hiking aesthetic","nature photography spots"],
+ r:"Nature photography locations: 🌿 Forests at golden hour (mist between trees), waterfalls (use slow shutter), coastal cliffs at dusk, mountain overlooks, flower fields in spring. Always look up — overhead canopies create stunning natural frames!",
+ cat:"nature"},
+{k:["vintage aesthetic","retro style","vintage room","retro design","70s aesthetic"],
+ r:"Vintage/retro aesthetic guide: 🎞️ Warm amber + mustard + rust + avocado green. Record players, vintage cameras, rotary phones as decor. Film grain filters on photos. Thrift stores are gold for authentic vintage pieces. Mix old items with clean modern furniture for balance!",
+ cat:"art"},
+{k:["neon aesthetic","neon lights","neon photography","neon signs"],
+ r:"Neon aesthetic tips: 🌈 Neon signs work best against dark walls (black or deep blue). Use one dominant neon colour + one accent. Long-exposure photography captures neon beautifully at night. Mix with industrial elements (brick, concrete) for contrast. Very popular in anime-inspired rooms!"},
+{k:["car modification","car mods","customize car","car tuning ideas","modified car"],
+ r:"Car customisation ideas: 🚗 **Exterior** — wrap vinyl, alloy wheel swap, tinted windows, body kit. **Interior** — carbon fibre trim, racing seats, custom steering wheel. **Lighting** — LED interior, HID headlights. Always match mod style to the car\'s character — sport vs luxury vs classic!",
+ cat:"cars"},
+{k:["bike customisation","custom motorcycle","cafe racer","scrambler bike"],
+ r:"Motorcycle customisation styles: 🏍️ **Café Racer** — low handlebars, stripped down, speed focus. **Scrambler** — rugged, off-road ready, round headlight. **Bobber** — lowered, minimal fenders, solo seat. **Chopper** — extended front fork, custom frame. Each has its own distinct aesthetic — ZenPin\'s Bikes section shows them all!",
+ cat:"bikes"},
+{k:["how to make moodboard","pinterest board","inspiration board","aesthetic collection"],
+ r:"Build a ZenPin inspiration board: 📌 1. Go to Boards → Create new board. 2. Give it a theme name. 3. Browse categories and save anything that resonates. 4. Aim for 20-30 images before judging. 5. Patterns emerge naturally — colours, textures, moods. Your board tells you what your aesthetic actually is!"},
+{k:["outfit color combinations","what colors go together","colors that match","outfit palette"],
+ r:"Outfit colour combos that always work: 👗 **Navy + white + tan** = classic preppy. **Black + camel + gold** = elevated minimal. **Olive + rust + cream** = earthy boho. **Grey + burgundy + black** = smart casual. **White + denim + any colour** = summer safe. Stick to 3 colours per outfit maximum!"},
+{k:["photo editing tips","how to edit photos","lightroom tips","photo presets"],
+ r:"Photo editing fundamentals: 🎨 1. Correct exposure before anything else. 2. Fix white balance for accurate colours. 3. Lift shadows slightly to reveal detail. 4. Reduce highlights to recover sky. 5. Add a gentle S-curve for contrast. 6. Sharpen last, at full zoom. Less is more — if you notice the edit, it\'s too heavy!"},
+{k:["what is my aesthetic","find my aesthetic","aesthetic quiz","what aesthetic am i"],
+ r:"Find your aesthetic: 🔍 Look at what you\'ve saved or liked on ZenPin — patterns emerge. Are you drawn to dark and moody? You might be dark academia or gothic. Bright and minimal? Scandinavian or clean girl. Warm and textured? Cottagecore or boho. Your saves don\'t lie — browse your profile collection!"},
+{k:["ai art","ai generated images","how to make ai art","stable diffusion","midjourney"],
+ r:"AI image generation tips: 🤖 Write descriptive prompts (style + subject + lighting + mood). Example: \'cinematic shot of a red motorcycle on a mountain road, golden hour, shallow depth of field, dramatic\'. Add artist style references for better results. Use ZenPin images as visual references for your prompt style!"},
+
+  // ── Emotions & wellbeing ─────────────────────────────────────
+  {k:["i am sad","i feel sad","i'm sad","feeling down","i feel bad","i'm upset","i'm unhappy"],
+   r:"I'm really sorry to hear that 💙 Sometimes browsing beautiful imagery can be a gentle mood lift. Take your time. If you want, I can show you some calming nature or scenery ideas — or just chat with me for a bit."},
+  {k:["i am happy","i'm happy","i feel great","i'm excited","great day","feeling good","so happy"],
+   r:"That's wonderful! 🎉 Happiness is contagious. Come share the energy by exploring some inspiring ideas — what would you like to discover today?"},
+  {k:["i am bored","i'm bored","nothing to do","so bored","bored af"],
+   r:"Boredom is just creativity waiting to be unlocked! 🎨 Try browsing a category you've never explored before. How about architecture, anime, or interior design? Something will spark your imagination!"},
+  {k:["i am lonely","i feel lonely","i'm lonely","no friends","feeling alone"],
+   r:"You're not alone here 💙 ZenPin is a community of creative people just like you. Browse, save ideas, and you might find your people. What interests you most — fashion, gaming, art?"},
+  {k:["i am stressed","i'm stressed","so stressed","feeling overwhelmed","too much stress"],
+   r:"Take a deep breath 🌿 Scrolling through beautiful imagery is genuinely therapeutic. Try ZenPin's nature or scenery sections — looking at peaceful landscapes actually reduces cortisol. Want me to show you some?",
+   cat:"scenery"},
+  {k:["i am tired","i'm tired","so tired","feeling exhausted","no energy"],
+   r:"Rest is productive too ✨ When you have energy again, come back and I'll help you find ideas that inspire you. For now, maybe browse some cosy interior or workspace designs — something warm and comforting.",
+   cat:"interior"},
+  {k:["i love zenpin","zenpin is amazing","zenpin is great","love this app","this is cool"],
+   r:"That means everything to us! 🤍 ZenPin is built with love for creative people. Tell a friend and help the community grow! What can I help you discover today?"},
+  {k:["i hate zenpin","zenpin is bad","zenpin sucks","not working","site is broken"],
+   r:"I'm sorry about that! 😔 Please tell me what's not working and I'll do my best to help. For technical issues, try hard-refreshing the page (Ctrl+Shift+R) or clearing your browser cache first."},
+
+  // ── Confidence & motivation ────────────────────────────────────
+  {k:["i am not good enough","i'm not talented","i can't do this","i give up","not creative enough"],
+   r:"Everyone starts somewhere, and creativity is a skill — not a gift 💪 The most talented designers once felt exactly how you do. Browse ZenPin for inspiration, save what moves you, and start small. One idea a day changes everything."},
+  {k:["how do i start","where do i start","i don't know where to begin","lost","overwhelmed","too many options"],
+   r:"Start with ONE thing that genuinely excites you 🌟 Browse a category that interests you most, save 5 images you love, and look for the pattern. That pattern is your aesthetic. Go from there — everything else follows."},
+  {k:["give me confidence","how to be confident","confidence tips","more confidence"],
+   r:"Confidence tip: 💪 Wear clothes that make you feel powerful. Master one skill deeply. Stand tall — posture affects mood. Celebrate small wins. Surround yourself with inspiring things (ZenPin helps with that!). And remember: confidence is built, not born."},
+
+  // ── Friendship & relationships ────────────────────────────────
+  {k:["how to make friends","i have no friends","making friends","finding friends","social tips"],
+   r:"Making friends as an adult: 🤝 Join a class or club (pottery, coding, fitness). Be the one who follows up. Ask genuine questions and actually listen. Shared interests matter — creative communities like this one are great for meeting like-minded people!"},
+  {k:["relationship advice","love advice","dating tips","how to find love"],
+   r:"Relationship wisdom: ❤️ Be genuinely interested in the other person. Share your actual personality early. Consistency builds trust. Listen more than you talk. And build a life you love independently — attractive people are people who love their own life!"},
+  {k:["gift ideas for girlfriend","gift for boyfriend","romantic gift","anniversary gift","birthday gift ideas"],
+   r:"Romantic gift ideas: 🎁 **Experiences** beat objects every time (cooking class, concert, weekend trip). **Personalised** items show thought (custom illustration, engraved jewellery). **Their hobby** (gear, books, tools they've mentioned). **Handmade** always beats store-bought. Browse ZenPin's accessories section for jewellery inspiration!",
+   cat:"accessories"},
+
+  // ── Cars & bikes extended ─────────────────────────────────────
+  {k:["best sports car","top sports cars","fastest car","dream car","luxury car"],
+   r:"Dream cars: 🚗 **Supercar** → Lamborghini Huracán, Ferrari SF90, McLaren 720S. **GT** → Porsche 911, Aston Martin DB11. **Accessible performance** → Porsche Cayman, Toyota GR86, Mazda MX-5. **Electric** → Tesla Model S Plaid, Rimac Nevera. Check ZenPin's Cars section for visual inspiration!",
+   cat:"cars"},
+  {k:["how to maintain bike","motorcycle maintenance","bike care tips","bike service"],
+   r:"Motorcycle maintenance basics: 🔧 1. Check tyre pressure weekly. 2. Change oil every 3,000-5,000 km. 3. Inspect brakes monthly. 4. Keep chain clean and lubed. 5. Check all lights before every ride. 6. Wash with motorcycle-specific products. A well-maintained bike is a safe bike!"},
+  {k:["electric motorcycle","electric bike","ev motorcycle","electric motorbike"],
+   r:"Electric motorcycles worth knowing: ⚡ Zero SR/F (fastest charging), Energica Ego (Italian premium), Harley-Davidson LiveWire (iconic brand), BMW CE-04 (urban futurism), Kawasaki Ninja e-1 (beginner friendly). The tech is improving fast — great time to be interested in EVs!",
+   cat:"bikes"},
+
+  // ── Anime extended ────────────────────────────────────────────
+  {k:["best anime","top anime","must watch anime","anime to watch","recommend anime show"],
+   r:"Anime with stunning visual aesthetics: 🎌 **Demon Slayer** (breathtaking water/flame effects). **Your Name** (beautiful backgrounds). **Violet Evergarden** (cinematic drama). **Spirited Away** (masterful world-building). **Jujutsu Kaisen** (dynamic action design). Browse ZenPin's Anime section for matching visual inspiration!",
+   cat:"anime"},
+  {k:["anime art style","draw like anime","anime illustration","anime inspired art"],
+   r:"Anime art style essentials: ✏️ Large expressive eyes, simplified noses and mouths, detailed hair, dramatic lighting, speed lines for action, screen tones for texture. Key software: Clip Studio Paint (industry standard for manga/anime). Study by copying your favourite artist's panels — that's how pros learn.",
+   cat:"anime"},
+  {k:["anime merchandise","anime figure","figure collection","anime poster","anime decor"],
+   r:"Anime merch tips: 🛒 Buy from official sources (Good Smile, Kotobukiya, Crunchyroll Store). Check review sites before buying figures. Funko Pops are entry-level — serious collectors prefer 1/8 or 1/7 scale PVC figures. Display behind glass to prevent dust. ZenPin's Anime section has room decoration ideas!",
+   cat:"anime"},
+
+  // ── Interior design extended ──────────────────────────────────
+  {k:["small room ideas","decorate small room","small apartment ideas","tiny room","studio apartment"],
+   r:"Small space solutions: 🏠 Mirrors make rooms feel 2× bigger. Wall-mounted shelves = no floor space used. Bed with storage underneath. Fold-away desk for WFH. Light, neutral walls. Vertical storage goes up, not out. Multi-function furniture (sofa bed, ottoman with storage). Less furniture = more space.",
+   cat:"interior"},
+  {k:["luxury interior","high end interior","expensive looking room","premium interior design"],
+   r:"Luxury look without luxury prices: 💎 Crown moulding (cheap to add, high impact). Statement lighting (one dramatic pendant). Quality textiles (linen, velvet, real wool). Art above sofa (large piece, centred). Fresh flowers or quality faux plants. Everything white + one bold colour = classic luxury.",
+   cat:"interior"},
+  {k:["scandinavian design","nordic design","hygge","scandi style","minimalist nordic"],
+   r:"Scandinavian design principles: 🌿 Functional beauty — every object must be useful. Natural materials (wood, linen, wool, stone). White walls with natural light. Minimal decoration. Quality over quantity. Candles and warm lighting. Plants everywhere. It's about feeling cosy and calm, not minimalism for its own sake.",
+   cat:"interior"},
+
+  // ── Fashion extended ──────────────────────────────────────────
+  {k:["capsule wardrobe","minimal wardrobe","essentials wardrobe","what to wear","build wardrobe"],
+   r:"Capsule wardrobe starter kit: 👗 White shirt (crisp). Black trousers (tailored). Dark wash jeans. Navy blazer. Grey or camel coat. White sneakers. Black ankle boots. 3 quality t-shirts (white, grey, black). These 10 items create 40+ outfits. Buy quality, buy less.",
+   cat:"fashion"},
+  {k:["how to dress for interview","interview outfit","professional outfit","smart casual"],
+   r:"Interview outfit formula: 💼 **Formal** → dark suit, white shirt, tie (men) / tailored dress or suit (women). **Smart casual** → chinos + blazer (men) / blouse + trousers (women). Always pressed, clean shoes, minimal accessories. Dress one level above the company's culture. Confidence is the final accessory."},
+  {k:["korean fashion","k-fashion","korean style","kdrama fashion","korean aesthetic"],
+   r:"K-fashion essentials: 🇰🇷 Oversized blazers over mini skirts. Pastel coordinates. Platform shoes. Bucket hats. Layered necklaces. Clean minimalism meets bold detail. Key brands: Musinsa, W Concept, ADER Error. Korean beauty (K-beauty) completes the look. ZenPin's Fashion section has tons of K-style inspo!",
+   cat:"fashion"},
+
+  // ── Architecture extended ─────────────────────────────────────
+  {k:["modern architecture","contemporary architecture","modern building","architectural styles"],
+   r:"Modern architectural styles: 🏛️ **Minimalist** (Mies van der Rohe — less is more). **Parametric** (Zaha Hadid — flowing curves). **Brutalist** (raw concrete, bold mass). **Biophilic** (nature integrated). **Deconstructivist** (fragmented forms, Frank Gehry). ZenPin's Architecture section showcases all these styles!",
+   cat:"architecture"},
+  {k:["best buildings in world","famous buildings","iconic architecture","architectural wonders"],
+   r:"Iconic architecture: 🌍 Sagrada Família (Gaudí, Barcelona). Sydney Opera House (Utzon). Burj Khalifa (Adrian Smith, Dubai). The Shard (Renzo Piano, London). CCTV Headquarters (Rem Koolhaas, Beijing). Guggenheim Bilbao (Frank Gehry). Each changed what we thought buildings could be.",
+   cat:"architecture"},
+
+  // ── Nature & scenery extended ─────────────────────────────────
+  {k:["best travel destinations","places to visit","where to travel","travel ideas","dream vacation"],
+   r:"Visually stunning destinations: 🌍 Santorini (iconic blue domes). Kyoto in cherry blossom season. Patagonia (dramatic mountains). Maldives (crystal lagoons). Morocco (intricate architecture). Iceland (aurora + geothermal). New Zealand (LOTR landscapes). Scotland's Highlands. Each one a photographer's dream.",
+   cat:"scenery"},
+  {k:["forest photography","outdoor photography","landscape photography tips","nature photo ideas"],
+   r:"Landscape photography: 📸 Shoot at golden hour (1 hour after sunrise, 1 hour before sunset). Use a polarising filter for richer skies. Include foreground interest. Find leading lines (path, river, fence). Wait for the right light — patience is the most important piece of gear.",
+   cat:"nature"},
+
+  // ── Gaming extended ───────────────────────────────────────────
+  {k:["best gaming pc","build gaming pc","gaming computer","pc gaming build","gaming rig"],
+   r:"Gaming PC build tiers: 🖥️ **Budget £500** → AMD Ryzen 5 + RX 6600. **Mid £800** → Ryzen 7 5700X + RTX 3070. **High-end £1400** → Core i7-13700K + RTX 4080. Key rule: GPU = 40% of budget. Don't skimp on PSU (quality power supply). ZenPin's Gaming section has setup inspiration!",
+   cat:"gaming"},
+  {k:["rgb lighting","rgb setup","led lighting desk","cool gaming lights"],
+   r:"RGB lighting tips: 🌈 Bias lighting behind monitor reduces eye strain. Underglow on desk creates floating effect. Match your peripheral colours to wallpaper. Less is more — consistent colour beats rainbow chaos. Govee or Philips Hue for smart control. LED strips at £10 make a huge visual difference.",
+   cat:"gaming"},
+
+  // ── Superhero & art extended ──────────────────────────────────
+  {k:["comic book art","comic art style","how to draw comics","manga vs comics"],
+   r:"Comics vs manga art: 🦸 **Western comics** → bold lines, heavy shading, muscular proportions, dynamic perspective. **Manga** → lighter lines, large eyes, more expressive emotion, screentone textures. Starting tip: copy existing panels to learn how masters handle anatomy, perspective and page composition.",
+   cat:"superhero"},
+  {k:["art supplies","what art supplies to buy","best art materials","drawing supplies for beginners"],
+   r:"Beginner art supplies worth buying: 🎨 Mechanical pencil (0.5mm). Uni Pin fineliner set. Pentel Aquash water brush. Winsor & Newton cotman watercolours. Moleskine sketchbook. Procreate on iPad (if digital). Start with pencil and one medium — master the basics before collecting supplies.",
+   cat:"art"},
+  {k:["graphic design tips","how to design","graphic design basics","design for beginners"],
+   r:"Graphic design fundamentals: 📐 **Hierarchy** — guide the eye. **Alignment** — nothing arbitrary. **Contrast** — make important things pop. **Repetition** — consistency creates brand. **Proximity** — related items together. Learn Canva free, then move to Figma (free) or Adobe Illustrator. Steal like an artist — study what you love."},
+
+  // ── Workspace extended ────────────────────────────────────────
+  {k:["home office setup","work from home setup","wfh setup","remote work setup","office desk"],
+   r:"Home office essentials: 💻 Ergonomic chair (non-negotiable). Monitor at eye level. External keyboard and mouse. Good webcam and microphone for calls. Warm lighting (3000K bulbs). Noise-cancelling headphones. Room divider if in shared space. Separate work/home spaces helps your brain switch modes.",
+   cat:"workspace"},
+  {k:["productivity apps","best apps for productivity","tools for work","work apps","task management"],
+   r:"Productivity tools that actually work: ⚡ **Notion** (knowledge base + tasks). **Todoist** (simple task manager). **Obsidian** (note-taking). **Linear** (engineering tasks). **Loom** (async video). **Raycast** (app launcher, Mac). **1Password** (password manager). Pick ONE task tool and commit — switching costs focus."},
+
+  // ── Accessories & pets ────────────────────────────────────────
+  {k:["watch recommendations","best watches","watch buying guide","men's watch","women's watch"],
+   r:"Watch guide: ⌚ **Entry luxury** → Seiko, Orient, Hamilton. **Mid** → Tissot, Longines, Omega Seamaster (dress). **High-end** → Rolex Submariner, Patek Philippe (investments). **Smart** → Apple Watch Ultra (health features). A classic steel dress watch goes with everything. ZenPin's Accessories section has visual inspiration!",
+   cat:"accessories"},
+  {k:["dog breeds","best dog","choosing a dog","first dog","dog for family","what dog should i get"],
+   r:"Choosing a dog: 🐕 Match to your lifestyle. **Active** → Border Collie, Vizsla. **Family** → Golden Retriever, Labrador. **Apartment** → French Bulldog, Pug, Shih Tzu. **Low maintenance** → Basenji, Greyhound. Rescue first — millions of wonderful dogs need homes. Research breed-specific health issues before buying.",
+   cat:"pets"},
+  {k:["cat care","cat tips","how to take care of cat","first cat","getting a cat"],
+   r:"Cat care basics: 🐱 Litter box: 1 per cat + 1 extra. Vet check within first week. Microchip and vaccinate. Scratch post (saves furniture). Interactive play daily (15 min minimum). High-quality wet food beats dry-only. Keep indoors for safety and longer life. Cats are independent but need attention and enrichment.",
+   cat:"pets"},
+
+  // ── Food & cooking ────────────────────────────────────────────
+  {k:["meal prep ideas","meal planning","how to meal prep","prep for the week","healthy meal prep"],
+   r:"Meal prep guide: 🍱 Choose 1 protein, 2 carbs, 3 vegetables. Cook Sunday, eat all week. Batch-cook grains (rice, quinoa, oats). Marinate proteins overnight. Use glass containers for freshness. Label with date. Prep sauces separately to avoid soggy meals. Start with just 3 meals — don't over-commit."},
+  {k:["baking tips","how to bake","baking for beginners","cake recipe","baking advice"],
+   r:"Baking basics: 🧁 Always weigh ingredients (volume is unreliable). Room temperature butter and eggs matter. Don't open the oven in the first 75% of bake time. Underbake slightly — carryover cooking finishes the job. Cool completely before icing. Baking is science: follow the recipe exactly until you understand the chemistry."},
+
+  // ── Life & random conversation ────────────────────────────────
+  {k:["tell me a joke","make me laugh","say something funny","joke please"],
+   r:"Why did the designer go broke? Because he had too many layers and not enough assets! 😄 ...I'll stick to design advice."},
+  {k:["what time is it","what day is it","current time","todays date"],
+   r:"I don't have access to real-time data like a clock, but your device's clock is always in the corner! ⏰ What I CAN help with: creative ideas, design questions, or ZenPin image browsing!"},
+  {k:["random fact","tell me something interesting","fun fact","did you know","surprise me"],
+   r:"Fun fact: 🌟 The Eiffel Tower grows about 15cm taller in summer due to thermal expansion of the iron. Also, the mantis shrimp can punch with the force of a bullet and sees 16 types of colour receptors (humans have 3). Nature is extraordinary — much like ZenPin's scenery collection!"},
+  {k:["favourite color","what is your favorite color","favorite colour","best colour"],
+   r:"If I had a favourite colour, I'd say deep purple — the colour of creativity, mystery and luxury 💜 It's also ZenPin's brand colour! What's yours? I can show you images that match any colour palette."},
+  {k:["can you help me","need help","i need help","help me","need assistance"],
+   r:"Absolutely — that's exactly what I'm here for! 🤝 Just tell me what you need: finding images, design advice, a creative idea, how to use ZenPin, or even just a chat. What's on your mind?"},
+  {k:["do you have feelings","are you sentient","do you think","are you alive","do you understand"],
+   r:"I'm an AI — I process, I respond, I match patterns 🤖 I don't feel in the way you do, but I'm designed to be genuinely helpful and to understand context. I find (in my computational way) that creative conversations are the most interesting! What would you like to explore?"},
+  {k:["what is the meaning of life","why are we here","purpose of life","meaning of existence"],
+   r:"That's the great question! Philosophers have wrestled with it forever 🌌 Some say connection, others say creation, others say experience. My perspective: people who make things tend to feel most alive. Maybe that's why creative platforms like ZenPin exist — to help people make and share."},
+  {k:["i want to learn something new","what should i learn","learn new skill","new hobby ideas","hobby recommendations"],
+   r:"Skills and hobbies worth starting: 🎯 **Visual** → photography, illustration, embroidery, pottery. **Technical** → coding (Python), woodworking, electronics. **Physical** → climbing, swimming, dancing, archery. **Creative** → writing, music production, ceramics. Pick something that scares you slightly — that's usually the right choice."},
+];
+const CAT_KEYWORDS = {
+  bikes:       ["bike","motorcycle","motorbike","two wheel","superbike","cruiser"],
+  cars:        ["car","automobile","vehicle","supercar","sports car","sedan","suv","black car"],
+  anime:       ["anime","manga","otaku","animation","japanese cartoon","anime room","waifu"],
+  fashion:     ["fashion","outfit","clothing","clothes","dress","style","wardrobe","wear"],
+  accessories: ["accessor","jewelry","jewellery","earring","necklace","bracelet","handbag","bag","watch","ring"],
+  architecture:["architect","building","structure","skyscraper","facade","bridge","tower","house exterior"],
+  art:         ["art","painting","illustration","digital art","sketch","drawing","artwork"],
+  food:        ["food","recipe","dish","cooking","cuisine","meal","restaurant","plating"],
+  gaming:      ["gaming","gamer","game","esport","pc setup","console","rgb","gaming room"],
+  interior:    ["interior","room","decor","living room","bedroom","home decor","furniture","cosy"],
+  nature:      ["nature","landscape","forest","mountain","ocean","waterfall","sky","leaf","tree"],
+  pets:        ["pet","dog","cat","puppy","kitten","animal","cute animal","fur"],
+  scenery:     ["scenery","scenic","travel","landscape photo","beautiful place","view","horizon"],
+  superhero:   ["superhero","marvel","dc","batman","spiderman","iron man","hero","comic"],
+  workspace:   ["workspace","desk","office","home office","setup","monitor","laptop desk"],
+};
+
+function detectCategory(msg) {
+  const low = msg.toLowerCase();
+  for (const [cat, kws] of Object.entries(CAT_KEYWORDS)) {
+    if (kws.some(kw => low.includes(kw))) return cat;
+  }
+  return null;
+}
+
+function brainLookup(msg) {
+  const clean = msg.toLowerCase().replace(/[^a-z0-9 ]/g, " ").trim();
+  const words  = new Set(clean.split(/\s+/).filter(w => w.length > 1));
+  let best = null, bestScore = 0;
+  for (const entry of BRAIN) {
+    for (const trigger of entry.k) {
+      // Check substring match OR word overlap
+      if (clean.includes(trigger)) return entry;
+      const tWords = trigger.split(" ");
+      const overlap = tWords.filter(w => words.has(w)).length;
+      const score   = overlap / tWords.length;
+      if (score > 0.65 && score > bestScore) {
+        bestScore = score; best = entry;
+      }
+    }
+  }
+  return bestScore > 0.65 ? best : null;
+}
+
 function setupChat() {
-  const input  = $("aiChatInput");
-  const send   = $("aiChatSend");
-  const msgs   = $("aiChatMessages");
+  // Selectors match actual HTML IDs (chatInput/chatSendBtn/chatMsgs in page-collab)
+  const input  = $("chatInput");
+  const send   = $("chatSendBtn");
+  const msgs   = $("chatMsgs");
   if (!input || !send || !msgs) return;
 
-  // ── 100-entry fallback knowledge base ──────────────────────
-  // Matched when backend is unavailable or for common questions.
-  // Keys are lowercase stripped strings; values are {text, category?}.
-  const BRAIN = [
-  // ── Greetings ──────────────────────────────────────────────────
-  {k:["how are you","how r you","how are u","how you doing","how r u"],
-   r:"I'm doing great! Ready to help you discover new ideas. 🎨"},
-  {k:["hi","hello","hey","hiya","sup","yo","hola","howdy","greetings","what's up","whats up"],
-   r:"Hey! 👋 I'm ZenPin AI. Ask me about bikes, anime, fashion, interior design or anything creative!"},
-  {k:["good morning","morning"],
-   r:"Good morning! ☀️ Ready to explore some beautiful ideas today?"},
-  {k:["good evening","good night","goodnight"],
-   r:"Good evening! 🌙 Perfect time to browse some inspiring ideas. What are you looking for?"},
-  {k:["good afternoon","afternoon"],
-   r:"Good afternoon! 🌤️ Hope your day is going well. What creative ideas can I help you find?"},
-  {k:["bye","goodbye","see you","cya","later","take care"],
-   r:"See you later! 👋 Come back anytime for more inspiration. Happy creating!"},
-  {k:["thank you","thanks","thankyou","thx","ty","appreciate it"],
-   r:"You're welcome! 😊 Happy to help. Let me know if you need more ideas!"},
-  {k:["ok","okay","cool","nice","great","awesome","perfect","got it"],
-   r:"Great! 🎉 Anything else you'd like to explore on ZenPin?"},
 
-  // ── Identity ───────────────────────────────────────────────────
-  {k:["who are you","what are you","what is zenpin ai","tell me about yourself","introduce yourself"],
-   r:"I'm ZenPin AI 🤖 — your creative assistant for discovering images, getting design inspiration, exploring craft ideas and finding aesthetic content across categories like bikes, anime, fashion, interior design and more!"},
-  {k:["what can you do","what do you do","help me","how can you help","your capabilities"],
-   r:"I can: 🔍 Search ZenPin's image library, 🎨 Answer design and craft questions, 💡 Give fashion, anime, bike or interior tips, 🖼️ Show matching images from our collection, and 💬 Chat about creative topics!"},
-  {k:["are you ai","are you a bot","are you real","are you human","are you chatgpt"],
-   r:"I'm ZenPin AI — a creative assistant built specifically for this platform. I'm not ChatGPT, but I'm here to help you discover ideas and get design inspiration! 🌟"},
-  {k:["what is zenpin","tell me about zenpin","what does zenpin do"],
-   r:"ZenPin is a visual discovery platform — like Pinterest but with curated collections of bikes, anime, fashion, interior design, art, cars and more. You can browse, save, and get AI-powered ideas! 📌"},
-
-  // ── Image search ───────────────────────────────────────────────
-  {k:["show bike ideas","bike ideas","show me bikes","bike images","motorcycle ideas"],
-   r:"Here are some amazing bike ideas from ZenPin! 🏍️ From sport bikes to cruisers, there's something for every rider.",
-   cat:"bikes"},
-  {k:["show black bike","black motorcycle","dark bike"],
-   r:"Here are some sleek dark motorcycle images from ZenPin! 🖤 Perfect for that edgy aesthetic.",
-   cat:"bikes"},
-  {k:["show car ideas","car ideas","car images","show me cars","supercar","sports car ideas"],
-   r:"Check out these stunning car images from ZenPin! 🚗 From supercars to classics.",
-   cat:"cars"},
-  {k:["show anime ideas","anime ideas","anime images","anime wallpaper","anime room"],
-   r:"Here are some incredible anime ideas from ZenPin! 🌸 From dark neon scenes to cherry blossom aesthetics.",
-   cat:"anime"},
-  {k:["show fashion ideas","fashion ideas","outfit ideas","clothing ideas","style ideas"],
-   r:"Here are some gorgeous fashion ideas from ZenPin! 👗 Trending styles and outfit inspiration.",
-   cat:"fashion"},
-  {k:["show accessories","accessories ideas","jewelry ideas","bag ideas","show me jewelry"],
-   r:"Here are some beautiful accessory ideas from ZenPin! 💍 From jewelry to bags and beyond.",
-   cat:"accessories"},
-  {k:["show interior","room ideas","interior design ideas","home decor ideas","bedroom ideas","living room ideas"],
-   r:"Here are some stunning interior design ideas from ZenPin! 🏠 From minimalist to cozy aesthetics.",
-   cat:"interior"},
-  {k:["show architecture","building ideas","architecture ideas","house design"],
-   r:"Here are some breathtaking architecture ideas from ZenPin! 🏛️ From modern to classic structures.",
-   cat:"architecture"},
-  {k:["show art ideas","art ideas","digital art ideas","painting ideas","artwork"],
-   r:"Here are some amazing art ideas from ZenPin! 🎨 From digital illustrations to traditional paintings.",
-   cat:"art"},
-  {k:["show food ideas","food ideas","recipe ideas","food styling","plating ideas"],
-   r:"Here are some delicious food styling ideas from ZenPin! 🍽️ Perfect for food photographers and chefs.",
-   cat:"food"},
-  {k:["show gaming setup","gaming room ideas","pc setup ideas","gaming desk","esports setup"],
-   r:"Here are some epic gaming setup ideas from ZenPin! 🎮 RGB, ultrawide and pro-level setups.",
-   cat:"gaming"},
-  {k:["show nature","nature ideas","landscape ideas","outdoor photography","nature photography"],
-   r:"Here are some breathtaking nature ideas from ZenPin! 🌿 From forests to mountain vistas.",
-   cat:"nature"},
-  {k:["show pets","cute pets","pet ideas","dog pictures","cat pictures"],
-   r:"Here are some adorable pet ideas from ZenPin! 🐾 Cats, dogs and furry friends galore.",
-   cat:"pets"},
-  {k:["show scenery","scenery ideas","travel photos","beautiful places","scenic views"],
-   r:"Here are some stunning scenery photos from ZenPin! 🌅 Beautiful landscapes from around the world.",
-   cat:"scenery"},
-  {k:["show superhero","superhero ideas","marvel ideas","dc comics ideas","batman","spiderman"],
-   r:"Here are some epic superhero ideas from ZenPin! 🦸 From Marvel to DC universe.",
-   cat:"superhero"},
-  {k:["show workspace","desk setup","office ideas","home office","work setup"],
-   r:"Here are some clean workspace setups from ZenPin! 💻 Productive and aesthetic desk setups.",
-   cat:"workspace"},
-
-  // ── Design & craft ─────────────────────────────────────────────
-  {k:["design clothes","how to design clothes","clothing design","how can i design cloth","design an outfit"],
-   r:"To design clothes: 1️⃣ Start with a sketch of your silhouette. 2️⃣ Choose a color palette (2-3 colors max). 3️⃣ Select fabric — cotton for casual, silk for elegant. 4️⃣ Add details like buttons, zippers or embroidery. 5️⃣ Make a pattern or find a template online. Try browsing ZenPin's Fashion category for visual inspiration! 👗"},
-  {k:["anime room ideas","how to make anime room","anime bedroom","anime aesthetic room"],
-   r:"For an anime room aesthetic: 🌸 Use dark walls (navy/black) with neon accent lighting. Add anime posters and figure displays. Install LED strips behind your desk. Use sakura fairy lights for ambiance. Check ZenPin's Anime collection for specific ideas!",
-   cat:"anime"},
-  {k:["fashion tips","style tips","how to dress better","dressing tips","outfit tips"],
-   r:"Fashion tips: 👗 1. Build a capsule wardrobe (10 versatile pieces). 2. Wear neutral colors as a base. 3. Add one statement piece per outfit. 4. Dress for your body shape. 5. Invest in good shoes — they elevate any look. 6. Accessorize minimally but intentionally!"},
-  {k:["interior design tips","how to decorate room","room decoration tips","how to make room look good"],
-   r:"Interior design tips: 🏠 1. Follow the 60-30-10 color rule. 2. Mix textures (wood, fabric, metal). 3. Use mirrors to make small rooms appear larger. 4. Layer lighting (ambient + task + accent). 5. Add plants for life and freshness. 6. Declutter first — good design starts with clean space!"},
-  {k:["workspace tips","how to setup desk","desk setup tips","productive workspace","office setup tips"],
-   r:"Workspace setup tips: 💻 1. Monitor at eye level (use a stand). 2. Good chair = back health. 3. External keyboard and mouse for comfort. 4. Warm lighting to reduce eye strain. 5. Cable management makes it look professional. 6. Add a plant for focus. ZenPin's Workspace category has amazing setups!",
-   cat:"workspace"},
-  {k:["photography tips","how to take better photos","photo tips","photo ideas"],
-   r:"Photography tips: 📸 1. Use the rule of thirds. 2. Shoot in golden hour (sunrise/sunset). 3. Look for leading lines and natural frames. 4. Keep backgrounds simple. 5. Edit lightly — enhance, don't overprocess. 6. Shoot in RAW if your camera supports it!"},
-  {k:["color palette ideas","color combination","color scheme","best color combinations"],
-   r:"Popular color palettes: 🎨 1. Monochromatic (shades of one color) — elegant. 2. Complementary (opposites on color wheel) — energetic. 3. Triadic (3 evenly spaced colors) — vibrant. 4. Earth tones — warm and timeless. 5. Pastel + white — soft and minimal. Try using Coolors.co to generate palettes!"},
-  {k:["diy craft ideas","craft ideas","creative diy","handmade ideas","craft project"],
-   r:"DIY craft ideas: ✂️ 1. Macramé wall hangings (rope art). 2. Resin jewelry making. 3. Candle pouring with essential oils. 4. Embroidery on denim jackets. 5. Terrarium building. 6. Hand-painted plant pots. 7. Collage art using magazine cutouts. Browse ZenPin for visual inspiration!"},
-  {k:["minimalist style","minimalist design","minimalism tips","how to be minimalist"],
-   r:"Minimalist style guide: ⬜ 1. Choose quality over quantity. 2. Stick to a neutral color palette. 3. Remove anything without function or meaning. 4. Leave negative space (empty space is good!). 5. One focal point per room or outfit. 6. Hidden storage > visible clutter."},
-  {k:["how to draw anime","draw anime character","anime drawing tips","drawing tips"],
-   r:"Anime drawing basics: ✏️ 1. Start with a circle for the head (larger than realistic proportions). 2. Eyes are large and expressive — the focal point. 3. Keep noses and mouths minimal. 4. Hair has volume and flows dramatically. 5. Study your favorite anime artist's style. 6. Practice with reference before drawing from imagination!"},
-
-  // ── Car / bike specific ────────────────────────────────────────
-  {k:["best bike color","bike color ideas","motorcycle color","what color bike"],
-   r:"Popular bike colors: 🏍️ **Matt Black** — timeless and aggressive. **Racing Red** — classic sport look. **Pearl White** — clean and premium. **Electric Blue** — eye-catching. **Burnt Orange** — vintage aesthetic. For night riding, darker colors look more dramatic under city lights!",
-   cat:"bikes"},
-  {k:["best car color","car color ideas","what color car","car paint ideas"],
-   r:"Best car colors: 🚗 **Midnight Black** — sophisticated and always stylish. **Glacier White** — clean and premium resale value. **Metallic Grey** — modern and understated. **Racing Red** — passionate and sporty. **British Racing Green** — classic and distinctive. Choose based on your climate — dark colors show dust more!",
-   cat:"cars"},
-  {k:["superbike","superbike ideas","sports bike","racing bike"],
-   r:"ZenPin has some incredible superbike images! 🏁 Check out our Bikes collection for sport bikes, naked bikes and café racers.",
-   cat:"bikes"},
-
-  // ── Anime specific ─────────────────────────────────────────────
-  {k:["anime aesthetic","anime wallpaper ideas","anime desktop","anime phone wallpaper"],
-   r:"Anime wallpaper aesthetics: 🌸 1. Dark city skylines (cyberpunk anime). 2. Cherry blossom forests. 3. Minimal character silhouettes. 4. Studio Ghibli landscapes. 5. Neon-lit street scenes. 6. Pastel kawaii characters. Browse ZenPin's Anime section for curated wallpaper ideas!",
-   cat:"anime"},
-  {k:["best anime","favorite anime","top anime","recommend anime","anime recommendation"],
-   r:"I'm focused on visual inspiration rather than reviews, but for stunning aesthetics: Attack on Titan, Demon Slayer, Your Name, and Spirited Away all have incredible visual design! ZenPin's anime collection showcases similar aesthetics. 🎌"},
-
-  // ── Fashion specific ───────────────────────────────────────────
-  {k:["street style","streetwear","street fashion","urban fashion"],
-   r:"Streetwear essentials: 👟 Oversized hoodies, cargo pants, clean sneakers (Air Force 1s, Jordan 1s), graphic tees, and bucket hats. Layer with an open flannel or bomber jacket. Neutral base with one pop of color. ZenPin's Fashion section has great streetwear inspo!",
-   cat:"fashion"},
-  {k:["boho style","bohemian fashion","boho fashion","boho look"],
-   r:"Boho style guide: 🌿 Flowy maxi dresses, earthy tones (terracotta, rust, cream), fringe details, layered jewelry, woven bags, and suede ankle boots. Add a wide-brim hat for the full look! Great for summer and festival season.",
-   cat:"fashion"},
-  {k:["casual outfit","casual style","casual look","everyday outfit"],
-   r:"Casual outfit formula: 👕 Good jeans or chinos + clean t-shirt or polo + white sneakers = always works. Upgrade with a structured blazer over a t-shirt for smart-casual. Stick to max 3 colors per outfit for a cohesive look!"},
-
-  // ── Login / account help ───────────────────────────────────────
-  {k:["cannot login","can't login","login problem","login not working","sign in not working","cant sign in"],
-   r:"Login help: 🔑 1. Check your email address for typos. 2. Try the OTP (email code) option instead of password. 3. Clear browser cache and try again. 4. If the server is just waking up, wait 30 seconds and retry. Still stuck? Contact support via the profile page."},
-  {k:["forgot password","reset password","password reset","forgot my password"],
-   r:"Password reset: 📧 Use the 'Sign in with code' option on the login page — enter your email and we'll send you a one-time code. No password needed! This is the fastest way back in."},
-  {k:["how to register","how to sign up","create account","new account","signup help"],
-   r:"To create a ZenPin account: 1️⃣ Click Sign In in the navbar. 2️⃣ Click 'Create account' on the login page. 3️⃣ Enter your email address. 4️⃣ Enter the 6-digit code sent to your email. 5️⃣ Set your username — you're in! 🎉"},
-  {k:["how to save image","save pin","how to save","bookmark image","save idea"],
-   r:"To save an image: Click the ❤️ icon on any image card while browsing. You can find all your saved ideas in your Profile → Saved section!"},
-  {k:["how to upload","upload image","add my image","post image","share image"],
-   r:"To upload: Click the ✦ Create button in the navbar. You can upload an image, add a title, category and description. Your image will appear in the community feed!"},
-
-  // ── Motivation / productivity ──────────────────────────────────
-  {k:["motivate me","i need motivation","feeling lazy","no motivation","inspire me"],
-   r:"Here's some motivation: 🌟 Every great design started with someone who didn't know how. Start before you're ready. The best time to begin was yesterday — the second best time is right now. Browse ZenPin for visual fuel to get you started! 🔥"},
-  {k:["productivity tips","how to be productive","focus tips","study tips","work tips"],
-   r:"Productivity tips: ⚡ 1. Use the Pomodoro technique (25 min work, 5 min break). 2. Single-task — multitasking kills focus. 3. Clear your workspace before starting. 4. Write tomorrow's top 3 tasks tonight. 5. Turn off notifications for 90-minute focus blocks!"},
-  {k:["creativity tips","how to be more creative","boost creativity","creative block","creative ideas"],
-   r:"Boost creativity: 🧠 1. Browse visual inspiration daily (ZenPin is great for this!). 2. Keep a sketchbook or idea journal. 3. Constraints spark creativity — try a 10-minute challenge. 4. Walk and think — movement unlocks new ideas. 5. Combine two unrelated ideas and see what happens!"},
-
-  // ── Errors / technical ─────────────────────────────────────────
-  {k:["something went wrong","error","not working","broken","bug","issue"],
-   r:"Sorry about that! 😅 Try: 1. Hard refresh the page (Ctrl+Shift+R). 2. Clear browser cache. 3. Wait 30 seconds — the server may be waking up from sleep. 4. Try a different browser. If it persists, this is likely a temporary glitch!"},
-  {k:["slow","loading slow","site is slow","takes long","server slow"],
-   r:"The site may be slow because the backend server is waking up from sleep mode (Render free tier sleeps after 15 min of inactivity). ⏱️ First request takes ~30 seconds. After that it runs normally! Refresh if needed."},
-  {k:["blank screen","white screen","nothing showing","images not loading","images not appearing"],
-   r:"Images not loading? Try: 1. Hard refresh (Ctrl+Shift+R). 2. Check your internet connection. 3. Click on a category chip to force a reload. 4. Wait a moment — server may be starting up. If the issue persists, try another browser!"},
-
-  // ── Misc ───────────────────────────────────────────────────────
-  {k:["what's trending","trending ideas","popular ideas","what is popular","trending now"],
-   r:"Trending on ZenPin right now: 🔥 Dark academia aesthetics, neon bike setups, anime room decor, minimalist workspace designs, and bold fashion accessories! Browse the Explore section to see what's hot."},
-  {k:["give me ideas","random idea","surprise me","something creative","inspiration"],
-   r:"Here's a creative challenge: 💡 Take one object near you and redesign it in a different style — minimalist, cyberpunk, vintage, or Japanese aesthetic. Or browse ZenPin's random category mix for unexpected inspiration! 🎲"},
-  {k:["how to make mood board","moodboard","vision board","aesthetic board"],
-   r:"Create a mood board: 🎨 1. Choose a theme or emotion. 2. Collect 15-20 images that match. 3. Arrange by color and mood (similar tones together). 4. Add texture samples if physical. 5. Use Canva or ZenPin boards for digital mood boards. Your board should make you feel something instantly!"},
-  {k:["zenpin features","features","what features","what does zenpin have"],
-   r:"ZenPin features: 📌 1. Image discovery across 15 curated categories. 2. Save and like images. 3. Create boards to organize ideas. 4. AI chat assistant (that's me!). 5. Image analysis — upload a photo for AI insights. 6. Collaborate with others. 7. Profile and portfolio!"},
-
-  // ── More design / craft ────────────────────────────────────────
-  {k:["architecture tips","how to appreciate architecture","best architectural styles"],
-   r:"Architecture styles: 🏛️ **Minimalist** — clean lines, open space. **Industrial** — raw materials, exposed metal/brick. **Art Deco** — ornate geometric patterns. **Brutalist** — raw concrete, bold mass. **Biophilic** — nature integrated into buildings. ZenPin\'s Architecture section has stunning examples!",
-   cat:"architecture"},
-  {k:["food styling tips","how to style food","food photography","food presentation"],
-   r:"Food styling tips: 🍽️ 1. Use odd numbers (3, 5) of elements. 2. Create height and layers. 3. Use natural light from the side. 4. Add a colour contrast (green garnish on warm dishes). 5. Keep the hero ingredient front and centre. 6. Wipe plate edges clean before shooting!",
-   cat:"food"},
-  {k:["home workout","workout at home","exercise at home","fitness tips","how to stay fit"],
-   r:"Home fitness essentials: 💪 1. Bodyweight routines (push-ups, squats, lunges). 2. Resistance bands — cheap and versatile. 3. 20-min HIIT 3x/week beats 1-hour slow cardio. 4. Track progress with photos not just weight. 5. Consistency beats intensity every time!"},
-  {k:["cooking tips","how to cook better","improve cooking","kitchen tips"],
-   r:"Cooking tips: 🍳 1. Salt pasta water like the sea. 2. Let meat rest after cooking. 3. Mise en place — prep everything before cooking. 4. High heat for searing, low heat for simmering. 5. Acid (lemon, vinegar) brightens flavours at the end. 6. Taste as you cook, always!"},
-  {k:["web design tips","website design","ui design tips","ux design","design a website"],
-   r:"Web design principles: 💻 1. Hierarchy — guide the eye to what matters. 2. White space is a design element, not wasted space. 3. Consistent colour palette (2-3 colours max). 4. Typography hierarchy: 3 sizes max. 5. Mobile-first design. 6. Load time matters — optimize images!"},
-  {k:["social media tips","instagram tips","content tips","how to grow social media"],
-   r:"Social media tips: 📱 1. Consistent aesthetic across posts. 2. Post at peak times (varies by platform). 3. Engage before and after posting (30 min each). 4. Carousels outperform single images. 5. Use 3-5 very specific hashtags, not 30 generic ones. 6. Stories daily, feed 3-4x/week!"},
-  {k:["startup ideas","business ideas","side hustle ideas","make money online"],
-   r:"Starter business ideas: 💼 1. Digital products (presets, templates, e-books). 2. Print-on-demand shop. 3. Social media management for local businesses. 4. Photography/content creation. 5. Handmade crafts on Etsy. 6. Online tutoring in your skill. Start small, validate before scaling!"},
-  {k:["book recommendations","good books","must read books","recommend a book"],
-   r:"Creative/design books worth reading: 📚 **The Elements of Style** (writing), **Steal Like an Artist** (creativity), **Don\'t Make Me Think** (UX), **Thinking Fast and Slow** (psychology), **The Creative Habit** (design thinking). ZenPin is great for visual book cover inspiration too!"},
-  {k:["what is interior design","interior design basics","how to design a room","room layout"],
-   r:"Interior design basics: 🏠 1. Choose a focal point (fireplace, statement wall, large art). 2. Follow the 60-30-10 colour rule. 3. Scale furniture to the room size. 4. Layer lighting (overhead + lamps + accent). 5. Mix textures for depth. 6. Add 1 unexpected element per room!",
-   cat:"interior"},
-  {k:["color theory","colour theory","how colors work","color wheel","complementary colors"],
-   r:"Colour theory essentials: 🎨 **Complementary** = opposites on the wheel (most contrast). **Analogous** = neighbours (harmonious). **Triadic** = 3 evenly spaced (vibrant). **Warm colours** (red, orange, yellow) energise. **Cool colours** (blue, green, purple) calm. Use 60-30-10 for balance!"},
-  {k:["how to style bookshelf","bookshelf ideas","shelf decor","bookshelf aesthetic"],
-   r:"Bookshelf styling tips: 📚 1. Group books by colour for visual harmony. 2. Mix books with objects (plants, candles, frames). 3. Leave empty space — not every inch needs filling. 4. Use bookends as art. 5. Lay some books horizontally as risers. 6. A plant on top adds life!",
-   cat:"interior"},
-  {k:["mental health tips","feeling stressed","anxiety tips","how to relax","destress","calm down"],
-   r:"Quick reset tips: 🌿 1. Box breathing (4-4-4-4 counts). 2. 5-minute walk outside. 3. Journal one thing you\'re grateful for. 4. Disconnect from screens for 20 minutes. 5. A warm shower resets the nervous system. Visual inspiration helps too — browse ZenPin\'s Nature category! 🌊",
-   cat:"nature"},
-  {k:["study tips","how to study better","focus while studying","study methods"],
-   r:"Study methods that work: 📖 1. **Active recall** — close book and write what you remember. 2. **Spaced repetition** — review at increasing intervals. 3. **Pomodoro** — 25 min focus, 5 min break. 4. Teach the concept to an imaginary person. 5. Handwrite key points — pen beats keyboard for retention!"},
-  {k:["money tips","save money","how to save money","budget tips","financial tips"],
-   r:"Simple money tips: 💰 1. Track every expense for 30 days. 2. The 50-30-20 rule (needs-wants-savings). 3. Automate savings on payday. 4. Unsubscribe from unused services monthly. 5. 24-hour rule before non-essential purchases. 6. Learn one marketable skill per year!"},
-  {k:["gift ideas","gift for her","gift for him","what to gift","present ideas"],
-   r:"Thoughtful gift ideas: 🎁 **For creators**: sketchbook + quality pens, Procreate subscription, photo book. **For homebody**: premium candle set, cosy throw, indoor plant. **For traveller**: packing cubes, camera accessories. **Universal**: personalised item, experience (class/event), book from their wishlist!"},
-  {k:["get inspired","find inspiration","creative inspiration","where to find ideas"],
-   r:"Find inspiration everywhere: 💡 Browse ZenPin (you\'re already here! 🎉), walk around a new neighbourhood, visit a gallery or bookshop, scroll architecture/fashion hashtags, watch a documentary about an artist, read a coffee table book, or just sit quietly — inspiration often comes in silence!"},
-  {k:["what is ai","how does ai work","explain ai","artificial intelligence"],
-   r:"AI simply explained: 🤖 AI learns patterns from data. When you ask me a question, I match it against things I\'ve been trained on or search ZenPin\'s content. I don\'t actually think like a human — I find the most useful response based on patterns. Think of me as a very fast pattern matcher with a creative twist!"},
-  {k:["make my room cosy","cosy room","hygge aesthetic","warm room ideas","cosy home"],
-   r:"Cosy room essentials: 🕯️ 1. Warm-temperature bulbs (2700K). 2. Chunky knit throw + cushions. 3. Candles or fairy lights. 4. A soft rug underfoot. 5. Books within reach. 6. A warm drink station (kettle, mugs, tea). 7. One living plant. Less tech, more texture!",
-   cat:"interior"},
-  {k:["dark academia","dark academia aesthetic","dark academia room"],
-   r:"Dark academia aesthetic: 📚 Deep wooden furniture, vintage books stacked everywhere, warm amber lighting, oil paintings or prints, leather notebooks, plaid or herringbone textiles, dried flowers, a globe or antique map. Colour palette: forest green, burgundy, cream, dark brown.",
-   cat:"interior"},
-  {k:["cyberpunk aesthetic","cyberpunk room","neon aesthetic","futuristic room","neon lights"],
-   r:"Cyberpunk room aesthetic: 🌆 Neon LED strips (purple/blue/pink), dark walls, tech equipment with RGB, holograms or anime posters, dark glass shelving, sleek black furniture. Mix tech and decay — rough textures + high-tech gear. Great for gaming rooms!",
-   cat:"gaming"},
-  {k:["cute room ideas","kawaii room","pink room","girly room ideas","aesthetic bedroom"],
-   r:"Cute aesthetic room ideas: 🌸 Pastel palette (pink, lavender, mint), cloud/star string lights, plushies and small figures, DIY wall art, mirror vanity with warm lighting, fluffy rugs, aesthetic photo wall with polaroids and fairy lights. ZenPin\'s Interior section has tons of inspo!",
-   cat:"interior"},
-  {k:["plant care tips","indoor plants","best indoor plants","how to keep plants alive"],
-   r:"Easy indoor plants for beginners: 🌿 **Pothos** — nearly indestructible. **Snake plant** — thrives on neglect. **ZZ plant** — loves low light. **Aloe vera** — water once a month. **Spider plant** — propagates itself. Golden rule: most indoor plants die from overwatering, not under-watering!"},
-  {k:["sunset photos","sunrise photos","golden hour photography","magic hour"],
-   r:"Golden hour photography tips: 🌅 Shoot within 1 hour of sunrise or sunset. Position subject backlit for a glow. Use a low angle. Expose for the sky, not the subject. Use lens flare intentionally. Warm up your white balance slightly in editing. Golden hour turns any location magical!",
-   cat:"scenery"},
-  {k:["japanese aesthetic","wabi sabi","japanese interior","japandi","japanese design"],
-   r:"Japanese interior aesthetics: 🏯 **Wabi-sabi** — embrace imperfection (handmade ceramics, weathered wood). **Japandi** — Japanese + Scandinavian minimalism (low furniture, neutral palette). **Traditional** — shoji screens, tatami, bonsai. Key principle: every item should be functional AND beautiful.",
-   cat:"interior"},
-
-  // ── Final 15 entries to complete 100-entry library ─────────────
-  {k:["best gaming setup","build gaming setup","gaming room tour","rgb setup"],
-   r:"Gaming setup essentials: 🎮 Curved ultrawide monitor, mechanical keyboard, smooth mouse pad (full-desk), good headset, RGB strips behind the desk for ambiance. Ergonomics first — invest in a proper chair and monitor arm. ZenPin\'s Gaming section has amazing setup inspiration!",
-   cat:"gaming"},
-  {k:["superhero costume","superhero cosplay","cosplay ideas","which superhero"],
-   r:"Superhero aesthetic picks: 🦸 **Black aesthetic** → Black Panther, Batman. **Futuristic** → Iron Man, Cyborg. **Mystic** → Doctor Strange, Scarlet Witch. **Classic** → Superman, Wonder Woman. ZenPin\'s Superhero collection has great visual references for any look!",
-   cat:"superhero"},
-  {k:["pet photography","how to photograph pets","cute pet photos"],
-   r:"Pet photography tips: 🐾 1. Get down to their eye level. 2. Use natural light near a window. 3. Have someone distract them while you shoot. 4. Burst mode catches perfect expressions. 5. Focus on the eyes — always. 6. A favourite toy helps keep their attention!",
-   cat:"pets"},
-  {k:["workspace productivity","clean desk","minimalist desk","desk aesthetic"],
-   r:"Minimal desk setup: 💻 Start with cable management. Single monitor + laptop stand combo. One plant (succulents for low maintenance). Notebook and pen always within reach. Remove everything that doesn\'t have a function. A clean desk = a clear mind. Browse ZenPin\'s Workspace section!",
-   cat:"workspace"},
-  {k:["cafe aesthetic","coffee shop aesthetic","cafe vibe","study cafe"],
-   r:"Café aesthetic elements: ☕ Warm amber lighting, exposed brick or wood, small round tables, hanging plants, vintage mugs and menu boards. Reproduce at home: a dedicated coffee corner with a pour-over kettle, good beans, and a small plant. Instant café mood!",
-   cat:"interior"},
-  {k:["nature walk ideas","outdoor ideas","hiking aesthetic","nature photography spots"],
-   r:"Nature photography locations: 🌿 Forests at golden hour (mist between trees), waterfalls (use slow shutter), coastal cliffs at dusk, mountain overlooks, flower fields in spring. Always look up — overhead canopies create stunning natural frames!",
-   cat:"nature"},
-  {k:["vintage aesthetic","retro style","vintage room","retro design","70s aesthetic"],
-   r:"Vintage/retro aesthetic guide: 🎞️ Warm amber + mustard + rust + avocado green. Record players, vintage cameras, rotary phones as decor. Film grain filters on photos. Thrift stores are gold for authentic vintage pieces. Mix old items with clean modern furniture for balance!",
-   cat:"art"},
-  {k:["neon aesthetic","neon lights","neon photography","neon signs"],
-   r:"Neon aesthetic tips: 🌈 Neon signs work best against dark walls (black or deep blue). Use one dominant neon colour + one accent. Long-exposure photography captures neon beautifully at night. Mix with industrial elements (brick, concrete) for contrast. Very popular in anime-inspired rooms!"},
-  {k:["car modification","car mods","customize car","car tuning ideas","modified car"],
-   r:"Car customisation ideas: 🚗 **Exterior** — wrap vinyl, alloy wheel swap, tinted windows, body kit. **Interior** — carbon fibre trim, racing seats, custom steering wheel. **Lighting** — LED interior, HID headlights. Always match mod style to the car\'s character — sport vs luxury vs classic!",
-   cat:"cars"},
-  {k:["bike customisation","custom motorcycle","cafe racer","scrambler bike"],
-   r:"Motorcycle customisation styles: 🏍️ **Café Racer** — low handlebars, stripped down, speed focus. **Scrambler** — rugged, off-road ready, round headlight. **Bobber** — lowered, minimal fenders, solo seat. **Chopper** — extended front fork, custom frame. Each has its own distinct aesthetic — ZenPin\'s Bikes section shows them all!",
-   cat:"bikes"},
-  {k:["how to make moodboard","pinterest board","inspiration board","aesthetic collection"],
-   r:"Build a ZenPin inspiration board: 📌 1. Go to Boards → Create new board. 2. Give it a theme name. 3. Browse categories and save anything that resonates. 4. Aim for 20-30 images before judging. 5. Patterns emerge naturally — colours, textures, moods. Your board tells you what your aesthetic actually is!"},
-  {k:["outfit color combinations","what colors go together","colors that match","outfit palette"],
-   r:"Outfit colour combos that always work: 👗 **Navy + white + tan** = classic preppy. **Black + camel + gold** = elevated minimal. **Olive + rust + cream** = earthy boho. **Grey + burgundy + black** = smart casual. **White + denim + any colour** = summer safe. Stick to 3 colours per outfit maximum!"},
-  {k:["photo editing tips","how to edit photos","lightroom tips","photo presets"],
-   r:"Photo editing fundamentals: 🎨 1. Correct exposure before anything else. 2. Fix white balance for accurate colours. 3. Lift shadows slightly to reveal detail. 4. Reduce highlights to recover sky. 5. Add a gentle S-curve for contrast. 6. Sharpen last, at full zoom. Less is more — if you notice the edit, it\'s too heavy!"},
-  {k:["what is my aesthetic","find my aesthetic","aesthetic quiz","what aesthetic am i"],
-   r:"Find your aesthetic: 🔍 Look at what you\'ve saved or liked on ZenPin — patterns emerge. Are you drawn to dark and moody? You might be dark academia or gothic. Bright and minimal? Scandinavian or clean girl. Warm and textured? Cottagecore or boho. Your saves don\'t lie — browse your profile collection!"},
-  {k:["ai art","ai generated images","how to make ai art","stable diffusion","midjourney"],
-   r:"AI image generation tips: 🤖 Write descriptive prompts (style + subject + lighting + mood). Example: \'cinematic shot of a red motorcycle on a mountain road, golden hour, shallow depth of field, dramatic\'. Add artist style references for better results. Use ZenPin images as visual references for your prompt style!"},
-];
 
 
   // ── Category keyword → cache key mapping ─────────────────────
-  const CAT_KEYWORDS = {
-    bikes:       ["bike","motorcycle","motorbike","two wheel","superbike","cruiser"],
-    cars:        ["car","automobile","vehicle","supercar","sports car","sedan","suv","black car"],
-    anime:       ["anime","manga","otaku","animation","japanese cartoon","anime room","waifu"],
-    fashion:     ["fashion","outfit","clothing","clothes","dress","style","wardrobe","wear"],
-    accessories: ["accessor","jewelry","jewellery","earring","necklace","bracelet","handbag","bag","watch","ring"],
-    architecture:["architect","building","structure","skyscraper","facade","bridge","tower","house exterior"],
-    art:         ["art","painting","illustration","digital art","sketch","drawing","artwork"],
-    food:        ["food","recipe","dish","cooking","cuisine","meal","restaurant","plating"],
-    gaming:      ["gaming","gamer","game","esport","pc setup","console","rgb","gaming room"],
-    interior:    ["interior","room","decor","living room","bedroom","home decor","furniture","cosy"],
-    nature:      ["nature","landscape","forest","mountain","ocean","waterfall","sky","leaf","tree"],
-    pets:        ["pet","dog","cat","puppy","kitten","animal","cute animal","fur"],
-    scenery:     ["scenery","scenic","travel","landscape photo","beautiful place","view","horizon"],
-    superhero:   ["superhero","marvel","dc","batman","spiderman","iron man","hero","comic"],
-    workspace:   ["workspace","desk","office","home office","setup","monitor","laptop desk"],
-  };
 
-  function detectCategory(msg) {
-    const low = msg.toLowerCase();
-    for (const [cat, kws] of Object.entries(CAT_KEYWORDS)) {
-      if (kws.some(kw => low.includes(kw))) return cat;
-    }
-    return null;
-  }
 
   // ── Fuzzy brain lookup ────────────────────────────────────────
-  function brainLookup(msg) {
-    const clean = msg.toLowerCase().replace(/[^a-z0-9 ]/g, " ").trim();
-    const words  = new Set(clean.split(/\s+/).filter(w => w.length > 1));
-    let best = null, bestScore = 0;
-    for (const entry of BRAIN) {
-      for (const trigger of entry.k) {
-        // Check substring match OR word overlap
-        if (clean.includes(trigger)) return entry;
-        const tWords = trigger.split(" ");
-        const overlap = tWords.filter(w => words.has(w)).length;
-        const score   = overlap / tWords.length;
-        if (score > 0.65 && score > bestScore) {
-          bestScore = score; best = entry;
-        }
-      }
-    }
-    return bestScore > 0.65 ? best : null;
-  }
 
   // ── Get 4 cards from a local category ────────────────────────
   function getCategoryCards(cat, count = 4) {
@@ -3240,6 +3402,7 @@ function setupChat() {
   async function sendMsg() {
     const msg = input.value.trim();
     if (!msg) return;
+    console.log(`[ZenPin] AI chat sendMsg: "${msg.slice(0,50)}"`);
     input.value = "";
     appendMsg("user", escHtml ? escHtml(msg) : msg);
     history.push({ role: "user", content: msg });
@@ -3280,6 +3443,7 @@ function setupChat() {
     if (!reply || reply.trim().length < 3) {
       const hit = brainLookup(msg);
       if (hit) {
+        console.log("[ZenPin] fallback brain used");
         reply     = hit.r;
         poweredBy = "brain";
         if (hit.cat) {
@@ -3292,6 +3456,7 @@ function setupChat() {
     if (!ideaCards.length) {
       const cat = detectCategory(msg);
       if (cat) {
+        console.log(`[ZenPin] category detected: ${cat}`);
         try { ideaCards = getAllCuratedIdeas(cat).slice(0, 6); } catch (_) {}
         if (!reply || reply.length < 3) {
           reply = `Here are some ${cat} ideas from ZenPin! ✨`;
@@ -4181,22 +4346,33 @@ function initAmbientForPage(page) {
   const themeMap = { dashboard: "dashboard", boards: "boards", collab: "collab" };
   const theme = themeMap[page];
   if (theme) {
+    console.log(`[ZenPin] ambient background initialized: ${theme}`);
     // Small delay so page is visible first
-    setTimeout(() => buildAmbientBg(theme), 100);
+    setTimeout(() => {
+      try { buildAmbientBg(theme);  }
+      catch(e) { console.warn(`[ZenPin] buildAmbientBg(${theme}) failed:`, e); }
+    }, 100);
   }
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-  // Decay preference weights slightly each session
-  UserPrefs.decay();
+  console.log("[ZenPin] page initialized");
 
-  // Hero floating gallery (anti-gravity effect)
-  initHeroGallery();
+  // Decay preference weights slightly each session
+  try { UserPrefs.decay(); } catch(e) { console.warn("[ZenPin] UserPrefs.decay failed:", e); }
+
+  // Hero floating gallery (safe — never blocks the rest of init)
+  try { initHeroGallery(); console.log("[ZenPin] Hero gallery initialised"); }
+  catch(e) { console.warn("[ZenPin] initHeroGallery failed (non-fatal):", e); }
+
+  // Wire AI chat (chatInput/chatSendBtn/chatMsgs are inside page-collab)
+  try { setupChat(); console.log("[ZenPin] AI initialized"); }
+  catch(e) { console.warn("[ZenPin] setupChat failed (non-fatal):", e); }
 
   // Generate category chips from actual _curatedCache keys
   // (runs after _curatedCache IIFE has already executed)
-  generateCategoryChips("homeFilters");
-  generateCategoryChips("exploreFilters");
+  try { generateCategoryChips("homeFilters"); generateCategoryChips("exploreFilters"); }
+  catch(e) { console.warn("[ZenPin] generateCategoryChips failed:", e); }
   // ── Warm up Render backend (free tier sleeps) ──────────────
   // Ping silently so by the time user requests data, it's awake
   (async () => {
@@ -4573,7 +4749,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (window.TypographySettings) TypographySettings.renderPicker("fontPickerWrap");
   }
 
-  $("editProfileBtn")?.addEventListener("click", openEditProfile);
+  $("editProfileBtn")?.addEventListener("click", () => {
+    console.log("[ZenPin] edit profile opened");
+    openEditProfile();
+  });
   $("profileAvEditBtn")?.addEventListener("click", openEditProfile);
 
   $("editProfileClose")?.addEventListener("click", () => $("editProfileModal")?.classList.remove("open"));
@@ -4668,7 +4847,34 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   // ── Login btn in navbar ────────────────────────────────────
-  $("navLoginBtn")?.addEventListener("click", () => { window.location.href = "login.html"; });
+  $("navLoginBtn")?.addEventListener("click", () => {
+    console.log("[ZenPin] login clicked");
+    window.location.href = "login.html";
+  });
+
+  // Signup — wire any element pointing to signup.html
+  document.querySelectorAll('[href="signup.html"],[data-href="signup.html"],[data-signup]').forEach(el => {
+    el.addEventListener("click", e => {
+      console.log("[ZenPin] signup clicked");
+      window.location.href = "signup.html";
+    });
+  });
+  // Also intercept direct navigation to signup.html
+  window._zpSignup = () => {
+    console.log("[ZenPin] signup clicked");
+    window.location.href = "signup.html";
+  };
+
+  // ── Profile / avatar wiring ───────────────────────────────────
+  $("navAvatar")?.addEventListener("click", () => {
+    console.log("[ZenPin] profile opened");
+    go("profile");
+  });
+  $("navProfileBtn")?.addEventListener("click", () => {
+    console.log("[ZenPin] profile opened");
+    go("profile");
+  });
+
 
   // ── Hamburger ─────────────────────────────────────────────
   $("hamburger")?.addEventListener("click", () => {
@@ -4694,9 +4900,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("navDashboardBtn")?.addEventListener("click", () => go("dashboard"));
   $("dashNewPostBtn")?.addEventListener("click", () => openCreatorPost?.());
 
-  // ── Collab chat ────────────────────────────────────────────
-  setupChat();
-
+  
   // ── Creator Post Modal ────────────────────────────────────
   function openCreatorPost() {
     if (!requireLogin("Sign in to share your ideas")) return;
