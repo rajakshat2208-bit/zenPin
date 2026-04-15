@@ -272,7 +272,10 @@ function updateNavbar() {
 // LOAD USER STATE (saves + likes) from backend
 // ─────────────────────────────────────────────────────────────
 async function loadUserState() {
-  if (!isLoggedIn()) return;
+  if (!isLoggedIn()) {
+    console.log("[ZenPin] no token found, skipping /auth/me");
+    return;
+  }
   try {
     const me = await apiFetch("GET", "/auth/me");
     localStorage.setItem("zenpin_user", JSON.stringify(me));
@@ -280,11 +283,15 @@ async function loadUserState() {
     S.likedIds = new Set(me.liked_idea_ids  || []);
     updateNavbar();
   } catch (e) {
-    // Token expired — clear it
-    if (e.message.includes("401") || e.message.includes("expired")) {
-      localStorage.removeItem("token");
+    const msg = e?.message || "";
+    if (msg.includes("401") || msg.includes("403") || msg.includes("expired")) {
+      // Invalid token — clear all keys
+      localStorage.removeItem("zenpin_token");
       localStorage.removeItem("zenpin_user");
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
       updateNavbar();
+      console.log("[ZenPin] invalid token cleared");
     }
   }
 }
@@ -3246,6 +3253,128 @@ const BRAIN = [
    r:"That's the great question! Philosophers have wrestled with it forever 🌌 Some say connection, others say creation, others say experience. My perspective: people who make things tend to feel most alive. Maybe that's why creative platforms like ZenPin exist — to help people make and share."},
   {k:["i want to learn something new","what should i learn","learn new skill","new hobby ideas","hobby recommendations"],
    r:"Skills and hobbies worth starting: 🎯 **Visual** → photography, illustration, embroidery, pottery. **Technical** → coding (Python), woodworking, electronics. **Physical** → climbing, swimming, dancing, archery. **Creative** → writing, music production, ceramics. Pick something that scares you slightly — that's usually the right choice."},
+
+  // ── Dashboard / page help ─────────────────────────────────────
+  {k:["dashboard not working","dashboard blank","dashboard broken","why is dashboard not working"],
+   r:"If your Dashboard is blank, you are likely not signed in 🔑 Click Sign In in the navbar, log in with your email and OTP code, and your Dashboard will show your posts, saves and boards. If you ARE signed in and still see nothing, try refreshing the page."},
+  {k:["boards not working","boards blank","boards broken","cannot see boards","boards page"],
+   r:"Your Boards page shows your saved collections 📌 You need to be signed in to see them. Sign in first, then click Boards in the navbar. If you see 'Sign in to see your boards', that means your session expired — log in again!"},
+  {k:["collaboration not working","collab page","collab broken","collab help"],
+   r:"The Collaboration page 🤝 lets you chat with other ZenPin users and get AI-powered ideas together. Sign in first to unlock collab features. The AI chat at the bottom of the page is always available even when logged out!"},
+  {k:["how to save ideas","save idea","save image","how do i save","bookmark"],
+   r:"Saving ideas on ZenPin is easy ❤️ Just click the heart icon on any image card. You need to be signed in first. Your saved ideas appear in your Profile → Saved tab. You can also add ideas to specific Boards!"},
+  {k:["how to create board","create board","new board","make a board","add board"],
+   r:"To create a Board 📋 Go to the Boards page and click the + Create Board button. Give it a name and description, then start adding images from your feed. Boards are great for organising ideas by theme or project!"},
+  {k:["what is dashboard","what does dashboard do","dashboard features"],
+   r:"Your Dashboard 📊 shows your ZenPin activity at a glance — posts you've created, ideas you've saved, boards you've made, and your most-liked content. It's your creative portfolio overview. Sign in to access it!"},
+  {k:["ai not working","chat not working","ai broken","ai not responding","why ai not working"],
+   r:"If the AI chat isn't responding, the backend server may be waking up (Render free tier sleeps after 15 minutes) ⏱️ Wait 20-30 seconds and try again. If it still doesn't respond, your fallback brain is always available for common questions!"},
+  {k:["why is site slow","site slow","loading slow","takes long to load"],
+   r:"ZenPin runs on Render's free tier which sleeps after 15 minutes of inactivity 💤 The first request after sleep takes 20-40 seconds to wake up. After that, everything runs normally! This is normal for the free hosting plan."},
+
+  // ── Specific category queries ──────────────────────────────────
+  {k:["superheroes","superhero ideas","marvel ideas","dc ideas","comic book ideas","avengers"],
+   r:"Check out ZenPin's Superhero collection! 🦸 Marvel, DC, anime heroes and beyond — perfect for costume ideas, room decor, fan art inspiration and more.",
+   cat:"superhero"},
+  {k:["architecture ideas","building designs","modern architecture","house design ideas"],
+   r:"Explore stunning architecture on ZenPin! 🏛️ From brutalist towers to glass minimalism, our Architecture collection has every style from around the world.",
+   cat:"architecture"},
+  {k:["interior ideas","room decoration","home decor","living room ideas","bedroom ideas","home design"],
+   r:"Transform your space with ZenPin's Interior Design collection! 🏠 Minimalist, cosy, luxury, industrial — find the aesthetic that matches your personality.",
+   cat:"interior"},
+  {k:["food ideas","meal ideas","recipe inspiration","food photography","food styling"],
+   r:"Get inspired by ZenPin's Food collection! 🍽️ From stunning plating to street food photography, find ideas for your next dish or food project.",
+   cat:"food"},
+  {k:["pet ideas","cute pets","animal photos","dog ideas","cat ideas","pet photography"],
+   r:"Meet ZenPin's adorable Pets collection! 🐾 Dogs, cats, birds and more — perfect for pet portraits, cute moments and animal lover inspiration.",
+   cat:"pets"},
+  {k:["workspace ideas","office setup","desk setup","home office","study setup"],
+   r:"Level up your workspace with ZenPin! 💻 Clean minimal desks, RGB gaming setups, cosy home offices — find your perfect productivity aesthetic.",
+   cat:"workspace"},
+  {k:["scenery ideas","landscape photos","travel photography","beautiful views","nature photography"],
+   r:"Escape into ZenPin's Scenery collection! 🌅 Stunning landscapes, golden hour shots, mountain vistas and ocean horizons await.",
+   cat:"scenery"},
+
+  // ── More conversation ──────────────────────────────────────────
+  {k:["what is your name","your name","name please","do you have a name"],
+   r:"I'm ZenPin AI ✨ — your creative discovery assistant! I help you find images, answer design questions, get craft inspiration and navigate the ZenPin platform. What can I help you explore today?"},
+  {k:["how do you work","how do you think","how are you made","what are you built with"],
+   r:"I combine a built-in knowledge base about ZenPin's content with connections to the Gemini AI API 🤖 When the backend is available, I can give richer answers. When it's not, my fallback brain handles common questions instantly!"},
+  {k:["tell me more","tell me something","talk to me","say something","chat with me"],
+   r:"I'd love to chat! 💬 Ask me about any of ZenPin's 15 image categories, get design inspiration, learn about craft techniques, or just say hello. What's on your mind today?"},
+  {k:["i love it","this is great","amazing","wonderful","fantastic","love this"],
+   r:"Thank you so much! 🌟 That truly means a lot. If you have any suggestions for how ZenPin could be even better, feel free to share them. Now — what creative ideas can I help you find?"},
+  {k:["how do i discover","discover ideas","find inspiration","how to use zenpin","getting started"],
+   r:"Welcome to ZenPin! 🎉 Start by clicking any category chip (Cars, Bikes, Anime...) to see curated images. Save ones you love with the ❤️ button. Create Boards to organise them. Use the AI chat (you're doing it right now!) for specific ideas. Have fun exploring!"},
+  {k:["what categories are there","what can i browse","what is available","categories list"],
+   r:"ZenPin has 15 curated categories: 🚗 Cars · 🏍️ Bikes · 🎌 Anime · 👗 Fashion · 💍 Ladies Accessories · 🏛️ Architecture · 🎨 Art · 🍽️ Food · 🎮 Gaming · 🏠 Interior Design · 🌿 Nature · 🐾 Pets · 🌅 Scenery · 🦸 Superheroes · 💻 Workspace"},
+  {k:["how to change profile","update profile","edit my profile","change username","change avatar"],
+   r:"To edit your profile 👤 Click your profile avatar in the top-right navbar, navigate to your Profile page, then click the Edit Profile button. You can change your username, bio, location and social links. Your changes save instantly!"},
+  {k:["how to logout","sign out","log out","how to sign out"],
+   r:"To sign out 👋 Click your profile avatar in the navbar, then click the Logout button. You'll be returned to the homepage. Your saves and boards will still be there when you sign back in!"},
+  {k:["how to upload","upload my own image","post image","share my work","create post"],
+   r:"To share your creative work 📸 Click the ✦ Create button in the navbar. Upload an image (or paste a URL), add a title, pick a category, and write a description. Your post will appear in the community feed!"},
+  {k:["can i download","download image","save to my phone","save to computer"],
+   r:"To download an image 💾 Click any image card to open it, then click the Download button (⬇️ icon). The image will save to your device. Please respect creators' rights and credit the source when sharing!"},
+  {k:["dark mode","light mode","theme","change theme","how to change theme"],
+   r:"ZenPin automatically matches your system's dark/light mode preference 🌙☀️ To switch, change your operating system's display settings. We're working on an in-app theme toggle for a future update!"},
+  {k:["mobile app","app download","ios app","android app","zenpin app"],
+   r:"ZenPin currently runs as a progressive web app 📱 You can add it to your home screen! On mobile Chrome, tap the menu (⋮) and select 'Add to Home Screen'. On Safari, tap the Share icon and choose 'Add to Home Screen'. It works just like a native app!"},
+  {k:["search images","how to search","find image","look for","search for"],
+   r:"To search ZenPin 🔍 Use the search bar in the navbar to search by keyword, or use the AI Chat and ask me! For example: 'show me red sports cars' or 'find minimalist workspace ideas'. Category chips also let you browse specific themes instantly."},
+  {k:["report bug","bug report","found a bug","something broken","report problem"],
+   r:"Thank you for reporting! 🐛 Please use the feedback form in your Profile settings, or describe the issue to me and I'll note it. Screenshots help! We're continuously improving ZenPin based on user feedback."},
+  {k:["privacy","data","my data","how is my data used","security"],
+   r:"Your privacy matters to us 🔒 ZenPin stores only your email, username, and content you deliberately create. We never sell your data. Passwords are bcrypt-hashed. Sessions use JWT tokens that expire. For details, check our privacy policy in the footer."},
+  {k:["free plan","pricing","cost","how much","paid"],
+   r:"ZenPin is completely free to use! 🎉 Browse, save, create boards, use AI chat — all at no cost. We may introduce optional premium features in the future, but the core experience will always be free."},
+  {k:["inspire me","random inspiration","something creative","give me ideas"],
+   r:"Here's your creative spark! 💡 Pick a material you have nearby (wood, fabric, clay, wire) and combine it with your favourite ZenPin category. A wooden motorcycle sculpture? Fabric anime panel? Wire car model? The constraint creates the creativity!"},
+  {k:["i feel creative","feeling creative","ready to create","let's create","want to make something"],
+   r:"YES! Let's channel that energy 🔥 Open ZenPin's Explore page, filter by your favourite category, and save everything that excites you — aim for 20+ images. Then look at what connects them. That pattern is your project. Go!"},
+  {k:["nature vs interior","anime vs fashion","which category","help me choose"],
+   r:"Both are incredible in their own way! 🌟 My suggestion: look at both categories side by side and notice which images make you feel something stronger. Your gut reaction is always right. What are you comparing?"},
+  {k:["vintage aesthetic","retro style","old school","vintage vibe"],
+   r:"The vintage aesthetic! 🎞️ Warm amber tones, grain textures, imperfect edges. Try combining ZenPin's Art and Fashion categories for vintage-inspired ideas. Key colours: terracotta, rust, cream, forest green, burgundy."},
+  {k:["futuristic aesthetic","cyberpunk","sci fi","neon","futurism"],
+   r:"Cyberpunk/futuristic aesthetics 🌆 are dominated by neon blues and purples on dark backgrounds, holographic elements and tech-meets-nature contrast. Check ZenPin's Gaming and Architecture sections for amazing futuristic visual references!",
+   cat:"gaming"},
+  {k:["minimalist","minimalism","less is more","simple design","clean aesthetic"],
+   r:"Minimalism philosophy: 🤍 Remove everything that doesn't need to be there. What remains should be both beautiful and functional. ZenPin's Workspace and Interior categories have stunning minimalist examples — clean lines, negative space, natural materials."},
+  {k:["how to be consistent","creative consistency","daily practice","routine for creativity"],
+   r:"Creative consistency secret: ⚡ Schedule it, don't wait for inspiration. 15 minutes of browsing ZenPin daily keeps your creative eye sharp. Keep a swipe file (save images that move you, even if you don't know why). Pattern emerges over months."},
+
+  // ── Final 12 entries (reaches 200) ───────────────────────────
+  {k:["what colors go with black","black outfit","all black look","black aesthetic"],
+   r:"All-black outfits: 🖤 Add texture contrast (leather + knit, silk + denim). Break it with one metallic accessory (silver or gold). White sneakers pop beautifully against all-black. For room decor, black walls with warm amber lighting and wood accents create dramatic luxury.",
+   cat:"fashion"},
+  {k:["pink aesthetic","pink room","pink decor","pink fashion","girly aesthetic"],
+   r:"Pink aesthetic guide: 🌸 Dusty rose + cream + gold = elegant. Hot pink + white + chrome = bold. Blush + terracotta + linen = earthy. For rooms: white furniture, fairy lights, arch mirrors, and dried pampas grass. For fashion: tonal pink outfits with nude accessories.",
+   cat:"fashion"},
+  {k:["earth tone","earthy colors","warm tones","terracotta","rust color","warm palette"],
+   r:"Earth tone palette: 🌍 Terracotta, rust, burnt sienna, ochre, warm taupe, olive green, warm cream. These colours work in any combination and never clash. Ground them with dark wood and natural linen. ZenPin's Interior and Fashion sections have stunning earth tone examples!"},
+  {k:["how to find my style","personal style","aesthetic quiz","discover my aesthetic"],
+   r:"Discover your aesthetic: 🔍 Open ZenPin's Explore page and save everything that resonates — aim for 30+ images without overthinking. Then look at what connects them: colours, textures, moods. That pattern IS your style. Your saves tell you more than any quiz!"},
+  {k:["beginner photography","photography for beginners","how to start photography","photo tips beginner"],
+   r:"Photography beginner tips: 📸 Start with your phone — the best camera is the one you have. Learn the rule of thirds (imagine a 3×3 grid, place subjects at intersections). Shoot in natural light. Move your feet instead of zooming. Edit lightly. Take 100 bad photos to get 1 great one.",
+   cat:"scenery"},
+  {k:["typography tips","font pairing","which fonts go together","font combination"],
+   r:"Font pairing that works: 🔤 Pair one serif + one sans-serif (e.g. Playfair + Inter). Use max 3 fonts per design. Display fonts for headings only. Body text should be highly readable at 16px+. Establish hierarchy: heading > subheading > body > caption. Size difference matters more than font choice."},
+  {k:["wall art ideas","gallery wall","wall decor","how to decorate walls"],
+   r:"Gallery wall guide: 🖼️ Lay your pieces on the floor first and arrange before hanging. Mix frame sizes and styles (some framed, some unframed). Use paper templates on the wall to plan spacing. Leave 2-3 inches between pieces. Start from the centre and work outward. Include one piece that surprises you.",
+   cat:"art"},
+  {k:["succulent care","plant beginner","easy plants","houseplant tips","low maintenance plants"],
+   r:"Easiest houseplants: 🌱 Pothos (grows anywhere, forgives neglect). Snake plant (water once a month). ZZ plant (thrives in low light). Aloe vera (only water when bone dry). Spider plant (self-propagates!). Golden rule: most plants die from overwatering — when in doubt, don't water."},
+  {k:["social media aesthetic","instagram feed","consistent feed","cohesive feed","instagram theme"],
+   r:"Consistent Instagram feed: 📱 Choose 3 anchor colours and stick to them. Edit ALL photos with the same preset. Alternate between busy and simple photos. Plan your grid 9 photos ahead (Later app helps). Your bio = hook + what you post + call to action. Post for your niche, not for everyone.",
+   cat:"fashion"},
+  {k:["handmade gifts","diy gift ideas","personalised gift","homemade gift"],
+   r:"Handmade gift ideas that feel premium: 🎁 Hand-poured soy candle with custom label. Embroidered tote bag (beginner-friendly). Clay earrings (air-dry clay, no kiln needed). Pressed flower bookmark or card. Macramé plant hanger. Photo book from Chatbooks or Artifact Uprising. Time and thought > price."},
+  {k:["creative block","stuck creatively","no ideas","creative burnout","can't think of anything"],
+   r:"Break creative block: 💡 1. Change location (café, park, different room). 2. Consume instead of create for 30 min (browse ZenPin!). 3. Set a 10-minute constraint challenge. 4. Work on something unrelated. 5. Go for a walk — movement literally reorganises thinking. 6. Lower the stakes: make something deliberately bad."},
+  {k:["how to relax","relaxing ideas","unwind","chill out","stress relief","calm down activities"],
+   r:"Genuine relaxation: 🌿 Progressive muscle relaxation (tense then release each body part). Nature sounds or binaural beats. Slow journaling with no agenda. Warm bath with magnesium salts. Creative doodling with no goal. Cooking a familiar recipe. ZenPin browsing with a warm drink 🍵 — calm and inspiring.",
+   cat:"scenery"},
 ];
 const CAT_KEYWORDS = {
   bikes:       ["bike","motorcycle","motorbike","two wheel","superbike","cruiser"],
@@ -3418,8 +3547,8 @@ function setupChat() {
       }
     } catch (e) {
       console.log("[ZenPin] backend AI failed:", e?.message?.slice(0,60) || "unknown");
-     const isAbort   = netErr.name === "AbortError";
-      const isNetwork = netErr.message?.includes("Failed to fetch") || netErr.message?.includes("NetworkError");
+      const isAbort   = e?.name === "AbortError";
+      const isNetwork = e?.message?.includes("Failed to fetch") || e?.message?.includes("NetworkError");
       poweredBy = isAbort || isNetwork ? "wakeup" : "error";
     }
 
@@ -3611,10 +3740,14 @@ async function initProfile() {
 
   // Fetch real stats
   try {
-    const [savedData, boardsData] = await Promise.allSettled([
-      apiFetch("GET", `/users/${user.id}/saves`),
-      apiFetch("GET", "/boards"),
-    ]);
+    const promises = [apiFetch("GET", `/users/${user.id}/saves`)];
+    if (isLoggedIn()) {
+      promises.push(apiFetch("GET", "/boards"));
+    } else {
+      console.log("[ZenPin] no token found, skipping /boards");
+      promises.push(Promise.resolve({ boards: [] }));
+    }
+    const [savedData, boardsData] = await Promise.allSettled(promises);
     const savedCount  = savedData.status  === "fulfilled" ? (savedData.value.ideas  || []).length : 0;
     const boardsCount = boardsData.status === "fulfilled" ? (boardsData.value.boards || []).length : 0;
     if ($("statSaved"))  $("statSaved").textContent  = savedCount;
@@ -3650,6 +3783,11 @@ async function renderProfileTab(tab) {
       renderGrid(grid, ideas);
 
     } else if (tab === "boards") {
+      if (!isLoggedIn()) {
+        console.log("[ZenPin] no token found, skipping /boards");
+        if (grid) grid.innerHTML = `<div class="profile-empty-state" style="display:flex;grid-column:1/-1"><p>Sign in to load your boards.</p></div>`;
+        return;
+      }
       const { boards } = await apiFetch("GET", "/boards");
       if ($("statBoards")) $("statBoards").textContent = boards.length;
       if (!boards.length) {
@@ -4317,7 +4455,10 @@ function buildAmbientBg(theme) {
   setTimeout(() => {
     const computed = window.getComputedStyle(bg);
     const visible  = computed.display !== "none" && computed.visibility !== "hidden" && parseFloat(computed.opacity) > 0;
-    console.log(`[ZenPin] ambient visible: ${visible} (display=${computed.display}, opacity=${computed.opacity})`);
+    console.log(`[ZenPin] ambient visible: ${theme}`);
+  if (!visible) {
+    console.warn(`[ZenPin] ambient may be hidden — display=${computed.display}, opacity=${computed.opacity}, visibility=${computed.visibility}`);
+  }
   }, 200);
 
   // ── Glow orbs (dashboard only) ────────────────────────────────
