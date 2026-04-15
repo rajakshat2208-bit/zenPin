@@ -2874,3 +2874,50 @@ body  { font-family: var(--font-body); }
     opacity: 0 !important;
   }
 }
+
+/* ── Ambient pages: transparent background so animated bg shows through ── */
+/* Dashboard, Boards, and Collaboration pages use the ambient-bg for atmosphere */
+#page-dashboard,
+#page-boards,
+#page-collab {
+  background: transparent !important;
+}
+
+/* Stat/content cards on these pages need their own opaque surface */
+#page-dashboard .stat-card,
+#page-dashboard .dash-section,
+#page-dashboard .quick-actions,
+#page-boards .board-card,
+#page-boards .boards-wrap,
+#page-collab .collab-layout,
+#page-collab .collab-sidebar,
+#page-collab .collab-main {
+  background: rgba(15, 10, 25, 0.72);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.06);
+  color: #f0eaf8;
+}
+
+/* Headings on ambient pages: light text */
+#page-dashboard h1, #page-dashboard h2, #page-dashboard h3,
+#page-dashboard p, #page-dashboard .section-title,
+#page-boards h1, #page-boards h2, #page-boards h3, #page-boards p,
+#page-collab h1,  #page-collab h2,  #page-collab h3,  #page-collab p {
+  color: #f0eaf8;
+}
+
+/* Chat input on collab page stays readable */
+#page-collab .chat-box,
+#page-collab #chatMsgs,
+#page-collab .chat-input-row {
+  background: rgba(10, 6, 20, 0.80);
+  border-color: rgba(255,255,255,0.10);
+}
+#page-collab #chatInput {
+  background: rgba(20, 12, 35, 0.90);
+  color: #f0eaf8;
+}
+#page-collab #chatInput::placeholder {
+  color: rgba(200, 180, 230, 0.5);
+}
