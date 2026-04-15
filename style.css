@@ -2462,7 +2462,8 @@ body  { font-family: var(--font-body); }
 .ambient-bg.visible { opacity: 1; }
 
 /* Page content must sit above the bg */
-.page.active { position: relative; z-index: 1; }
+/* .page.active: no z-index — avoids trapping fixed ambient-bg children */
+.page.active { position: relative; }
 
 /* ── Cloud layer ─────────────────────────────────────────── */
 .cloud-layer {
@@ -2881,6 +2882,18 @@ body  { font-family: var(--font-body); }
 #page-boards,
 #page-collab {
   background: transparent !important;
+  /* z-index must NOT be set here — it would trap fixed children */
+  isolation: auto !important;
+}
+
+/* Ensure the ambient-bg is visible on these pages */
+#page-dashboard .ambient-bg,
+#page-boards    .ambient-bg,
+#page-collab    .ambient-bg {
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  z-index: 0;
 }
 
 /* Stat/content cards on these pages need their own opaque surface */
