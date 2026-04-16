@@ -2934,3 +2934,143 @@ body  { font-family: var(--font-body); }
 #page-collab #chatInput::placeholder {
   color: rgba(200, 180, 230, 0.5);
 }
+
+
+/* ════════════════════════════════════════════════════════════
+   IMAGE MODAL — PINTEREST-STYLE MOBILE FIX
+   ════════════════════════════════════════════════════════════ */
+
+/* Hide description everywhere — clean look */
+.modal-desc { display: none !important; }
+
+/* Desktop: keep existing 2-col grid */
+/* Mobile: 50% image top / 50% controls bottom */
+@media (max-width: 640px) {
+  .modal-backdrop { padding: 0 !important; align-items: stretch; }
+  .modal-card {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: 50dvh 50dvh !important;
+    max-height: 100dvh !important;
+    height: 100dvh !important;
+    border-radius: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+  .modal-image-col { height: 50dvh !important; overflow: hidden !important; }
+  .modal-img {
+    width: 100% !important; height: 100% !important;
+    object-fit: cover !important; min-height: unset !important;
+  }
+  .modal-detail-col {
+    height: 50dvh !important;
+    overflow-y: auto !important;
+    padding: 14px 16px !important;
+    gap: 10px !important;
+  }
+  /* On mobile hide heavy sections, keep title + actions */
+  .modal-section,
+  .modal-ratings-row,
+  #modalMeta,
+  #modalExecGuide,
+  .related-row-wrap,
+  .modal-category-tag { display: none !important; }
+  /* Action buttons: single row, even */
+  .modal-action-row {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    gap: 6px !important;
+  }
+  .modal-action-row .btn-primary,
+  .modal-action-row .btn-ghost {
+    flex: 1 !important;
+    padding: 10px 4px !important;
+    font-size: 0.72rem !important;
+    white-space: nowrap !important;
+    justify-content: center !important;
+  }
+  /* Nav arrows at vertical center of the IMAGE half */
+  .modal-nav-btn { top: 25dvh !important; transform: translateY(-50%) !important; }
+  .modal-x-btn   { top: 12px !important; right: 12px !important; }
+}
+
+/* ════════════════════════════════════════════════════════════
+   EDIT PROFILE MODAL — READABLE DARK ROMANTIC STYLE
+   ════════════════════════════════════════════════════════════ */
+.zp-modal-backdrop.open .zp-modal {
+  background: linear-gradient(160deg, #1e1430 0%, #170e28 60%, #1a1035 100%) !important;
+  border-color: rgba(180,140,255,0.20) !important;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.7), 0 0 60px rgba(120,60,200,0.12) !important;
+}
+.zp-modal .zp-modal-header {
+  background: rgba(140,90,255,0.08);
+  border-bottom: 1px solid rgba(180,140,255,0.12);
+}
+.zp-modal .zp-modal-header h3 {
+  color: #e8d8ff !important;
+  font-size: 1.1rem; font-weight: 650;
+}
+.zp-modal .field-label,
+.zp-modal label,
+.zp-modal .ep-avatar-label {
+  color: #c8b8f0 !important;
+  font-size: 0.79rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.04em !important;
+}
+.zp-modal input,
+.zp-modal textarea,
+.zp-modal select,
+.zp-modal .auth-input {
+  background: rgba(255,255,255,0.07) !important;
+  border: 1px solid rgba(180,140,255,0.22) !important;
+  color: #f0e8ff !important;
+  border-radius: 10px !important;
+}
+.zp-modal input:focus,
+.zp-modal textarea:focus {
+  border-color: rgba(160,100,255,0.55) !important;
+  background: rgba(255,255,255,0.10) !important;
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(140,80,255,0.15) !important;
+}
+.zp-modal input::placeholder,
+.zp-modal textarea::placeholder {
+  color: rgba(200,180,240,0.45) !important;
+}
+.zp-modal .ep-section-label,
+.zp-modal .modal-section-head {
+  color: #b8a0e8 !important;
+  font-size: 0.78rem !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+}
+#epError { color: #ff8888 !important; }
+.ep-avatar-preview {
+  background: linear-gradient(135deg, #6d3bca, #b06aff) !important;
+  color: #fff !important;
+}
+.ep-avatar-hint { color: rgba(190,170,230,0.65) !important; }
+.zp-modal .font-card {
+  border: 1px solid rgba(180,140,255,0.15);
+  background: rgba(255,255,255,0.04);
+  color: #e0d0f8;
+}
+.zp-modal .font-card.selected {
+  border-color: #a06aff !important;
+  background: rgba(140,80,255,0.18) !important;
+  box-shadow: 0 0 0 2px rgba(140,80,255,0.35);
+}
+.zp-modal .zp-modal-footer {
+  border-top: 1px solid rgba(180,140,255,0.10);
+  padding: 16px 24px;
+}
+.zp-modal .btn-primary {
+  background: linear-gradient(135deg, #7c3aed, #a855f7) !important;
+  color: #fff !important;
+}
+.zp-modal .btn-ghost {
+  border-color: rgba(180,140,255,0.30) !important;
+  color: #c8b8f0 !important;
+}
+.ep-bio-count { color: rgba(180,150,240,0.6) !important; }
