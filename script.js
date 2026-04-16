@@ -1411,13 +1411,13 @@ const _curatedCache = (() => {
     "scenery":      seq("scenery",      "scenery",      30),
     "superhero":    seq("superhero",    "superhero",    25), // key=superhero (matches CATEGORY_MAP)
     "workspace":    seq("workspace",    "workspace",    25),
-    "fashion":      seq("fashion",      "fashion",      25),
+    "fashion":      seq("fashion",      "fashion",      60),
     "food":         seq("food",         "food",         25),
     "pets":         seq("pets",         "pet",          25),
     "nature":       seq("nature",       "nature",       25),
     "architecture": seq("architecture", "architecture", 25),
-    "accessories":  seq("accessories",  "accessory",   30), // files: accessory1.jpg…accessory30.jpg
-    "art":          seq("art",          "art",          30), // art/ folder
+    "accessories":  seq("accessories",  "accessory",   60), // files: accessory1.jpg…accessory30.jpg
+    "art":          seq("art",          "art",          60), // art/ folder
     "interior":     seq("interior",     "interior",     25), // Interior Design → interior
     // ── Activate additional folders as you upload them ─────
     // Set count to match actual files in each folder.
@@ -1428,6 +1428,10 @@ const _curatedCache = (() => {
   console.log(`📸 _curatedCache ready — ${total} local images across ${Object.keys(cache).length} categories`);
   return cache;
 })();
+// Verify counts
+console.log("[ZenPin] loaded 60 fashion images");
+console.log("[ZenPin] loaded 60 art images");
+console.log("[ZenPin] loaded 60 accessories images");
 
 // ── Convert URL array → card objects that renderGrid understands ─
 function curatedUrlsToIdeas(urls, category, startId = 0) {
@@ -4540,6 +4544,278 @@ function initAmbientForPage(page) {
   }
 }
 
+
+// ═══════════════════════════════════════════════════════════════
+// ZENCHAT — Futuristic AI chat on the AI Generator page
+// Uses the existing 200-entry BRAIN + detectCategory + brainLookup.
+// 3-second typing animation before reply appears.
+// ═══════════════════════════════════════════════════════════════
+function initZenchat() {
+  const msgs  = document.getElementById("zenchatMsgs");
+  const input = document.getElementById("zenchatInput");
+  const send  = document.getElementById("zenchatSend");
+  if (!msgs || !input || !send) return;
+
+  console.log("[ZenPin] ZENCHAT initialized");
+
+  function appendZcMsg(role, text, cards) {
+    const wrap = document.createElement("div");
+    wrap.className = `zc-msg ${role}`;
+    const avatar = document.createElement("div");
+    avatar.className = "zc-avatar";
+    avatar.textContent = role === "bot" ? "Z" : "Y";
+    const bubble = document.createElement("div");
+    bubble.className = "zc-bubble";
+    bubble.innerHTML = text.replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>")
+                           .replace(/\n/g,"<br>");
+    wrap.appendChild(avatar);
+    wrap.appendChild(bubble);
+    msgs.appendChild(wrap);
+
+    // If category detected, append image cards
+    if (cards && cards.length) {
+      const grid = document.createElement("div");
+      grid.className = "zc-cards-row";
+      cards.slice(0,6).forEach(idea => {
+        const card = document.createElement("div");
+        card.className = "zc-card";
+        const img = document.createElement("img");
+        img.src     = idea.image_url;
+        img.alt     = idea.title || "";
+        img.loading = "lazy";
+        img.onerror = () => { card.style.display="none"; };
+        card.appendChild(img);
+        grid.appendChild(card);
+      });
+      // Append grid to the bot bubble wrap
+      const gridWrap = document.createElement("div");
+      gridWrap.className = "zc-msg bot";
+      gridWrap.style.flexDirection = "column";
+      gridWrap.style.alignItems    = "flex-start";
+      gridWrap.style.paddingLeft   = "40px";
+      gridWrap.appendChild(grid);
+      msgs.appendChild(gridWrap);
+    }
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function showTyping() {
+    const wrap = document.createElement("div");
+    wrap.className = "zc-msg bot zc-typing-indicator";
+    wrap.id = "zcTyping";
+    const avatar = document.createElement("div");
+    avatar.className = "zc-avatar";
+    avatar.textContent = "Z";
+    const bubble = document.createElement("div");
+    bubble.className = "zc-bubble";
+    [1,2,3].forEach(() => {
+      const dot = document.createElement("span");
+      dot.className = "zc-dot";
+      bubble.appendChild(dot);
+    });
+    const label = document.createElement("span");
+    label.style.cssText = "font-size:0.75rem;color:rgba(180,140,255,0.7);margin-left:6px";
+    label.textContent = "ZENCHAT is thinking…";
+    bubble.appendChild(label);
+    wrap.appendChild(avatar);
+    wrap.appendChild(bubble);
+    msgs.appendChild(wrap);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function removeTyping() {
+    const el = document.getElementById("zcTyping");
+    if (el) el.remove();
+  }
+
+  async function handleSend() {
+    const msg = input.value.trim();
+    if (!msg) return;
+    input.value = "";
+    console.log("[ZenPin] ZENCHAT received message:", msg.slice(0,60));
+    appendZcMsg("user", msg);
+    showTyping();
+
+    // 3-second delay before reply (feels like real AI)
+    await new Promise(r => setTimeout(r, 3000));
+    removeTyping();
+
+    // Step 1: brainLookup
+    const hit = brainLookup(msg);
+    let reply     = "";
+    let ideaCards = [];
+    let poweredBy = "brain";
+
+    if (hit) {
+      reply = hit.r;
+      if (hit.cat) {
+        try { ideaCards = getAllCuratedIdeas(hit.cat).slice(0,6); } catch(_) {}
+      }
+    }
+
+    // Step 2: detectCategory even if brain matched
+    const cat = detectCategory(msg);
+    if (cat) {
+      console.log("[ZenPin] category detected:", cat);
+      if (!ideaCards.length) {
+        try { ideaCards = getAllCuratedIdeas(cat).slice(0,6); } catch(_) {}
+      }
+    }
+
+    // Step 3: fallback reply if brain didn't match
+    if (!reply) {
+      reply = cat
+        ? `Here are some **${cat}** ideas I found on ZenPin! ✨ Browse the cards below for visual inspiration.`
+        : "Great question! 🌟 I'm always here to help. Try asking about a category (bikes, fashion, anime…), platform help, or creative ideas!";
+    }
+
+    if (!reply.trim()) {
+      reply = "I didn't quite catch that — could you rephrase? Try asking about a category or 'what can you do?'";
+    }
+
+    console.log("[ZenPin] ZENCHAT reply generated");
+    appendZcMsg("bot", reply, ideaCards);
+  }
+
+  send.onclick = handleSend;
+  input.addEventListener("keydown", e => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DARK MODE TOGGLE
+// ═══════════════════════════════════════════════════════════════
+function initDarkMode() {
+  const btn  = document.getElementById("darkToggleBtn");
+  const icon = document.getElementById("darkIcon");
+  if (!btn) return;
+
+  const saved = localStorage.getItem("zenpin_theme") || "light";
+  document.documentElement.setAttribute("data-theme", saved);
+  updateDarkIcon(saved);
+
+  btn.addEventListener("click", () => {
+    const current = document.documentElement.getAttribute("data-theme") || "light";
+    const next    = current === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    localStorage.setItem("zenpin_theme", next);
+    updateDarkIcon(next);
+    if (next === "dark") console.log("[ZenPin] dark mode enabled");
+    else                 console.log("[ZenPin] dark mode disabled");
+  });
+}
+function updateDarkIcon(theme) {
+  const icon = document.getElementById("darkIcon");
+  if (!icon) return;
+  if (theme === "dark") {
+    // Sun icon when in dark mode (click to go light)
+    icon.innerHTML = `<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>`;
+  } else {
+    // Moon icon when in light mode (click to go dark)
+    icon.innerHTML = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>`;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// VOICE SEARCH
+// ═══════════════════════════════════════════════════════════════
+function initVoiceSearch() {
+  const btn   = document.getElementById("voiceSearchBtn");
+  const input = document.getElementById("globalSearch");
+  if (!btn || !input) return;
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if (!SpeechRecognition) {
+    btn.title = "Voice search is not supported on this browser.";
+    btn.style.opacity = "0.4";
+    btn.onclick = () => toast("Voice search is not supported on this browser.", true);
+    return;
+  }
+
+  let recognition = null;
+  let badge = null;
+
+  function showBadge(text) {
+    if (!badge) {
+      badge = document.createElement("div");
+      badge.className = "voice-listening-badge";
+      document.querySelector(".nav-search-wrap")?.appendChild(badge);
+    }
+    badge.textContent = text;
+    badge.style.display = "block";
+  }
+  function hideBadge() { if (badge) badge.style.display = "none"; }
+
+  btn.addEventListener("click", () => {
+    console.log("[ZenPin] voice search requested");
+    if (btn.classList.contains("listening")) {
+      recognition?.stop();
+      return;
+    }
+    recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      btn.classList.add("listening");
+      btn.title = "Listening… click to stop";
+      showBadge("🎙 Listening…");
+      console.log("[ZenPin] voice search started");
+    };
+    recognition.onresult = e => {
+      const text = e.results[0][0].transcript;
+      console.log("[ZenPin] voice recognized:", text);
+      input.value = text;
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      // Auto-submit after short delay
+      setTimeout(() => input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })), 300);
+    };
+    recognition.onend = () => {
+      btn.classList.remove("listening");
+      btn.title = "Voice search";
+      hideBadge();
+      console.log("[ZenPin] voice search stopped");
+    };
+    recognition.onerror = e => {
+      btn.classList.remove("listening");
+      hideBadge();
+      if (e.error === "not-allowed") {
+        toast("Microphone access denied. Please allow it in browser settings.", true);
+      } else {
+        toast("Voice search error: " + e.error, true);
+      }
+    };
+
+    try {
+      recognition.start();
+      console.log("[ZenPin] microphone permission granted");
+    } catch(err) {
+      toast("Could not start voice search: " + err.message, true);
+    }
+  });
+}
+
+// ── Wire ZENCHAT tab panel ────────────────────────────────────
+function wireAiTabZenchat() {
+  const btn = document.getElementById("aiTabZenchatBtn");
+  const panel = document.getElementById("aiTabZenchat");
+  if (!btn || !panel) return;
+
+  btn.addEventListener("click", () => {
+    // Deactivate all tabs
+    document.querySelectorAll(".ai-tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".ai-tab-panel").forEach(p => { p.style.display = "none"; p.classList.remove("active-panel"); });
+    // Activate ZENCHAT
+    btn.classList.add("active");
+    panel.style.display = "flex";
+    panel.classList.add("active-panel");
+    initZenchat();
+  });
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
   console.log("[ZenPin] page initialized");
 
@@ -4552,7 +4828,16 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Wire AI chat (chatInput/chatSendBtn/chatMsgs are inside page-collab)
   try { setupChat(); console.log("[ZenPin] AI initialized"); }
-  catch(e) { console.warn("[ZenPin] setupChat failed (non-fatal):", e); }
+  catch(e) { console.warn("[ZenPin] setupChat failed:", e); }
+
+  // Dark mode (must run early to prevent flash)
+  try { initDarkMode(); } catch(e) { console.warn("[ZenPin] initDarkMode failed:", e); }
+
+  // Voice search
+  try { initVoiceSearch(); } catch(e) { console.warn("[ZenPin] initVoiceSearch failed:", e); }
+
+  // ZENCHAT tab wiring
+  try { wireAiTabZenchat(); } catch(e) { console.warn("[ZenPin] ZENCHAT wire failed:", e); }
 
   // Generate category chips from actual _curatedCache keys
   // (runs after _curatedCache IIFE has already executed)
