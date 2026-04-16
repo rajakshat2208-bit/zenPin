@@ -3074,3 +3074,229 @@ body  { font-family: var(--font-body); }
   color: #c8b8f0 !important;
 }
 .ep-bio-count { color: rgba(180,150,240,0.6) !important; }
+
+
+/* ════════════════════════════════════════════════════════════
+   FEATURE 2 — CREATE MODAL: Futuristic Ambient Style
+   ════════════════════════════════════════════════════════════ */
+#creatorPostModal.open {
+  background: radial-gradient(ellipse at 30% 20%, rgba(80,20,140,0.55), transparent 60%),
+              radial-gradient(ellipse at 70% 80%, rgba(160,40,100,0.40), transparent 55%),
+              rgba(4, 2, 14, 0.90) !important;
+  backdrop-filter: blur(20px) !important;
+}
+#creatorPostModal.open .zp-modal {
+  background: linear-gradient(155deg, rgba(26,16,50,0.95) 0%, rgba(18,10,38,0.98) 100%) !important;
+  border: 1px solid rgba(160,100,255,0.25) !important;
+  box-shadow: 0 40px 100px rgba(0,0,0,0.8),
+              0 0 60px rgba(120,60,220,0.15),
+              inset 0 1px 0 rgba(255,255,255,0.05) !important;
+}
+#creatorPostModal .zp-modal-header { background: rgba(100,40,200,0.08); border-bottom: 1px solid rgba(160,100,255,0.15); }
+#creatorPostModal .zp-modal-header h3 { color: #e8d0ff; font-size: 1.05rem; font-weight: 650; }
+#creatorPostModal .field-label,
+#creatorPostModal label { color: #c0a8f8 !important; font-size: 0.79rem; font-weight: 600; letter-spacing: 0.04em; }
+#creatorPostModal input,
+#creatorPostModal textarea,
+#creatorPostModal select {
+  background: rgba(255,255,255,0.06) !important;
+  border: 1px solid rgba(160,100,255,0.22) !important;
+  color: #f0e8ff !important; border-radius: 10px !important;
+}
+#creatorPostModal input:focus,
+#creatorPostModal textarea:focus {
+  border-color: rgba(160,80,255,0.6) !important;
+  box-shadow: 0 0 0 3px rgba(140,60,255,0.14) !important;
+  outline: none !important;
+}
+#creatorPostModal input::placeholder,
+#creatorPostModal textarea::placeholder { color: rgba(190,160,240,0.4) !important; }
+#creatorPostModal .btn-primary {
+  background: linear-gradient(135deg, #6d28d9, #a855f7) !important;
+  color: #fff !important; border: none !important;
+  box-shadow: 0 4px 20px rgba(120,60,220,0.35) !important;
+}
+#creatorPostModal .btn-ghost {
+  border-color: rgba(160,100,255,0.30) !important; color: #c0a8f8 !important;
+}
+#creatorPostModal .cp-upload-area {
+  border: 2px dashed rgba(140,80,255,0.35) !important;
+  background: rgba(100,40,180,0.08) !important; border-radius: 12px !important;
+  color: #c0a8f8 !important;
+}
+#creatorPostModal .cp-upload-area:hover {
+  border-color: rgba(160,100,255,0.55) !important;
+  background: rgba(100,40,180,0.14) !important;
+}
+#creatorPostModal .chip, #creatorPostModal .category-chip {
+  background: rgba(100,40,180,0.20) !important;
+  border-color: rgba(140,80,255,0.28) !important; color: #d0b8ff !important;
+}
+#creatorPostModal .chip.selected, #creatorPostModal .category-chip.active {
+  background: rgba(120,60,220,0.40) !important;
+  border-color: rgba(160,100,255,0.70) !important;
+}
+
+/* ════════════════════════════════════════════════════════════
+   FEATURE 3 — ZENCHAT: Futuristic AI chat tab
+   ════════════════════════════════════════════════════════════ */
+#aiTabZenchat {
+  display: none;
+  height: calc(100vh - 240px);
+  min-height: 400px;
+  flex-direction: column;
+  background: linear-gradient(180deg, rgba(10,5,25,0) 0%, rgba(5,2,15,0) 100%);
+  position: relative;
+}
+#aiTabZenchat.active-panel { display: flex; }
+.zenchat-header {
+  text-align: center; padding: 20px 0 10px;
+}
+.zenchat-title {
+  font-size: 1.5rem; font-weight: 750; letter-spacing: 0.06em;
+  background: linear-gradient(90deg, #c084fc, #818cf8, #f472b6);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.zenchat-subtitle { font-size: 0.8rem; color: rgba(180,160,220,0.7); margin-top: 4px; }
+.zenchat-msgs {
+  flex: 1; overflow-y: auto; padding: 16px;
+  display: flex; flex-direction: column; gap: 14px;
+  scrollbar-width: thin; scrollbar-color: rgba(120,60,200,0.3) transparent;
+}
+.zc-msg {
+  display: flex; gap: 10px; align-items: flex-end;
+  animation: zcFadeIn 0.35s cubic-bezier(0.16,1,0.3,1) both;
+}
+@keyframes zcFadeIn { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform:translateY(0); } }
+.zc-msg.user  { flex-direction: row-reverse; }
+.zc-bubble {
+  max-width: 75%; padding: 12px 16px; border-radius: 18px;
+  font-size: 0.88rem; line-height: 1.55; position: relative;
+}
+.zc-msg.user  .zc-bubble {
+  background: linear-gradient(135deg, #6d28d9, #a855f7);
+  color: #fff; border-bottom-right-radius: 4px;
+  box-shadow: 0 4px 16px rgba(120,60,220,0.35);
+}
+.zc-msg.bot   .zc-bubble {
+  background: rgba(30,20,55,0.85);
+  border: 1px solid rgba(140,100,255,0.22);
+  color: #e8d8ff; border-bottom-left-radius: 4px;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3), 0 0 20px rgba(100,60,200,0.08);
+}
+.zc-avatar {
+  width: 30px; height: 30px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem; flex-shrink: 0;
+}
+.zc-msg.bot  .zc-avatar {
+  background: linear-gradient(135deg, #4c1d95, #7c3aed);
+  color: #fff; font-weight: 700;
+}
+.zc-msg.user .zc-avatar { background: rgba(100,80,160,0.4); color: #c8b8f0; font-weight: 700; }
+.zc-typing-indicator .zc-bubble {
+  display: flex; gap: 5px; align-items: center; padding: 14px 16px;
+}
+.zc-typing-indicator .zc-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: rgba(160,120,255,0.6);
+  animation: zcDot 1.2s ease-in-out infinite;
+}
+.zc-typing-indicator .zc-dot:nth-child(2) { animation-delay: 0.2s; }
+.zc-typing-indicator .zc-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes zcDot { 0%,60%,100% { transform: scale(1); opacity:0.5; } 30% { transform: scale(1.4); opacity:1; } }
+.zenchat-input-row {
+  padding: 14px 16px;
+  display: flex; gap: 10px; align-items: center;
+  border-top: 1px solid rgba(140,100,255,0.12);
+  background: rgba(10,5,25,0.4); backdrop-filter: blur(8px);
+}
+#zenchatInput {
+  flex: 1; background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(140,100,255,0.25); border-radius: 12px;
+  padding: 11px 16px; color: #f0e8ff; font-size: 0.88rem;
+}
+#zenchatInput:focus { outline:none; border-color:rgba(160,80,255,0.55); box-shadow:0 0 0 3px rgba(140,60,255,0.12); }
+#zenchatInput::placeholder { color: rgba(180,150,240,0.4); }
+#zenchatSend {
+  background: linear-gradient(135deg,#6d28d9,#a855f7);
+  border:none; border-radius:10px; padding:10px 16px;
+  color:#fff; font-size:0.85rem; font-weight:600; cursor:pointer;
+  box-shadow:0 3px 12px rgba(120,60,220,0.3);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+#zenchatSend:hover { transform:scale(1.04); box-shadow:0 4px 16px rgba(120,60,220,0.45); }
+.zc-cards-row {
+  display: grid; grid-template-columns: repeat(3,1fr); gap: 8px;
+  padding: 10px 0 4px;
+}
+.zc-card img { width:100%; aspect-ratio:3/4; object-fit:cover; border-radius:10px; }
+@media (max-width:640px) { .zc-cards-row { grid-template-columns: repeat(2,1fr); } }
+
+/* ════════════════════════════════════════════════════════════
+   FEATURE 4 — DARK MODE
+   ════════════════════════════════════════════════════════════ */
+/* Dark mode inherits --bg from :root, light mode sets white values */
+:root {
+  --dm-bg:      #fafaf8;
+  --dm-surface: #ffffff;
+  --dm-text:    #1a1a1a;
+  --dm-text-2:  #555;
+  --dm-border:  rgba(0,0,0,0.10);
+}
+[data-theme="dark"] {
+  --bg:       #0c0a16 !important;
+  --surface:  #130f22 !important;
+  --surface-2:#1a1430 !important;
+  --surface-3:#211840 !important;
+  --text:     #f0ecff !important;
+  --text-2:   #c0b0e8 !important;
+  --text-3:   #9080c0 !important;
+  --border:   rgba(140,100,255,0.15) !important;
+}
+[data-theme="dark"] .ideas-grid .idea-card { border-color: rgba(140,100,255,0.12); }
+[data-theme="dark"] .navbar { background: rgba(10,6,25,0.95); border-bottom-color: rgba(140,100,255,0.12); }
+[data-theme="dark"] .nav-search-input { background: rgba(255,255,255,0.06); color: #f0e8ff; }
+[data-theme="dark"] .hero { background: transparent; }
+[data-theme="dark"] .card-body { background: var(--surface); }
+[data-theme="dark"] .btn-ghost { border-color: rgba(140,100,255,0.30); color: #c0a8f8; }
+[data-theme="dark"] .chip { background: rgba(100,40,180,0.18); color: #d0b8ff; }
+[data-theme="dark"] .chip.active { background: rgba(120,60,220,0.38); }
+.dark-toggle-btn {
+  background: none; border: none; cursor: pointer;
+  width: 34px; height: 34px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-2); transition: background 0.2s, color 0.2s;
+  flex-shrink: 0;
+}
+.dark-toggle-btn:hover { background: var(--surface-2); color: var(--text); }
+.dark-toggle-btn svg { transition: transform 0.3s; }
+[data-theme="dark"] .dark-toggle-btn svg { transform: rotate(180deg); }
+
+/* ════════════════════════════════════════════════════════════
+   FEATURE 5 — VOICE SEARCH
+   ════════════════════════════════════════════════════════════ */
+.nav-voice-btn {
+  background: none; border: none; cursor: pointer;
+  width: 28px; height: 28px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-3); transition: color 0.2s;
+  flex-shrink: 0;
+}
+.nav-voice-btn:hover { color: var(--text); }
+.nav-voice-btn.listening {
+  color: #a855f7;
+  animation: voicePulse 1.2s ease-in-out infinite;
+}
+@keyframes voicePulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(168,85,247,0); }
+  50%      { box-shadow: 0 0 0 6px rgba(168,85,247,0.25); }
+}
+.voice-listening-badge {
+  position: absolute; top: 54px; left: 50%; transform: translateX(-50%);
+  background: rgba(100,40,180,0.90); backdrop-filter: blur(8px);
+  color: #f0e8ff; font-size: 0.78rem; padding: 5px 14px;
+  border-radius: 20px; white-space: nowrap; pointer-events: none;
+  z-index: 9999; animation: zcFadeIn 0.2s ease both;
+}
