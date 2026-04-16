@@ -45,6 +45,14 @@
       <input class="nav-search-input" id="globalSearch" type="text"
         placeholder="Search images… press Enter for AI search"
         autocomplete="off"/>
+      <button class="nav-voice-btn" id="voiceSearchBtn" title="Voice search" aria-label="Voice search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+          <line x1="12" y1="19" x2="12" y2="23"/>
+          <line x1="8" y1="23" x2="16" y2="23"/>
+        </svg>
+      </button>
       <span class="nav-search-kbd" id="searchKbd">/</span>
       <button class="nav-ai-search-btn" id="navAiSearchBtn" title="AI Search" style="display:none">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M11 8v3l2 2" stroke-width="2"/></svg>
@@ -86,6 +94,12 @@
 
     <!-- Actions -->
     <div class="nav-actions">
+      <!-- Dark mode toggle -->
+      <button class="dark-toggle-btn" id="darkToggleBtn" title="Toggle dark/light mode" aria-label="Toggle dark mode">
+        <svg id="darkIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+      </button>
       <button class="nav-btn-create" id="createPostBtn">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         Create
@@ -504,6 +518,10 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
         Analyze Image
       </button>
+      <button class="ai-tab" data-ai-tab="zenchat" id="aiTabZenchatBtn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        ZENCHAT
+      </button>
     </div>
 
     <!-- ── TAB: Generate Board ──────────────────────────── -->
@@ -587,6 +605,28 @@
         <h2 class="ai-page-title">Analyze Any Image</h2>
         <p class="ai-page-sub">Upload or paste an image URL — get captions, mood, tags, and design suggestions instantly.</p>
       </div>
+    <!-- ── TAB: ZENCHAT ─────────────────────────────────── -->
+    <div id="aiTabZenchat" style="display:none" class="ai-tab-panel">
+      <div class="zenchat-header">
+        <div class="zenchat-title">✦ ZENCHAT</div>
+        <div class="zenchat-subtitle">Your AI creative companion — ask anything</div>
+      </div>
+      <div class="zenchat-msgs" id="zenchatMsgs">
+        <!-- Initial bot message -->
+        <div class="zc-msg bot">
+          <div class="zc-avatar">Z</div>
+          <div class="zc-bubble">
+            Hey! 👋 I'm <strong>ZENCHAT</strong> — ZenPin's AI assistant.<br>
+            Ask me anything: show image ideas, help with login, design tips, or just chat!
+          </div>
+        </div>
+      </div>
+      <div class="zenchat-input-row">
+        <input id="zenchatInput" type="text" placeholder="Ask me anything… e.g. show anime ideas" autocomplete="off"/>
+        <button id="zenchatSend">Send ✦</button>
+      </div>
+    </div>
+
       <div class="ai-input-card">
         <!-- Drop zone -->
         <div class="cp-upload-area" id="analyzeDropZone" style="margin-bottom:14px">
