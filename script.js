@@ -1361,6 +1361,33 @@ async function loadDiscoveryImages(category, page = 1) {
 // populated before the first card ever renders.
 // ═══════════════════════════════════════════════════════════════
 
+// ═══════════════════════════════════════════════════════════════
+// HOW TO ADD NEW LOCAL IMAGES TO ZENPIN
+// ═══════════════════════════════════════════════════════════════
+//
+// STEP 1 — Add image files to GitHub repo
+//   Folder:  assets/discovery/<category>/
+//   Naming:  <prefix>1.jpg, <prefix>2.jpg, ... <prefix>N.jpg
+//   Example: assets/discovery/tattoos/tattoo1.jpg … tattoo25.jpg
+//   ⚠️  GitHub Pages is case-sensitive — folder name must match exactly.
+//   ⚠️  Use .jpg extension (not .jpeg or .jfif). No spaces in filenames.
+//
+// STEP 2 — Add ONE LINE to _curatedCache below:
+//   "newcategory": seq("folderName", "prefix", count),
+//   Example:  "tattoos": seq("tattoos", "tattoo", 25),
+//   → generates: assets/discovery/tattoos/tattoo1.jpg … tattoo25.jpg
+//
+// STEP 3 — Add CATEGORY_MAP entries (for filter chip label matching):
+//   "Tattoos": "tattoos",
+//   "tattoo":  "tattoos",
+//
+// STEP 4 — Done. Chip, filter bar, and AI brain all update automatically.
+//
+// ACTIVE CATEGORIES (15): cars bikes anime gaming scenery
+//   superhero workspace fashion food pets nature
+//   architecture accessories art interior
+// ═══════════════════════════════════════════════════════════════
+
 const _curatedCache = (() => {
   // ── Helper: generate sequential image paths ──────────────────
   function seq(folder, prefix, count, ext = "jpg") {
@@ -4231,6 +4258,7 @@ const AISearch = (() => {
 
   // ── Image analysis (called from card context or analyze btn) ─
   async function analyzeImage(imageUrl, userPrompt = "") {
+    console.log("[ZenPin] analyzer upload started");
     open();
     if (_analyzeWrap)   _analyzeWrap.style.display = "block";
     if (_analyzeResult) _analyzeResult.innerHTML = `
@@ -4241,12 +4269,31 @@ const AISearch = (() => {
     if (_grid)   _grid.innerHTML   = "";
     if (_answer) _answer.style.display = "none";
 
+    if (!isLoggedIn()) {
+      if (_analyzeResult) _analyzeResult.innerHTML =
+        `<p style="color:#c8b8f0;text-align:center;padding:20px;line-height:1.7">
+           🔐 <strong>Please sign in to use AI Analyze</strong><br>
+           <a href="login.html" style="color:#a06aff;text-decoration:underline">Sign In</a>
+         </p>`;
+      return;
+    }
+
+    let currentUser = getUser();
+    if (!currentUser) {
+      try {
+        currentUser = await apiFetch("GET", "/auth/me");
+        if (currentUser) localStorage.setItem("zenpin_user", JSON.stringify(currentUser));
+      } catch (_) {}
+    }
+    if (currentUser) console.log("[ZenPin] analyzer user loaded:", currentUser.username || currentUser.id);
+
     try {
-      const data = await apiFetch("POST", "/ai/analyze", {
-        image_url: imageUrl,
-        prompt:    userPrompt,
-      });
+      const analyzeBody = { image_url: imageUrl, prompt: userPrompt };
+      if (currentUser?.id) analyzeBody.user_id = currentUser.id;
+
+      const data = await apiFetch("POST", "/ai/analyze", analyzeBody);
       const a = data.analysis || {};
+      console.log("[ZenPin] analyzer upload success");
 
       if (_analyzeResult) _analyzeResult.innerHTML = `
         <div class="ai-analyze-card">
@@ -4271,17 +4318,20 @@ const AISearch = (() => {
               <div class="ai-analyze-section-label">Try searching</div>
               <div class="ai-analyze-searches">
                 ${a.similar_searches.map(s =>
-                  `<button class="chip ai-search-suggestion" onclick="AISearch.search('${s.replace(/'/g,"\'")}')">
-                    ${escHtml(s)}
-                  </button>`
+                  `<button class="chip ai-search-suggestion" onclick="AISearch.search('${s.replace(/'/g,"\'")}')">${escHtml(s)}</button>`
                 ).join("")}
               </div>
             ` : ""}
           </div>
         </div>`;
     } catch (e) {
+      const reason = e?.message || "unknown error";
+      console.log("[ZenPin] analyzer upload failed:", reason);
       if (_analyzeResult) _analyzeResult.innerHTML =
-        `<p style="color:var(--text-3);padding:16px">Analysis failed. Make sure GEMINI_API_KEY is set on Render.</p>`;
+        `<p style="color:#ff8888;padding:16px;text-align:center">
+           Analysis failed: ${escHtml(reason)}<br>
+           <small style="color:rgba(200,180,240,0.6)">Ensure GEMINI_API_KEY is set in Render env vars and you are signed in.</small>
+         </p>`;
     }
   }
 
@@ -5303,22 +5353,32 @@ document.addEventListener("DOMContentLoaded", async () => {
   async function runAnalyzeTab() {
     const url    = $("analyzeUrl")?.value.trim();
     const prompt = $("analyzePrompt")?.value.trim() || "";
-    const result = $("analyzePageResult");
+    const result  = $("analyzePageResult");
     const loading = $("analyzeLoading");
 
     if (!url) { toast("Paste an image URL or upload a file first.", true); return; }
+    if (!isLoggedIn()) { toast("Please sign in to use AI Analyze", true); return; }
 
+    console.log("[ZenPin] analyzer upload started");
     if (loading) loading.style.display = "block";
     if (result)  result.innerHTML = "";
 
+    let currentUser = getUser();
+    if (!currentUser) {
+      try { currentUser = await apiFetch("GET", "/auth/me"); } catch (_) {}
+    }
+    if (currentUser) console.log("[ZenPin] analyzer user loaded:", currentUser.username || currentUser.id);
+
     try {
-      const data = await apiFetch("POST", "/ai/analyze", { image_url: url, prompt });
+      const analyzeBody = { image_url: url, prompt };
+      if (currentUser?.id) analyzeBody.user_id = currentUser.id;
+      const data = await apiFetch("POST", "/ai/analyze", analyzeBody);
       const a    = data.analysis || {};
+      console.log("[ZenPin] analyzer upload success");
 
       if (result) result.innerHTML = `
         <div class="ai-analyze-card" style="background:var(--surface-2);border-radius:16px;padding:20px">
-          <img src="${url}" alt="Analyzed" class="ai-analyze-thumb"
-               onerror="this.style.display='none'"/>
+          <img src="${url}" alt="Analyzed" class="ai-analyze-thumb" onerror="this.style.display='none'"/>
           <div class="ai-analyze-body">
             <div class="ai-analyze-caption">${escHtml(a.caption || "")}</div>
             <div class="ai-analyze-row">
@@ -5340,20 +5400,21 @@ document.addEventListener("DOMContentLoaded", async () => {
                 ${a.similar_searches.map(s => `
                   <button class="chip ai-search-suggestion" onclick="
                     document.querySelectorAll('.ai-tab')[1].click();
-                    const inp = document.getElementById('aiSearchInput');
-                    if(inp){ inp.value='${s.replace(/'/g, "\\'")}'; }
-                    setTimeout(runAiSearchTab, 50);
-                  ">${escHtml(s)}</button>`).join("")}
+                    const inp=document.getElementById('aiSearchInput');
+                    if(inp){inp.value='${s.replace(/'/g,"\'")}'; }
+                    setTimeout(runAiSearchTab,50);">${escHtml(s)}</button>`).join("")}
               </div>
             ` : ""}
           </div>
         </div>`;
     } catch (e) {
+      const reason = e?.message || "unknown error";
+      console.log("[ZenPin] analyzer upload failed:", reason);
       if (result) result.innerHTML =
-        `<p style="color:var(--text-3);text-align:center;padding:20px">
-          Analysis failed: ${escHtml(e.message)}<br>
-          <small>Make sure GEMINI_API_KEY is set in Render env vars.</small>
-        </p>`;
+        `<p style="color:#ff8888;text-align:center;padding:20px">
+           Analysis failed: ${escHtml(reason)}<br>
+           <small>Ensure GEMINI_API_KEY is set in Render env vars.</small>
+         </p>`;
     } finally {
       if (loading) loading.style.display = "none";
     }
