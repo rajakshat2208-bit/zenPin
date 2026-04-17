@@ -3300,3 +3300,66 @@ body  { font-family: var(--font-body); }
   border-radius: 20px; white-space: nowrap; pointer-events: none;
   z-index: 9999; animation: zcFadeIn 0.2s ease both;
 }
+
+/* ── Search bar: single flex row [ icon | input | mic | / ] ── */
+.nav-search-wrap {
+  flex: 1 !important;
+  max-width: 520px !important;
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  height: 40px !important;
+  background: var(--surface-2, #f3f4f6) !important;
+  border: 1px solid var(--border, #e5e7eb) !important;
+  border-radius: 20px !important;
+  padding: 0 10px !important;
+  gap: 6px !important;
+}
+.nav-search-ico {
+  position: static !important;
+  transform: none !important;
+  flex-shrink: 0;
+  color: var(--text-3);
+  pointer-events: none;
+}
+.nav-search-input {
+  width: 100% !important;
+  height: 42px !important;
+  padding: 0 68px 0 42px !important; /* left=icon, right=mic+slash */
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  font-size: 0.86rem !important;
+  color: var(--text) !important;
+  min-width: 0 !important;
+  position: relative; z-index: 1;
+}
+.nav-search-input:focus { outline: none !important; box-shadow: none !important; }
+.nav-search-input::placeholder { color: var(--text-3) !important; }
+.nav-voice-btn {
+  position: absolute;
+  right: 36px; top: 50%;
+  transform: translateY(-50%);
+  width: 26px; height: 26px;
+  display: flex; align-items: center; justify-content: center;
+  background: none; border: none;
+  cursor: pointer; color: var(--text-3);
+  border-radius: 6px; transition: color 0.2s;
+  z-index: 2;
+}
+.nav-voice-btn:hover { color: var(--text); }
+.nav-voice-btn.listening { color: #a855f7; animation: voicePulse 1.2s ease-in-out infinite; }
+.nav-search-kbd {
+  flex-shrink: 0;
+  font-size: 0.7rem; color: var(--text-3);
+  background: var(--surface-3, #e5e7eb); border-radius: 4px;
+  padding: 2px 5px; pointer-events: none;
+}
+[data-theme="dark"] .nav-search-wrap {
+  background: rgba(255,255,255,0.06) !important;
+  border-color: rgba(140,100,255,0.20) !important;
+}
+@media (max-width: 640px) {
+  .nav-search-wrap { max-width: 200px !important; }
+  .nav-search-kbd  { display: none; }
+}
