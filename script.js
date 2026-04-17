@@ -3406,6 +3406,242 @@ const BRAIN = [
   {k:["how to relax","relaxing ideas","unwind","chill out","stress relief","calm down activities"],
    r:"Genuine relaxation: 🌿 Progressive muscle relaxation (tense then release each body part). Nature sounds or binaural beats. Slow journaling with no agenda. Warm bath with magnesium salts. Creative doodling with no goal. Cooking a familiar recipe. ZenPin browsing with a warm drink 🍵 — calm and inspiring.",
    cat:"scenery"},
+
+  // ── Deep fashion & style ────────────────────────────────────
+  {k:["what should i wear","outfit ideas","style advice","how to dress","wardrobe help"],
+   r:"Style tip: Start with a neutral base (black, white, navy, grey) and add one statement piece. Less is more — three colours max per outfit. ZenPin's Fashion section has endless outfit inspiration! 👗",cat:"fashion"},
+  {k:["korean style","k fashion","korean outfit","kpop fashion","korean aesthetic"],
+   r:"K-fashion is all about oversized fits, layered textures, platform shoes, and clean palettes. Try wide-leg trousers + crop knit + sneakers. ZenPin's Fashion collection has Korean-style inspiration! 🇰🇷",cat:"fashion"},
+  {k:["summer outfit","summer fashion","summer look","beach outfit","summer style"],
+   r:"Summer essentials: linen sets, slip dresses, breezy co-ords, and white sneakers. Light fabrics + earthy or pastel tones = perfect summer aesthetic! ☀️",cat:"fashion"},
+  {k:["winter fashion","winter outfit","cosy style","winter look","cold weather style"],
+   r:"Winter layering formula: base layer + chunky knit + long coat + boots. Camel, forest green, and burgundy are the winning winter palette! 🧥",cat:"fashion"},
+  {k:["casual style","everyday look","casual outfit","daily outfit","casual fashion"],
+   r:"Elevated casual: quality basics done well. A great white tee, well-fitted jeans, and clean sneakers will always win. Add a watch or minimal jewellery to finish the look.",cat:"fashion"},
+  {k:["luxury fashion","designer style","high fashion","luxury look","premium style"],
+   r:"Luxury style isn't just logos — it's fit, fabric, and confidence. Invest in one truly excellent piece per season rather than many average ones. ZenPin's Accessories section has premium inspiration! 💎",cat:"accessories"},
+  {k:["accessories tips","how to accessorize","jewellery advice","styling accessories"],
+   r:"Accessory rule: one statement piece or two minimal ones. Mix metals intentionally. Layer necklaces for depth. A quality leather bag or watch elevates any outfit. 💍",cat:"accessories"},
+
+  // ── Architecture & spaces ─────────────────────────────────────
+  {k:["brutalist architecture","brutalism","concrete buildings","brutalist style"],
+   r:"Brutalism celebrates raw concrete, bold geometry, and monolithic forms. Architects like Le Corbusier and Paul Rudolph defined the movement. ZenPin's Architecture collection has stunning brutalist photography! 🏛️",cat:"architecture"},
+  {k:["japanese architecture","japanese house","japanese building","japan design"],
+   r:"Japanese architecture emphasises negative space, natural materials, and indoor-outdoor connection. Kengo Kuma and Tadao Ando are masters of this aesthetic — pure, disciplined, beautiful.",cat:"architecture"},
+  {k:["scandinavian architecture","nordic design","scandinavian building","nordic house"],
+   r:"Nordic architecture: pitched roofs, natural wood, triple-glazed windows, and deep connection to landscape. Form follows climate — everything is beautifully functional.",cat:"architecture"},
+  {k:["tiny house","small house design","micro house","compact living","tiny home"],
+   r:"Tiny homes maximise every centimetre: built-in storage, loft sleeping, fold-out furniture, and clever lighting. Under 50m² can feel spacious with the right design principles!",cat:"interior"},
+  {k:["open plan","open floor plan","open concept","loft living","open space interior"],
+   r:"Open-plan living works when you zone with rugs, lighting levels, and furniture arrangement. Keep a visual anchor (a large sofa or dining table) to give structure without walls.",cat:"interior"},
+  {k:["home lighting","interior lighting","room lighting","lighting design","ambient lighting"],
+   r:"Lighting layers: ambient (general), task (functional), accent (decorative). Warm 2700K for living spaces, neutral 4000K for kitchens/offices. Dimmer switches change everything! 💡",cat:"interior"},
+
+  // ── Art & creativity ─────────────────────────────────────────
+  {k:["digital art","digital illustration","digital painting","concept art","digital design"],
+   r:"Digital art fundamentals: master one brush, study light and form first, then add complexity. Procreate (iPad), Clip Studio Paint, and Photoshop are the top tools. ZenPin's Art section is packed with inspiration! 🎨",cat:"art"},
+  {k:["watercolour","watercolor","watercolour tips","watercolour technique","watercolor painting"],
+   r:"Watercolour magic: work light to dark, keep paper damp for soft edges, dry for crisp lines. Never overwork a wash — put it down and leave it. Transparent pigments > opaque ones for luminosity.",cat:"art"},
+  {k:["oil painting","oil paint","oil art","painting with oils","oil canvas"],
+   r:"Oil painting fundamentals: fat over lean rule (more oil in top layers), lay in darks first, build lights last. Slow drying time is a gift — you can blend for hours.",cat:"art"},
+  {k:["street art","graffiti","mural","urban art","spray paint art"],
+   r:"Street art has evolved into a legitimate gallery medium. Artists like Banksy, Shepard Fairey, and Kobra blur the line between activism, culture, and fine art. Raw, powerful, democratic.",cat:"art"},
+  {k:["portrait photography","portrait tips","how to photograph people","portrait lighting"],
+   r:"Portrait lighting basics: Rembrandt (dramatic triangle), butterfly (glamour), split (moody), flat (even). The eyes must always be sharp — focus there first, everything else follows. 📸",cat:"art"},
+  {k:["abstract art","abstract painting","non-representational art","abstract expressionism"],
+   r:"Abstract art communicates emotion through colour, line, shape, and texture — no literal representation needed. Rothko's colour fields, Pollock's drip paintings, and Kandinsky's compositions are touchstones.",cat:"art"},
+
+  // ── Food & cooking ────────────────────────────────────────────
+  {k:["coffee aesthetic","coffee photography","coffee setup","coffee flat lay","barista"],
+   r:"Coffee photography: natural side light, simple background, steam on dark coffee. Latte art, ceramic cups, and a light dusting of cinnamon make the perfect shot! ☕",cat:"food"},
+  {k:["japanese food","ramen","sushi","japanese cuisine","japanese cooking"],
+   r:"Japanese cuisine: precision, balance, and seasonal ingredients. Umami is the fifth taste — dashi broth, miso, soy, and fermented foods build it. Presentation is as important as flavour.",cat:"food"},
+  {k:["italian food","pasta","pizza","italian cooking","italian cuisine"],
+   r:"Italian cooking: three ingredients done perfectly beat ten done carelessly. Great olive oil, San Marzano tomatoes, and Parmigiano-Reggiano are non-negotiable. La semplicità è la sofisticazione! 🍝",cat:"food"},
+  {k:["baking bread","homemade bread","sourdough","bread recipe","bread baking"],
+   r:"Sourdough fundamentals: hydration, fermentation time, and oven heat. A Dutch oven creates the steam for a crackling crust. Starter health is everything — feed it consistently!",cat:"food"},
+  {k:["healthy eating","nutrition tips","clean eating","healthy food","diet tips"],
+   r:"Sustainable healthy eating: add more vegetables rather than restricting. Protein at every meal keeps you full. Cook at home 80% of the time. Colour variety = nutritional diversity! 🥗"},
+  {k:["food styling","food photography tips","how to style food","plating techniques"],
+   r:"Food styling rules: odd numbers of elements, height variation, sauce dots and swooshes, fresh herbs as garnish. Wipe every plate edge before shooting. Natural side light, always! 📸",cat:"food"},
+
+  // ── Gaming & tech setup ───────────────────────────────────────
+  {k:["best gaming mouse","gaming mouse","mouse recommendation","gaming peripheral"],
+   r:"Gaming mice: low sensitivity + high DPI is the pro meta for FPS games. Logitech G Pro, Razer DeathAdder, and Zowie EC2 are perennial favourites. Weight and shape preference is personal — try before you buy!",cat:"gaming"},
+  {k:["gaming headset","best headset","gaming audio","headset recommendation"],
+   r:"Gaming headset tiers: entry (HyperX Cloud II), mid (SteelSeries Arctis 5), premium (Astro A50, Beyerdynamic MMX 300). For the best audio, open-back studio headphones + clip-on mic beats most gaming headsets.",cat:"gaming"},
+  {k:["streaming setup","twitch setup","youtube setup","content creator setup","streamer equipment"],
+   r:"Streaming essentials: stable internet (50+ Mbps upload), good lighting (ring light or key light), decent microphone (Blue Yeti or SM7B), and OBS or Streamlabs. Start simple, upgrade as you grow! 🎮"},
+  {k:["mechanical keyboard","keyboard recommendation","best keyboard","custom keyboard","keycaps"],
+   r:"Mechanical keyboard terms: linear (smooth, quiet — Reds), tactile (bump, no click — Browns), clicky (audible click — Blues). 75% or TKL layouts save desk space. Custom keycaps change the whole vibe!",cat:"gaming"},
+  {k:["dual monitor","multi monitor setup","monitor setup","desk monitor setup","ultrawide"],
+   r:"Dual monitor tip: angle the secondary monitor at 30°, not flat — reduces neck strain. Match brightness and colour temperature between both. Ultrawide vs dual is personal — ultrawide for immersion, dual for productivity.",cat:"workspace"},
+
+  // ── Nature & outdoors ─────────────────────────────────────────
+  {k:["forest photography","forest aesthetic","dark forest","moody forest","woodland photo"],
+   r:"Forest photography: shoot after rain for atmospheric mist, use backlight filtering through trees (called 'crepuscular rays'), and get low to include foreground interest. Magic hour in a forest is unmatched! 🌲",cat:"nature"},
+  {k:["ocean photography","beach photography","seascape","coastal photo","waves photography"],
+   r:"Ocean photography: long exposure smooths water into silk (2–30 seconds). Rock formations with crashing waves need a polarising filter. Golden hour coastal light is extraordinary — warm, directional, magic.",cat:"scenery"},
+  {k:["mountain photography","alpine photo","snow mountain","hiking photography","peak photography"],
+   r:"Mountain photography: arrive at sunrise for alpenglow (peaks glow pink and gold before full sunrise). Bring extra batteries (cold kills them fast). Wait for clouds — they add drama and scale.",cat:"scenery"},
+  {k:["night photography","astrophotography","milky way","stars photography","night sky"],
+   r:"Night sky photography: 500 rule (500 ÷ focal length = max seconds before star trails), f/1.8–2.8 aperture, ISO 1600–6400. Dark sky sites essential. Stack multiple exposures for cleaner noise reduction! 🌌",cat:"scenery"},
+  {k:["flower photography","flower macro","botanical photography","plant photography","botanical art"],
+   r:"Flower photography: macro lens or extension tubes for close-up detail. Shoot on overcast days for soft even light. Spray with water for dew effect. Use shallow DOF to separate subject from background! 🌸"},
+
+  // ── Study & productivity ──────────────────────────────────────
+  {k:["how to focus","improve focus","deep work","concentration tips","focus better"],
+   r:"Deep focus protocol: 90-minute sessions (match your ultradian rhythm), phone in another room or on airplane mode, start with a written intention for the session. Newport's 'Deep Work' is essential reading. 🧠"},
+  {k:["note taking","study notes","how to take notes","best note taking method","cornell notes"],
+   r:"Note-taking methods: Cornell (cue | notes | summary), mind mapping (visual connections), zettelkasten (linked atomic notes). Digital: Obsidian for linked notes, Notion for structured projects. Test yourself immediately after — retrieval beats re-reading!"},
+  {k:["morning routine","productive morning","morning habits","best morning routine","wake up tips"],
+   r:"High-performance morning: no phone for the first 30 minutes, hydrate before caffeine, 10 minutes outside (light exposure sets circadian rhythm). Write 3 priorities for the day before anything else. Compound effect is real."},
+  {k:["burnout","feeling burned out","tired of work","overworked","exhausted from studying"],
+   r:"Burnout recovery: genuine rest first (sleep, nature, movement — not Netflix marathons). Then: reduce workload by 40%, add one deeply enjoyable non-work activity weekly. Burnout is a signal, not a character flaw. Take it seriously. 💙"},
+  {k:["time management","manage time","time blocking","schedule tips","how to manage time"],
+   r:"Time blocking: assign every hour a purpose the night before. Most people overestimate what they can do in a day and underestimate what they can do in a year. Protect two deep-work blocks daily above everything else."},
+
+  // ── Music & audio ─────────────────────────────────────────────
+  {k:["music production","music making","home studio","music producer","make beats"],
+   r:"Music production starter pack: a laptop (Mac preferred), DAW (Ableton, FL Studio, or Logic Pro), an audio interface (Focusrite Scarlett), studio monitors or headphones (Sony MDR-7506), and a MIDI keyboard. Learn one instrument — it changes everything! 🎹"},
+  {k:["music recommendations","what music to listen","music suggestions","playlist ideas","music genre"],
+   r:"Genre exploration: if you love X, try Y: Hip-hop → jazz → bossa nova. Electronic → ambient → drone. Indie rock → dream pop → shoegaze. Post-rock → modern classical. Music maps at every.noise.at show the connections! 🎵"},
+  {k:["guitar tips","learn guitar","guitar chords","guitar practice","how to play guitar"],
+   r:"Guitar learning path: learn 4 chords first (G, C, D, Em — 90% of pop songs). Practice 20 minutes daily rather than 2 hours once a week. Calluses form in 4–6 weeks. Your first guitar should cost £100–200, not more."},
+  {k:["piano tips","learn piano","piano practice","keyboard lessons","piano beginner"],
+   r:"Piano learning: learn to read treble clef first, then bass. Practice hands separately before combining. Scales build muscle memory — 15 minutes daily. For adults: Yousician or Simply Piano apps + a teacher accelerates enormously."},
+
+  // ── Travel ────────────────────────────────────────────────────
+  {k:["travel tips","travel advice","how to travel","travel hacks","travel smarter"],
+   r:"Travel fundamentals: pack half what you think you need, carry-on only if possible, travel insurance always (non-negotiable), offline maps downloaded (Google Maps or Maps.me), and morning flights (fewer delays). 🌍",cat:"scenery"},
+  {k:["japan travel","visiting japan","trip to japan","japan itinerary","japan tips"],
+   r:"Japan travel: get a Suica card (works everywhere), book bullet train (shinkansen) in advance, visit Kyoto on weekdays only. Best seasons: spring cherry blossom (late March–April) and autumn colour (October–November). Bow slightly when entering shops!"},
+  {k:["europe travel","visiting europe","europe trip","europe backpacking","eurotrip"],
+   r:"Europe travel: Interrail pass for 3+ countries. Start in Lisbon (cheapest and sunniest), move east. Prague, Budapest, and Kraków are the best value. Avoid major cities in August — locals escape, tourists flood in."},
+  {k:["budget travel","cheap travel","travel on budget","affordable travel","backpacking"],
+   r:"Budget travel: hostel dorms, overnight trains (skip hotel + transport cost), cooking one meal per day, shoulder-season flights (May, September), and Skyscanner 'Everywhere' search for cheapest destinations from your city."},
+
+  // ── Books & learning ──────────────────────────────────────────
+  {k:["book recommendations","good books to read","must read books","suggest a book","reading list"],
+   r:"Book recommendations by goal: **Design** → 'The Elements of Style' + 'Don't Make Me Think'. **Creativity** → 'Steal Like an Artist'. **Mindset** → 'Mindset' (Dweck). **Productivity** → 'Deep Work'. **Fiction** → start with anything by Ursula Le Guin. 📚"},
+  {k:["self help books","personal development books","best self help","self improvement reading"],
+   r:"Actually useful self-help: 'Atomic Habits' (James Clear) for behaviour change, 'Four Thousand Weeks' (Oliver Burkeman) for time philosophy, 'The Psychology of Money' for finance mindset. Skip anything promising overnight transformation."},
+  {k:["how to read more","reading habit","read faster","read more books","build reading habit"],
+   r:"Reading habit: always have a book within reach. Read 20 pages minimum daily (6,000 pages/year = 20 books). Don't finish bad books — quit at 100 minus your age pages if it hasn't grabbed you. Audiobooks count!"},
+
+  // ── Coding & tech ────────────────────────────────────────────
+  {k:["learn coding","how to code","programming for beginners","coding tips","start programming"],
+   r:"Coding path: Python first (readable, versatile, huge job market). Free resources: freeCodeCamp, CS50 (Harvard), The Odin Project (web dev). Build projects from week one — tutorial hell is real. Consistency beats intensity!"},
+  {k:["web development","learn web dev","html css javascript","frontend development","web design"],
+   r:"Web dev path: HTML → CSS → JavaScript (vanilla) → React or Vue. CSS Grid and Flexbox are non-negotiable. Learn Git immediately. Deploy to GitHub Pages from day one — seeing your work live is the best motivation!"},
+  {k:["python tips","python learning","python projects","best python course","python beginner"],
+   r:"Python learning: master lists, dictionaries, and loops first. Then functions, OOP, and file I/O. Build: a web scraper, a data analyser, a simple API. Projects > tutorials after the first month. FastAPI for backend, Pandas for data."},
+  {k:["git tips","github","version control","git commands","how to use git"],
+   r:"Essential Git: commit early and often with clear messages, branch for every feature, pull before you push. The four commands you'll use 90% of the time: git add, git commit, git push, git pull. Gitignore everything sensitive!"},
+
+  // ── Movies & entertainment ────────────────────────────────────
+  {k:["good movies to watch","movie recommendations","film suggestions","what to watch","best movies"],
+   r:"Movie recommendations by mood: **Mind-bending** → Arrival, Annihilation. **Aesthetic masterpiece** → Portrait of a Lady on Fire, In the Mood for Love. **Epic** → Seven Samurai, Lawrence of Arabia. **Recent** → Past Lives, Aftersun. 🎬"},
+  {k:["anime recommendations","best anime to watch","anime suggestions","must watch anime","anime films"],
+   r:"Essential anime: **Visually stunning** → Demon Slayer, Your Name, Spirited Away. **Deep narrative** → Neon Genesis Evangelion, Monster, Vinland Saga. **Beginner entry** → My Hero Academia, Attack on Titan, One Punch Man. 🎌",cat:"anime"},
+  {k:["documentary recommendations","best documentaries","educational documentary","documentary films"],
+   r:"Essential documentaries: **Design** → Abstract (Netflix). **Nature** → Our Planet. **Music** → Rolling Stones: Gimme Shelter. **Society** → 13th (Ava DuVernay). **Food** → Jiro Dreams of Sushi. Each one changes how you see their subject!"},
+
+  // ── Sports & fitness ─────────────────────────────────────────
+  {k:["workout routine","exercise plan","fitness routine","how to work out","training plan"],
+   r:"Effective workout structure: compound movements first (squat, deadlift, bench, row), isolation last. 3–4 days/week beats 7. Progressive overload (incrementally harder each session) is the only principle that matters long-term. 💪"},
+  {k:["running tips","how to run","improve running","running for beginners","jogging tips"],
+   r:"Running basics: start slower than you think (the 'talk test' — you should be able to hold a conversation). 80% of runs at low intensity, 20% hard. Build mileage by no more than 10% per week. Shoes matter — get fitted properly at a running shop."},
+  {k:["yoga tips","learn yoga","yoga for beginners","yoga routine","yoga poses"],
+   r:"Yoga for beginners: start with 15 minutes daily (Yoga with Adriene on YouTube is genuinely excellent and free). Focus on breath first, poses second. Consistency at shorter durations beats irregular long sessions. 🧘"},
+
+  // ── Colour & design theory ───────────────────────────────────
+  {k:["color theory","colour theory","color palette","design colors","color combinations"],
+   r:"Colour fundamentals: 60-30-10 rule (dominant-secondary-accent), warm vs cool temperature, simultaneous contrast (colours change appearance depending on neighbours). Coolors.co for palette generation, Adobe Color for harmony wheels. 🎨"},
+  {k:["typography tips","font pairing","best fonts","type design","choosing fonts"],
+   r:"Font pairing formula: contrast in weight and style (serif heading + sans body, or display + neutral). Three fonts maximum per design. Body text: 16px minimum, 1.5–1.7 line height. Readability beats personality every time."},
+  {k:["logo design","logo tips","brand identity","how to design logo","branding"],
+   r:"Logo design principles: works in black and white first, readable at any size (from favicon to billboard), memorable in one glance. Great logos are simple geometric forms — Apple, Nike, Target. Complexity = confusion."},
+  {k:["ui design tips","user interface design","app design","ux design","interface design"],
+   r:"UI fundamentals: Fitts's Law (bigger and closer = easier to click), Gestalt principles (proximity, similarity, closure), 8-point grid system, and accessibility (4.5:1 contrast ratio minimum). Design systems save enormous time — use one!"},
+  {k:["graphic design","design tips","design principles","how to design","visual design"],
+   r:"Core design principles: hierarchy (guide the eye), alignment (nothing arbitrary), repetition (build brand), contrast (create emphasis), proximity (group related elements). Canva for beginners, Figma for professionals. 🖥️"},
+
+  // ── Home aesthetics ───────────────────────────────────────────
+  {k:["cottagecore","cottagecore aesthetic","cottagecore room","cottage aesthetic","rural aesthetic"],
+   r:"Cottagecore elements: linen and natural fabrics, dried flowers, wooden furniture, wicker baskets, botanical prints, warm amber lighting, and a kitchen garden. Think English countryside meets forest fairy. 🌿",cat:"nature"},
+  {k:["dark academia","dark academia aesthetic","dark academic room","academia vibes"],
+   r:"Dark academia: deep wood tones, leather-bound books, green banker's lamps, tartan throws, world maps, candelabras, and a globe. Colours: dark brown, forest green, burgundy, cream, and black. Oxford library made your bedroom.",cat:"interior"},
+  {k:["boho decor","bohemian interior","boho chic","boho style room","eclectic decor"],
+   r:"Boho interior: layered rugs, macramé wall art, rattan furniture, terracotta pots, trailing plants, and warm lighting. Mix patterns boldly — the key is colour cohesion across the chaos. Earthy palette + natural textures = perfect boho. 🌾",cat:"interior"},
+  {k:["scandi decor","scandinavian interior","nordic room","hygge style","danish design"],
+   r:"Scandinavian interiors: white walls, oak floors, linen textiles, sheepskin throws, candles (always), and one potted plant per room. Remove clutter entirely — negative space is part of the design. Form follows function, beautifully."},
+  {k:["maximalist decor","maximalist interior","more is more","eclectic style","bold interior"],
+   r:"Maximalism done right: cohesive colour story across all patterns, dedicated 'hero pieces', consistent lighting temperature, and curated collections not random accumulation. More is more — but more of WHAT must be intentional! 🌈",cat:"interior"},
+  {k:["plants in interior","indoor plant decor","plant styling","houseplants room","biophilic design"],
+   r:"Biophilic design: cluster plants in odd numbers (3, 5, 7), vary heights dramatically, mix leaf sizes and textures. Trailing plants on high shelves, tall fiddle leaf figs in corners, small succulents on desks. Life changes a room instantly! 🌱"},
+
+  // ── Cyberpunk & futuristic ────────────────────────────────────
+  {k:["cyberpunk aesthetic","cyberpunk design","neon aesthetic","futuristic style","cyber aesthetic"],
+   r:"Cyberpunk visual language: high-tech + low-life contrast, neon against darkness, glitch effects, holographic elements, rain-slicked streets. Colour palette: electric blue, magenta, acid yellow on deep black. Blade Runner is the template. 🌆",cat:"gaming"},
+  {k:["vaporwave","vaporwave aesthetic","80s aesthetic","retrowave","synthwave aesthetic"],
+   r:"Vaporwave: pastel sunsets, Roman busts, chrome text, Windows 95 glitches, and Japanese characters. Colours: lavender, pink, cyan, and seafoam. Lo-fi nostalgia for a past that never existed — digital archaeology as art. 📼"},
+  {k:["y2k aesthetic","early 2000s style","2000s fashion","y2k fashion","2000s aesthetic"],
+   r:"Y2K revival: low-rise jeans, metallic fabrics, butterfly clips, baby tees, mini bags, platform shoes, and frosted lip gloss. Colours: silver, lilac, orange, and early-internet blue. Paris Hilton and Destiny's Child are the mood board. 💿",cat:"fashion"},
+  {k:["dark aesthetic","dark style","gothic aesthetic","dark fashion","dark room"],
+   r:"Dark aesthetic: deep charcoal, black, oxblood, forest green, and moonstone grey. Velvet textures, candlelight, aged brass hardware, bookshelves with spines facing in, and dark florals. Sophisticated, not spooky. 🖤"},
+
+  // ── Vintage & retro ──────────────────────────────────────────
+  {k:["vintage aesthetic","retro style","vintage look","vintage room","old school style"],
+   r:"Vintage done right: source authentic pieces from markets and charity shops, mix one era with modern basics, and never costume-wear — integrate. 1970s colours (terracotta, avocado), 1950s silhouettes (full skirts), 1980s power dressing. 🎞️"},
+  {k:["film photography","analogue photography","film camera","35mm film","kodak film"],
+   r:"Film photography essentials: start with a Pentax K1000 or Canon AE-1 (reliable, affordable). Kodak Ultramax 400 for sunny days, Portra 400 for portraits, Cinestill 800T for night/tungsten. Develop at home or use a local lab. The grain is the point! 📷"},
+  {k:["mid century modern","mid century design","1950s style","atomic age design","eames style"],
+   r:"Mid-century modern: tapered legs, organic forms, warm woods (teak, walnut), bold geometry, and the Eames aesthetic. Mustard, olive, rust, and teal are the definitive palette. Function and beauty were inseparable in this era.",cat:"interior"},
+
+  // ── Photography advanced ─────────────────────────────────────
+  {k:["composition photography","rule of thirds","photo composition","framing photography"],
+   r:"Composition beyond rule of thirds: leading lines (roads, rivers, fences), frame within frame (doorways, windows, arches), negative space (silence in the image), and foreground interest (anchors the scene). Break rules intentionally — always understand them first!"},
+  {k:["street photography","urban photography","street photo tips","candid photography"],
+   r:"Street photography: zone focus at f/8 (1.5–3m), shoot at 1/500s, and move your feet rather than zooming. Shoot the reaction, not the action. Black and white removes distraction — colour is a second decision, not the first."},
+  {k:["photo editing tips","lightroom tips","photo retouching","post processing","edit photos"],
+   r:"Editing workflow: exposure and white balance first (global fixes), then graduated filters and spot adjustments (local), colour grading last (creative). 'If you notice the edit, it's too much.' Create a preset from your signature look and apply it as a starting point."},
+  {k:["lens recommendation","camera lens","best lens","prime lens","zoom lens","which lens"],
+   r:"Lens priorities: 50mm f/1.8 first (cheap, versatile, teaches composition). Then a 35mm for environment, or 85mm for portraits. Zoom lenses for wildlife and sport. Prime lenses make you a better photographer by forcing movement. 📷"},
+
+  // ── ZenPin help ───────────────────────────────────────────────
+  {k:["how does zenpin work","zenpin guide","zenpin help","zenpin tutorial","getting started zenpin"],
+   r:"ZenPin works like Pinterest but AI-powered ✨ Browse 15 curated categories, save images you love, create boards to organise them, and use the AI tools to generate boards, analyse images, or just chat. Sign up to unlock saves and boards!"},
+  {k:["zenpin categories","what categories","browse categories","all categories"],
+   r:"ZenPin's 15 categories: 🚗 Cars · 🏍️ Bikes · 🎌 Anime · 👗 Fashion · 💍 Accessories · 🏛️ Architecture · 🎨 Art · 🍽️ Food · 🎮 Gaming · 🏠 Interior · 🌿 Nature · 🐾 Pets · 🌅 Scenery · 🦸 Superheroes · 💻 Workspace"},
+  {k:["ai tools zenpin","zenpin ai","how does ai work","what can ai do","zenpin features"],
+   r:"ZenPin's AI features: **Generate Board** — describe any topic and get a curated image board instantly. **Analyze Image** — upload any image for a detailed aesthetic breakdown. **ZENCHAT** — that's me! Ask anything and I'll help you explore creative ideas. 🤖"},
+  {k:["save ideas","how to save","bookmark image","heart image","save pin","like image"],
+   r:"To save an image on ZenPin: click the ❤️ icon on any card (you must be signed in). Saved images appear in your Profile under 'Saved'. You can also add images to specific Boards from the modal! 📌"},
+  {k:["create board","make board","new board","add board","board creation"],
+   r:"To create a Board: go to the Boards page and click '+ Create Board'. Give it a name and description, then start adding images from any category. Boards are perfect for organising ideas by project or theme! 📋"},
+  {k:["upload image zenpin","post image","share image","add my image","create post"],
+   r:"To share your own image: click the ✦ Create button in the navbar. Upload a file or paste an image URL, add a title and category, then publish. Your image will appear in the community feed! 🖼️"},
+  {k:["delete account","remove account","deactivate account","close zenpin account"],
+   r:"To delete your ZenPin account, please contact support through the Profile settings page. We'll process your request within 48 hours and remove all your data. We're sorry to see you go! 💙"},
+  {k:["forgot password","reset password","cannot login","login not working","account access"],
+   r:"Password or login issue: Use 'Sign in with code' on the login page — enter your email and we'll send a one-time code. No password needed! If you're still stuck, try clearing browser cache or using a different browser."},
+  {k:["upload not working","image not uploading","upload failed","cannot upload"],
+   r:"Upload issues: make sure your file is JPG, PNG, or WebP under 10MB. Check your internet connection. If you see 'User not found', try signing out and back in — your session may have expired. Still failing? Hard-refresh (Ctrl+Shift+R)."},
+  {k:["site not loading","zenpin broken","blank page","nothing loading","app not working"],
+   r:"Site issues: first hard-refresh with Ctrl+Shift+R. The backend server may be waking up (takes 20–40 seconds on cold start). If images aren't loading, check your internet. Clear browser cache if problems persist. Still broken? Try incognito mode."},
+  {k:["dark mode not working","theme broken","wrong colours","display issue","visual bug"],
+   r:"Dark mode: click the moon/sun icon in the navbar to toggle. Your preference is saved. If colours look wrong, hard-refresh the page (Ctrl+Shift+R) to clear any cached styles."},
+  {k:["mobile issues","zenpin on phone","mobile version","app on phone","zenpin mobile"],
+   r:"ZenPin works as a Progressive Web App on mobile! In Chrome, tap the menu (⋮) → 'Add to Home Screen'. On Safari, tap Share → 'Add to Home Screen'. You'll get an app icon and full-screen experience. 📱"},
+  {k:["how to share image","share idea","share to social","export image","copy image link"],
+   r:"To share an image: open it in the modal and click the Share button (↗️ icon). You can copy the link or share directly to social platforms. For download, click the ⬇️ Download button!"},
+  {k:["what is the analyze feature","image analysis","how does analyze work","ai image analysis"],
+   r:"The Analyze Image feature uses AI to break down any image: style, mood, colour palette, design category, objects detected, and how to recreate it. Upload a file or paste a URL, then click Analyze! The AI does the rest. 🔍"},
+  {k:["what is generate board","board generator","how generate works","ai board generation"],
+   r:"Generate Board: type any creative topic (e.g. 'dark cyberpunk bedroom' or 'Japanese minimalist kitchen') and ZenPin instantly builds a visual inspiration board from matching images in our library. ⚡"},
+  {k:["what is zenchat","zenchat help","how does zenchat work","ai chat help"],
+   r:"ZENCHAT is ZenPin's built-in AI creative assistant (that's me! 👋). Ask me about any topic — design ideas, category images, platform help, creative advice, or just casual conversation. I'm always here and always respond! ✨"},
 ];
 const CAT_KEYWORDS = {
   bikes:       ["bike","motorcycle","motorbike","two wheel","superbike","cruiser"],
@@ -3503,7 +3739,7 @@ function setupChat() {
         img.alt     = idea.title     || "";
         img.loading = "lazy";
         img.className = "chat-img-card";
-        img.onclick = () => openModal(idea);
+        img.onclick = () => { console.log("[ZenPin] image clicked:", idea.id); openModal(idea.id); };
         img.onerror = () => { img.style.display = "none"; };
         strip.appendChild(img);
       });
@@ -3686,6 +3922,67 @@ async function initAI() {
   if (window.AIModule) AIModule.renderHistory($("aiHistoryList"));
 }
 
+async // buildLocalBoard — instant local results from _curatedCache, no backend needed
+function buildLocalBoard(topic) {
+  const low = topic.toLowerCase();
+  console.log("[ZenPin] board generation started:", topic);
+
+  // Multi-keyword category detector
+  const TOPIC_CATS = [
+    { keys: ["anime","manga","naruto","dragonball","sakura","otaku","studio ghibli","miyazaki"], cat:"anime" },
+    { keys: ["bike","motorcycle","motorbike","cruiser","superbike","kawasaki","ducati","harley"], cat:"bikes" },
+    { keys: ["car","supercar","ferrari","lamborghini","bmw","porsche","tesla","vehicle","racing"], cat:"cars" },
+    { keys: ["gaming","gamer","esport","rgb","setup","pc build","console","playstation","xbox"], cat:"gaming" },
+    { keys: ["fashion","outfit","clothing","style","dress","streetwear","ootd","wardrobe"], cat:"fashion" },
+    { keys: ["interior","room","decor","living room","bedroom","kitchen","furniture","loft","apartment"], cat:"interior" },
+    { keys: ["architecture","building","facade","skyscraper","brutalist","modern house","urban"], cat:"architecture" },
+    { keys: ["art","paint","digital art","illustration","sketch","drawing","canvas","abstract"], cat:"art" },
+    { keys: ["accessories","jewelry","watch","bag","purse","bracelet","earring","necklace"], cat:"accessories" },
+    { keys: ["food","recipe","meal","cuisine","dish","restaurant","cook","baking","dessert","coffee"], cat:"food" },
+    { keys: ["nature","forest","mountain","ocean","landscape","wildlife","sunset","flowers","garden"], cat:"nature" },
+    { keys: ["pet","dog","cat","animal","puppy","kitten","bird","bunny"], cat:"pets" },
+    { keys: ["scenery","travel","beach","city","skyline","street","alley","destination"], cat:"scenery" },
+    { keys: ["superhero","marvel","dc","batman","spiderman","avengers","comic","hero"], cat:"superhero" },
+    { keys: ["workspace","desk","office","productivity","minimal desk","study setup","home office"], cat:"workspace" },
+    // Aesthetic crossovers
+    { keys: ["cyberpunk","neon","futuristic","dystopia","synthwave","blade runner"], cat:"gaming" },
+    { keys: ["minimalist","minimal","clean","simple","monochrome","wabi-sabi"], cat:"interior" },
+    { keys: ["vintage","retro","aesthetic","cottagecore","dark academia","bohemian"], cat:"fashion" },
+    { keys: ["japanese","japan","tokyo","kyoto","sakura","zen","wabi sabi"], cat:"nature" },
+    { keys: ["luxury","premium","gold","black car","supercar","penthouse"], cat:"cars" },
+    { keys: ["dark","moody","cinematic","dramatic","gothic","emo"], cat:"anime" },
+    { keys: ["pink","pastel","kawaii","cute","girly","soft aesthetic"], cat:"fashion" },
+    { keys: ["outdoor","hiking","camping","adventure","explore","mountains"], cat:"scenery" },
+  ];
+
+  let matchedCat = null;
+  let bestScore  = 0;
+  for (const { keys, cat } of TOPIC_CATS) {
+    const score = keys.filter(k => low.includes(k)).length;
+    if (score > bestScore) { bestScore = score; matchedCat = cat; }
+  }
+
+  if (!matchedCat) {
+    // Fallback: use all categories, pick evenly
+    const allCats = Object.keys(_curatedCache);
+    const pick    = [];
+    for (let i = 0; pick.length < 12 && i < allCats.length; i++) {
+      const ideas = getAllCuratedIdeas(allCats[i]);
+      if (ideas.length) pick.push(ideas[Math.floor(Math.random()*ideas.length)]);
+    }
+    console.log("[ZenPin] board generation category: mixed");
+    console.log("[ZenPin] board generation results:", pick.length);
+    return pick;
+  }
+
+  console.log("[ZenPin] board generation category:", matchedCat);
+  const ideas = getAllCuratedIdeas(matchedCat);
+  // Shuffle and take 12
+  const shuffled = [...ideas].sort(() => Math.random()-0.5).slice(0, 12);
+  console.log("[ZenPin] board generation results:", shuffled.length);
+  return shuffled;
+}
+
 async function runAI() {
   const topic = $("aiInput")?.value.trim();
   if (!topic) { $("aiInput")?.focus(); return; }
@@ -3695,23 +3992,33 @@ async function runAI() {
   $("aiGenBtn").disabled       = true;
 
   try {
-    const data = await apiFetch("POST", "/ai/generate", { topic });
+    // Local cache first — instant results
+    const localIdeas = buildLocalBoard(topic);
+    if (localIdeas.length >= 4) {
+      $("aiLoading").style.display = "none";
+      $("aiOutput").style.display  = "block";
+      $("aiOutputTitle").textContent = `"${topic}"`;
+      const localBadge = $("aiPoweredBadge");
+      if (localBadge) { localBadge.textContent = "⚡ Local Match"; localBadge.style.display = "inline-flex"; }
+      renderGrid($("aiGrid"), localIdeas);
+    }
+
+    // Try backend for richer results
+    let data = { ideas: localIdeas, powered_by: "local" };
+    try { data = await apiFetch("POST", "/ai/generate", { topic }); }
+    catch (_) {}
 
     $("aiLoading").style.display = "none";
     $("aiOutput").style.display  = "block";
-
-    // Title
     $("aiOutputTitle").textContent = `"${topic}"`;
 
-    // Powered-by badge
     const badge = $("aiPoweredBadge");
     if (badge) {
       badge.textContent   = data.powered_by === "openai" ? "✨ GPT-4o" : "⚡ Smart Match";
       badge.style.display = "inline-flex";
     }
 
-    // Render cards
-    const ideas = data.ideas || [];
+    const ideas = (data.ideas && data.ideas.length >= 4) ? data.ideas : localIdeas;
     renderGrid($("aiGrid"), ideas);
 
     // Color palette
@@ -3944,15 +4251,22 @@ function downloadImage(url, title = "zenpin-image") {
 }
 
 async function openModal(id) {
-  let idea;
-  try {
-    idea = await apiFetch("GET", `/ideas/${id}`);
-  } catch {
-    // Fallback to cached
-    idea = S.allIdeas.find(i => i.id === id) || null;
+  const numId = Number(id) || id;
+  let idea =
+    S.allIdeas.find(i => i.id === numId || String(i.id) === String(id)) ||
+    (S.ideas && S.ideas.find(i => String(i.id) === String(id))) ||
+    null;
+
+  if (!idea) {
+    try { idea = await apiFetch("GET", `/ideas/${numId}`); }
+    catch { idea = null; }
   }
-  if (!idea) return;
-  S.modalId = id;
+  if (!idea) {
+    console.warn("[ZenPin] openModal: idea not found for id", id);
+    return;
+  }
+  console.log("[ZenPin] modal opened:", idea.id, idea.image_url?.slice(-40));
+  S.modalId = numId;
   // Opening a card = interest signal (+1 weight)
   if (idea.category) UserPrefs.bump(idea.category, 1);
 
@@ -4261,7 +4575,71 @@ const AISearch = (() => {
   }
 
   // ── Image analysis (called from card context or analyze btn) ─
-  async function analyzeImage(imageUrl, userPrompt = "") {
+  async 
+// ── Local fallback analyzer (used when backend is unavailable) ─────────────
+// Returns a structured analysis from URL/filename heuristics and keyword detection
+const LOCAL_ANALYZE_DB = {
+  anime:         { style:"Anime illustration",    mood:"expressive, vibrant",     colours:["electric blue","pink","white","jet black"], category:"Anime",        tools:["Clip Studio Paint","Procreate","Photoshop"],  howTo:"Use cel-shading technique: flat colour fills + hard-edged shadows. Large expressive eyes, exaggerated hair volume, dynamic poses. Reference from manga panels for composition." },
+  gaming:        { style:"Gaming / RGB aesthetic", mood:"intense, futuristic",     colours:["RGB spectrum","deep black","neon accents"], category:"Gaming",       tools:["Photo editor","RGB lighting controller"],       howTo:"Position RGB strips behind monitor and desk edge. Use long exposure (1–3s) to capture light trails. Underexpose slightly to make neon pop against dark room." },
+  fashion:       { style:"Fashion editorial",      mood:"confident, stylised",     colours:["neutral base","one statement colour"],      category:"Fashion",      tools:["Camera","Lightroom","natural light"],            howTo:"Shoot on plain or textured background. Diffused natural window light at 45°. Edit for skin tone accuracy, boost saturation selectively on the garment, reduce everywhere else." },
+  interior:      { style:"Interior design",        mood:"calm, aspirational",      colours:["warm neutral","accent","natural wood"],      category:"Interior",     tools:["Wide-angle lens","Lightroom","Photoshop"],       howTo:"Shoot from corner at tripod height (~1m). Straighten verticals in Lightroom. Balance warm ambient light with cooler daylight. Declutter before shooting — less is more." },
+  architecture:  { style:"Architectural photography",mood:"monumental, precise",  colours:["concrete grey","sky blue","glass chrome"],   category:"Architecture", tools:["Ultra-wide lens","Lightroom","polarising filter"],howTo:"Shoot at dawn or dusk for dramatic light. Polariser removes glass reflections. Use leading lines — converging verticals create depth. Lens correction is essential." },
+  art:           { style:"Fine art / illustration", mood:"expressive, contemplative",colours:["varied palette","intentional accents"],   category:"Art",          tools:["Procreate","Photoshop","traditional mediums"],   howTo:"Build composition first with rough thumbnail sketches. Establish value structure before colour. Work from large shapes to fine detail. Reference real light sources always." },
+  cars:          { style:"Automotive photography",  mood:"powerful, aspirational",  colours:["metallic paint","studio lighting","shadow"], category:"Cars",        tools:["Mirrorless camera","Lightroom","strobe lights"],  howTo:"Park car at magic hour on a clean surface. Light the car with broad reflectors. Merge 3–5 exposures in post. Chrome bumpers and wheels need individual exposure attention." },
+  bikes:         { style:"Motorcycle photography",  mood:"adventurous, raw",        colours:["chrome","matte black","burnt orange"],       category:"Bikes",       tools:["Camera","outdoor location","low angle"],          howTo:"Get low — ground-level shots make motorcycles look massive. Find a road with good surroundings. Motion blur the background (pan at 1/60s) to convey speed." },
+  food:          { style:"Food photography",        mood:"appetising, warm",         colours:["warm earth","fresh green","cream","plating"], category:"Food",       tools:["50mm lens","natural light","reflector"],          howTo:"Diffused window light from the side. White reflector card opposite to fill shadows. Style with fresh herbs and sauce dots. Shoot top-down for flat lays, 45° for depth." },
+  nature:        { style:"Nature photography",      mood:"peaceful, awe-inspiring",  colours:["forest green","sky blue","earth brown"],     category:"Nature",      tools:["Telephoto lens","polarising filter","tripod"],    howTo:"Golden hour is non-negotiable. Polariser boosts sky saturation and removes water glare. Patience is the most important tool — wait for the decisive moment." },
+  scenery:       { style:"Landscape photography",   mood:"expansive, serene",        colours:["sky gradient","horizon glow","deep shadow"],  category:"Scenery",    tools:["Wide-angle lens","ND filter","tripod"],           howTo:"Rule of thirds — place horizon on lower or upper third, never middle. ND filter for long exposure water/clouds. Shoot RAW for maximum shadow/highlight recovery in post." },
+  workspace:     { style:"Workspace photography",   mood:"productive, minimal",      colours:["white","neutral wood","one accent colour"],   category:"Workspace",  tools:["50mm lens","natural light","editing software"],  howTo:"Declutter ruthlessly. Natural side light + white bounce card. Include one 'life' element (plant, coffee cup, open notebook). Tidy cable runs behind the desk first." },
+  superhero:     { style:"Comic / hero art",        mood:"dramatic, powerful",        colours:["primary colours","bold contrast","metallic"], category:"Superheroes",tools:["Photoshop","Midjourney","Procreate"],             howTo:"Dynamic pose first — S-curve or contrapposto stance. Hard side lighting for dramatic shadows. Backlighting for silhouette effect. Cape and costume details last, not first." },
+  pets:          { style:"Pet photography",         mood:"joyful, warm",              colours:["warm ambient","subject pop","soft bokeh"],    category:"Pets",       tools:["85mm f/1.8","natural light","patience"],          howTo:"Get down to eye level — always. Photograph just before or after feeding for good behaviour. Use burst mode (10fps). Focus on the eyes first, always. Treat-based attention-grabbing." },
+  accessories:   { style:"Product / accessory photography",mood:"premium, detailed",colours:["white sweep","marble","clean background"],    category:"Accessories",tools:["Macro lens","light tent","Lightroom"],             howTo:"White seamless backdrop or marble surface. Two-light setup (key + fill) at 45° each side. Shoot tethered for instant quality check. Macro for detail shots — catch scratches first." },
+};
+
+function localAnalyzeImage(url) {
+  const low = (url || "").toLowerCase();
+  let matched = null;
+
+  // Detect category from URL path
+  for (const [cat, data] of Object.entries(LOCAL_ANALYZE_DB)) {
+    if (low.includes(cat) || low.includes(data.category.toLowerCase())) {
+      matched = { cat, ...data };
+      break;
+    }
+  }
+
+  // Fallback to a generic analysis
+  if (!matched) {
+    matched = {
+      cat: "general",
+      style: "Creative photography / digital art",
+      mood: "artistic, expressive",
+      colours: ["primary tones", "complementary accents", "neutral background"],
+      category: "Art",
+      tools: ["Camera or design software", "Lightroom / Photoshop", "Procreate"],
+      howTo: "Identify the primary light source and reproduce it. Match the colour palette using a colour picker. Study the compositional geometry — where are the dominant lines and focal point?"
+    };
+  }
+
+  return {
+    caption:    `${matched.style} — ${matched.category} aesthetic`,
+    style:      matched.style,
+    mood:       matched.mood,
+    colours:    matched.colours,
+    category:   matched.category,
+    tools:      matched.tools,
+    howTo:      matched.howTo,
+    suggestions: `**How to recreate:**\n${matched.howTo}\n\n**Tools likely used:** ${matched.tools.join(", ")}\n\n**Suggested search prompts:** "${matched.style}", "${matched.mood} ${matched.category.toLowerCase()}", "aesthetic ${matched.category.toLowerCase()} photography"`,
+    tags:        [matched.style.split(" ")[0], matched.mood.split(",")[0].trim(), matched.category],
+    similar_searches: [
+      `${matched.category} aesthetic`,
+      `${matched.style.split(" ")[0].toLowerCase()} inspiration`,
+      `${matched.mood.split(",")[0].trim()} photography`,
+    ],
+  };
+}
+
+async function analyzeImage(imageUrl, userPrompt = "") {
     console.log("[ZenPin] analyzer upload started");
     open();
     if (_analyzeWrap)   _analyzeWrap.style.display = "block";
@@ -4330,12 +4708,26 @@ const AISearch = (() => {
         </div>`;
     } catch (e) {
       const reason = e?.message || "unknown error";
-      console.log("[ZenPin] analyzer upload failed:", reason);
-      if (_analyzeResult) _analyzeResult.innerHTML =
-        `<p style="color:#ff8888;padding:16px;text-align:center">
-           Analysis failed: ${escHtml(reason)}<br>
-           <small style="color:rgba(200,180,240,0.6)">Ensure GEMINI_API_KEY is set in Render env vars and you are signed in.</small>
-         </p>`;
+      console.log("[ZenPin] analyzer upload failed:", reason, "— using local fallback");
+
+      // Local fallback — always shows something useful
+      const local = localAnalyzeImage(imageUrl);
+      if (_analyzeResult) _analyzeResult.innerHTML = `
+        <div class="ai-analyze-card" style="padding:16px">
+          <div style="background:rgba(120,60,200,0.12);border:1px solid rgba(140,80,255,0.2);border-radius:14px;padding:18px;color:#f0e8ff">
+            <div style="font-size:0.72rem;letter-spacing:0.06em;color:#a0a0c0;text-transform:uppercase;margin-bottom:12px">⚡ Local Analysis (backend offline)</div>
+            <div style="font-size:1rem;font-weight:700;margin-bottom:6px">${escHtml(local.style)}</div>
+            <div style="color:rgba(200,180,240,0.8);margin-bottom:12px;font-size:0.88rem">${escHtml(local.mood)}</div>
+            <div style="margin-bottom:10px"><strong style="color:#c8b8f0">Colour palette:</strong><br>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">
+                ${local.colours.map(c=>`<span style="background:rgba(140,80,255,0.2);padding:3px 10px;border-radius:20px;font-size:0.75rem">${escHtml(c)}</span>`).join("")}
+              </div>
+            </div>
+            <div style="margin-bottom:10px"><strong style="color:#c8b8f0">Category:</strong> ${escHtml(local.category)}</div>
+            <div style="margin-bottom:10px"><strong style="color:#c8b8f0">Tools likely used:</strong><br>${escHtml(local.tools.join(", "))}</div>
+            <div style="font-size:0.85rem;line-height:1.6;white-space:pre-line;color:#e0d0ff">${escHtml(local.howTo)}</div>
+          </div>
+        </div>`;
     }
   }
 
@@ -4556,7 +4948,7 @@ function initZenchat() {
   const send  = document.getElementById("zenchatSend");
   if (!msgs || !input || !send) return;
 
-  console.log("[ZenPin] ZENCHAT initialized");
+  console.log("[ZenPin] zenchat initialized");
 
   function appendZcMsg(role, text, cards) {
     const wrap = document.createElement("div");
@@ -4632,7 +5024,7 @@ function initZenchat() {
     const msg = input.value.trim();
     if (!msg) return;
     input.value = "";
-    console.log("[ZenPin] ZENCHAT received message:", msg.slice(0,60));
+    console.log("[ZenPin] zenchat received:", msg.slice(0,60));
     appendZcMsg("user", msg);
     showTyping();
 
@@ -4647,6 +5039,7 @@ function initZenchat() {
     let poweredBy = "brain";
 
     if (hit) {
+      console.log("[ZenPin] zenchat brain match found");
       reply = hit.r;
       if (hit.cat) {
         try { ideaCards = getAllCuratedIdeas(hit.cat).slice(0,6); } catch(_) {}
@@ -4656,7 +5049,7 @@ function initZenchat() {
     // Step 2: detectCategory even if brain matched
     const cat = detectCategory(msg);
     if (cat) {
-      console.log("[ZenPin] category detected:", cat);
+      console.log("[ZenPin] zenchat category detected:", cat);
       if (!ideaCards.length) {
         try { ideaCards = getAllCuratedIdeas(cat).slice(0,6); } catch(_) {}
       }
@@ -4664,6 +5057,7 @@ function initZenchat() {
 
     // Step 3: fallback reply if brain didn't match
     if (!reply) {
+      console.log("[ZenPin] zenchat fallback reply used");
       reply = cat
         ? `Here are some **${cat}** ideas I found on ZenPin! ✨ Browse the cards below for visual inspiration.`
         : "Great question! 🌟 I'm always here to help. Try asking about a category (bikes, fashion, anime…), platform help, or creative ideas!";
@@ -4673,7 +5067,7 @@ function initZenchat() {
       reply = "I didn't quite catch that — could you rephrase? Try asking about a category or 'what can you do?'";
     }
 
-    console.log("[ZenPin] ZENCHAT reply generated");
+    console.log("[ZenPin] zenchat fallback reply used");
     appendZcMsg("bot", reply, ideaCards);
   }
 
@@ -4763,11 +5157,12 @@ function initVoiceSearch() {
       btn.classList.add("listening");
       btn.title = "Listening… click to stop";
       showBadge("🎙 Listening…");
+      console.log("[ZenPin] voice search button mounted");
       console.log("[ZenPin] voice search started");
     };
     recognition.onresult = e => {
       const text = e.results[0][0].transcript;
-      console.log("[ZenPin] voice recognized:", text);
+      console.log("[ZenPin] voice search transcript:", text);
       input.value = text;
       input.dispatchEvent(new Event("input", { bubbles: true }));
       // Auto-submit after short delay
@@ -4800,20 +5195,44 @@ function initVoiceSearch() {
 
 // ── Wire ZENCHAT tab panel ────────────────────────────────────
 function wireAiTabZenchat() {
-  const btn = document.getElementById("aiTabZenchatBtn");
-  const panel = document.getElementById("aiTabZenchat");
-  if (!btn || !panel) return;
+  // Full AI tab controller — only one panel visible at a time
+  const tabPanels = {
+    generate: { btn: null, panel: document.getElementById("aiTabGenerate") },
+    analyze:  { btn: null, panel: document.getElementById("aiTabAnalyze") },
+    zenchat:  { btn: null, panel: document.getElementById("aiTabZenchat") },
+  };
 
-  btn.addEventListener("click", () => {
-    // Deactivate all tabs
-    document.querySelectorAll(".ai-tab").forEach(t => t.classList.remove("active"));
-    document.querySelectorAll(".ai-tab-panel").forEach(p => { p.style.display = "none"; p.classList.remove("active-panel"); });
-    // Activate ZENCHAT
-    btn.classList.add("active");
-    panel.style.display = "flex";
-    panel.classList.add("active-panel");
-    initZenchat();
+  // Ensure Generate Board panel is shown first, others hidden
+  Object.entries(tabPanels).forEach(([key, { panel }]) => {
+    if (!panel) return;
+    panel.style.display = key === "generate" ? "" : "none";
   });
+
+  document.querySelectorAll(".ai-tab[data-ai-tab]").forEach(btn => {
+    const key = btn.dataset.aiTab;
+    if (tabPanels[key]) tabPanels[key].btn = btn;
+
+    btn.addEventListener("click", () => {
+      // Deactivate all
+      document.querySelectorAll(".ai-tab[data-ai-tab]").forEach(b => b.classList.remove("active"));
+      Object.values(tabPanels).forEach(({ panel }) => {
+        if (panel) panel.style.display = "none";
+      });
+
+      // Activate clicked tab
+      btn.classList.add("active");
+      const target = tabPanels[key]?.panel;
+      if (target) {
+        target.style.display = key === "zenchat" ? "flex" : "";
+      }
+
+      // Init ZENCHAT on first open
+      if (key === "zenchat") initZenchat();
+    });
+  });
+
+  // Mark Generate Board as active by default
+  document.querySelector('.ai-tab[data-ai-tab="generate"]')?.classList.add("active");
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -4891,7 +5310,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Open modal
     const card = e.target.closest(".idea-card[data-id]");
     if (card && !e.target.closest(".card-ico-btn")) {
-      openModal(Number(card.dataset.id));
+      const _clickedId = card.dataset.id;
+      console.log("[ZenPin] image clicked:", _clickedId);
+      openModal(Number(_clickedId) || _clickedId);
       return;
     }
     // Related thumb
@@ -5694,12 +6115,18 @@ document.addEventListener("DOMContentLoaded", async () => {
         </div>`;
     } catch (e) {
       const reason = e?.message || "unknown error";
-      console.log("[ZenPin] analyzer upload failed:", reason);
-      if (result) result.innerHTML =
-        `<p style="color:#ff8888;text-align:center;padding:20px">
-           Analysis failed: ${escHtml(reason)}<br>
-           <small>Ensure GEMINI_API_KEY is set in Render env vars.</small>
-         </p>`;
+      console.log("[ZenPin] analyzer upload failed:", reason, "— using local fallback");
+      const local = localAnalyzeImage(url);
+      if (result) result.innerHTML = `
+        <div style="background:rgba(120,60,200,0.12);border:1px solid rgba(140,80,255,0.2);border-radius:14px;padding:18px;color:#f0e8ff">
+          <div style="font-size:0.72rem;letter-spacing:0.06em;color:#a0a0c0;text-transform:uppercase;margin-bottom:12px">⚡ Local Analysis</div>
+          <div style="font-size:1rem;font-weight:700;margin-bottom:6px">${escHtml(local.style)}</div>
+          <div style="color:rgba(200,180,240,0.8);margin-bottom:12px">${escHtml(local.mood)}</div>
+          <div style="margin-bottom:8px"><strong>Colours:</strong> ${escHtml(local.colours.join(", "))}</div>
+          <div style="margin-bottom:8px"><strong>Category:</strong> ${escHtml(local.category)}</div>
+          <div style="margin-bottom:8px"><strong>Tools used:</strong> ${escHtml(local.tools.join(", "))}</div>
+          <div style="font-size:0.85rem;line-height:1.6;white-space:pre-line">${escHtml(local.howTo)}</div>
+        </div>`;
     } finally {
       if (loading) loading.style.display = "none";
     }
