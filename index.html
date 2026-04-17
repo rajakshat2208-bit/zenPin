@@ -41,23 +41,15 @@
 
     <!-- Search -->
     <div class="nav-search-wrap" id="navSearchWrap">
+      <!-- [ search-icon ][ input ][ mic ][ / ] all in one flex row -->
       <svg class="nav-search-ico" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
       <input class="nav-search-input" id="globalSearch" type="text"
-        placeholder="Search images… press Enter for AI search"
+        placeholder="Search images…"
         autocomplete="off"/>
       <button class="nav-voice-btn" id="voiceSearchBtn" title="Voice search" aria-label="Voice search">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-          <line x1="12" y1="19" x2="12" y2="23"/>
-          <line x1="8" y1="23" x2="16" y2="23"/>
-        </svg>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
       </button>
       <span class="nav-search-kbd" id="searchKbd">/</span>
-      <button class="nav-ai-search-btn" id="navAiSearchBtn" title="AI Search" style="display:none">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M11 8v3l2 2" stroke-width="2"/></svg>
-        Search
-      </button>
     </div>
 
     <!-- AI Search Results Panel (slides down under navbar) -->
@@ -510,10 +502,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
         Generate Board
       </button>
-      <button class="ai-tab" data-ai-tab="search">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        AI Search
-      </button>
+
       <button class="ai-tab" data-ai-tab="analyze">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
         Analyze Image
@@ -552,49 +541,7 @@
       </div>
     </div>
 
-    <!-- ── TAB: AI Search ───────────────────────────────── -->
-    <div class="ai-tab-panel" id="aiTabSearch" style="display:none">
-      <div class="ai-hero-section">
-        <div class="ai-star-icon" style="background:linear-gradient(135deg,#0ea5e9,#7c3aed)">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        </div>
-        <h2 class="ai-page-title">AI Image Search</h2>
-        <p class="ai-page-sub">Search ZenPin's curated library with natural language — powered by Gemini.</p>
-      </div>
-      <div class="ai-input-card">
-        <div class="ai-input-row">
-          <input class="ai-text-input" id="aiSearchInput" type="text"
-            placeholder="black sports car · minimal desk · anime cyberpunk…"/>
-          <button class="ai-gen-btn" id="aiSearchRunBtn" style="background:linear-gradient(135deg,#0ea5e9,#7c3aed)">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-            Search
-          </button>
-        </div>
-        <div class="quick-prompts-row">
-          <span class="quick-label">Try:</span>
-          <button class="quick-search-btn">black sports car neon</button>
-          <button class="quick-search-btn">minimal desk setup dark</button>
-          <button class="quick-search-btn">anime cyberpunk wallpaper</button>
-          <button class="quick-search-btn">luxury jewelry flatlay</button>
-          <button class="quick-search-btn">lofi room aesthetic</button>
-        </div>
-      </div>
-      <!-- Results rendered inline (no panel overlay on this tab) -->
-      <div class="ai-search-inline-result" id="aiSearchInlineResult" style="display:none">
-        <div class="ai-search-answer" id="aiSearchInlineAnswer" style="display:none">
-          <div class="ai-search-answer-icon">✦</div>
-          <div>
-            <div class="ai-search-answer-text" id="aiSearchInlineText"></div>
-            <div class="ai-search-answer-meta" id="aiSearchInlineMeta"></div>
-          </div>
-        </div>
-        <div class="masonry" id="aiSearchInlineGrid"></div>
-      </div>
-      <div class="ai-loading-state" id="aiSearchLoading" style="display:none">
-        <div class="ai-dots"><span></span><span></span><span></span></div>
-        <p>Searching ZenPin library…</p>
-      </div>
-    </div>
+
 
     <!-- ── TAB: Analyze Image ───────────────────────────── -->
     <div class="ai-tab-panel" id="aiTabAnalyze" style="display:none">
@@ -605,27 +552,7 @@
         <h2 class="ai-page-title">Analyze Any Image</h2>
         <p class="ai-page-sub">Upload or paste an image URL — get captions, mood, tags, and design suggestions instantly.</p>
       </div>
-    <!-- ── TAB: ZENCHAT ─────────────────────────────────── -->
-    <div id="aiTabZenchat" style="display:none" class="ai-tab-panel">
-      <div class="zenchat-header">
-        <div class="zenchat-title">✦ ZENCHAT</div>
-        <div class="zenchat-subtitle">Your AI creative companion — ask anything</div>
-      </div>
-      <div class="zenchat-msgs" id="zenchatMsgs">
-        <!-- Initial bot message -->
-        <div class="zc-msg bot">
-          <div class="zc-avatar">Z</div>
-          <div class="zc-bubble">
-            Hey! 👋 I'm <strong>ZENCHAT</strong> — ZenPin's AI assistant.<br>
-            Ask me anything: show image ideas, help with login, design tips, or just chat!
-          </div>
-        </div>
-      </div>
-      <div class="zenchat-input-row">
-        <input id="zenchatInput" type="text" placeholder="Ask me anything… e.g. show anime ideas" autocomplete="off"/>
-        <button id="zenchatSend">Send ✦</button>
-      </div>
-    </div>
+
 
       <div class="ai-input-card">
         <!-- Drop zone -->
@@ -657,7 +584,26 @@
       </div>
     </div>
 
-    </div><!-- end #aiTabGenerate -->
+    <!-- ── TAB: ZENCHAT (sibling of aiTabAnalyze, not nested inside) ── -->
+    <div id="aiTabZenchat" style="display:none" class="ai-tab-panel">
+      <div class="zenchat-header">
+        <div class="zenchat-title">✦ ZENCHAT</div>
+        <div class="zenchat-subtitle">Your AI creative companion — ask anything</div>
+      </div>
+      <div class="zenchat-msgs" id="zenchatMsgs">
+        <div class="zc-msg bot">
+          <div class="zc-avatar">Z</div>
+          <div class="zc-bubble">
+            Hey! 👋 I'm <strong>ZENCHAT</strong> — ZenPin's AI assistant.<br>
+            Ask me anything: show image ideas, help with login, design tips, or just chat!
+          </div>
+        </div>
+      </div>
+      <div class="zenchat-input-row">
+        <input id="zenchatInput" type="text" placeholder="Ask me anything… e.g. show anime ideas" autocomplete="off"/>
+        <button id="zenchatSend">Send ✦</button>
+      </div>
+    </div>
 
     <!-- Loading + Output stay outside tabs so they render below all tabs -->
     <div class="ai-loading-state" id="aiLoading" style="display:none">
