@@ -4583,7 +4583,6 @@ const AISearch = (() => {
   }
 
   // ── Image analysis (called from card context or analyze btn) ─
-  async 
 // ── Local fallback analyzer (used when backend is unavailable) ─────────────
 // Returns a structured analysis from URL/filename heuristics and keyword detection
 const LOCAL_ANALYZE_DB = {
