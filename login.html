@@ -195,6 +195,7 @@
   </div>
   <p class="mascot-caption">Ready to play! 🐾</p>
 </div>
+<script>if(window.innerWidth > 900) console.log("[ZenPin] login dog animation visible");</script>
 
 <!-- ─── CAT ANIMATION (right) ────────────────────────────── -->
 <div class="auth-mascot auth-mascot-right" id="catWrap" aria-hidden="true">
@@ -245,18 +246,19 @@
   </div>
   <p class="mascot-caption">Catch it! 🐱</p>
 </div>
+<script>if(window.innerWidth > 900) console.log("[ZenPin] login cat animation visible");</script>
 
 <style>
 /* ── Mascot layout ── */
 .auth-mascot {
   position: fixed; top: 50%; transform: translateY(-50%);
-  display: flex; flex-direction: column; align-items: center;
-  pointer-events: none; z-index: 0;
-  opacity: 0.92;
+  display: flex !important; flex-direction: column; align-items: center;
+  pointer-events: none; z-index: 10;
+  opacity: 1;
 }
-.auth-mascot-left  { left: 4vw; }
-.auth-mascot-right { right: 4vw; }
-@media (max-width: 1100px) { .auth-mascot { display: none !important; } }
+.auth-mascot-left  { left: 3vw; }
+.auth-mascot-right { right: 3vw; }
+@media (max-width: 900px) { .auth-mascot { display: none !important; } }
 
 .mascot-caption {
   font-size: 0.82rem; color: rgba(200,180,255,0.7);
