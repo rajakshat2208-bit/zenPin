@@ -3646,3 +3646,98 @@ body  { font-family: var(--font-body); }
   .ep-col           { padding: 18px 16px !important; }
   .ep-col-left      { border-right: none !important; border-bottom: 1px solid rgba(160,100,255,0.12) !important; }
 }
+
+
+/* ════════════════════════════════════════════════════════════════
+   MOBILE ICON-ONLY BOTTOM NAVBAR (≤768px)
+   ════════════════════════════════════════════════════════════════ */
+.mobile-nav-bar {
+  display: none; /* hidden on desktop */
+}
+
+@media (max-width: 768px) {
+  /* Hide desktop elements on mobile */
+  .nav-links     { display: none !important; }
+  .nav-actions   { display: none !important; }
+  .nav-search-wrap { display: none !important; }
+  .nav-hamburger { display: none !important; }
+  /* Show logo only in top bar */
+  .nav-inner { justify-content: center; padding: 0 12px; min-height: 44px; }
+  .nav-logo  { margin: 0 auto; }
+
+  /* Bottom mobile nav bar */
+  .mobile-nav-bar {
+    display: flex;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(10,6,22,0.97);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid rgba(140,100,255,0.18);
+    padding: 6px 4px env(safe-area-inset-bottom,6px);
+    z-index: 1000;
+    justify-content: space-around;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .mn-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: rgba(180,150,255,0.65);
+    transition: color 0.2s, background 0.2s, box-shadow 0.2s;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .mn-btn:hover,
+  .mn-btn.active {
+    color: #e0c8ff;
+    background: rgba(120,60,200,0.22);
+    box-shadow: 0 0 12px rgba(140,80,255,0.30);
+  }
+  .mn-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: 3px;
+    left: 50%; transform: translateX(-50%);
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: #a78bfa;
+  }
+  /* Create button special style */
+  .mn-create {
+    background: linear-gradient(135deg, #6d28d9, #a855f7) !important;
+    color: #fff !important;
+    width: 42px; height: 42px;
+    border-radius: 14px !important;
+    box-shadow: 0 4px 14px rgba(120,60,220,0.4) !important;
+  }
+  .mn-create:hover { transform: scale(1.08); }
+
+  /* Page content padding at bottom so grid not hidden behind nav bar */
+  .page { padding-bottom: 70px !important; }
+  .hero { padding-bottom: 30px !important; }
+
+  /* 4-column grid on mobile */
+  .masonry {
+    column-count: 4 !important;
+    column-gap: 6px !important;
+  }
+  .idea-card {
+    margin-bottom: 6px !important;
+    border-radius: 10px !important;
+  }
+  .card-img-wrap { min-height: 70px !important; }
+}
+
+@media (max-width: 480px) {
+  .masonry { column-count: 4 !important; column-gap: 4px !important; }
+  .mn-btn { width: 36px; height: 36px; }
+}
