@@ -242,6 +242,11 @@ function updateNavbar() {
   if (isLoggedIn() && user) {
     console.log("[ZenPin] profile visible");
     if (loginBtn)   loginBtn.style.display  = "none";
+    // Mobile nav: show profile, hide sign in
+    const mnP = document.getElementById("mnProfile");
+    const mnS = document.getElementById("mnSignIn");
+    if (mnP) mnP.style.display = "";
+    if (mnS) mnS.style.display = "none";
     if (userMenu)   { userMenu.style.display = "flex"; }
     if (usernameEl) usernameEl.textContent   = user.username || "You";
     if (avatarEl) {
@@ -267,6 +272,11 @@ function updateNavbar() {
     console.log("[ZenPin] sign in visible");
     if (loginBtn) loginBtn.style.display = "flex";
     if (userMenu) userMenu.style.display = "none";
+    // Mobile nav: hide profile, show sign in
+    const mnP2 = document.getElementById("mnProfile");
+    const mnS2 = document.getElementById("mnSignIn");
+    if (mnP2) mnP2.style.display = "none";
+    if (mnS2) mnS2.style.display = "";
   }
 }
 
@@ -696,6 +706,9 @@ function go(page) {
   const el = document.getElementById("page-" + page);
   if (el) el.classList.add("active");
   console.log("[ZenPin] page navigation working:", page);
+  // Sync mobile nav bar active state
+  document.querySelectorAll(".mn-btn[data-page]").forEach(b =>
+    b.classList.toggle("active", b.dataset.page === page));
   initAmbientForPage(page);
   document.querySelectorAll(".nav-link").forEach(l =>
     l.classList.toggle("active", l.dataset.page === page)
@@ -5863,6 +5876,136 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("navLoginBtn")?.addEventListener("click", () => {
     console.log("[ZenPin] login clicked");
     window.location.href = "login.html";
+  });
+
+  // ── Mobile nav bar wiring ───────────────────────────────────
+  // Wire page navigation buttons
+  document.querySelectorAll(".mn-btn[data-page]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const page = btn.dataset.page;
+      go(page);
+      document.querySelectorAll(".mn-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+    });
+  });
+  // Dark mode mobile
+  $("mnDark")?.addEventListener("click", () => {
+    const current = document.documentElement.getAttribute("data-theme") || "light";
+    const next = current === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    localStorage.setItem("zenpin_theme", next);
+    updateDarkIcon(next);
+  });
+  // Create mobile
+  $("mnCreate")?.addEventListener("click", openCreatorPost);
+  // Profile mobile
+  $("mnProfile")?.addEventListener("click", () => go("profile"));
+  // Sign In mobile
+  $("mnSignIn")?.addEventListener("click", () => { window.location.href = "login.html"; });
+
+  // Sync mobile nav active state with go()
+  const _origGo = go;
+
+  // ── Search system ───────────────────────────────────────────
+  function runSearch(term) {
+    term = (term || "").trim().toLowerCase();
+    if (!term) {
+      console.log("[ZenPin] search cleared");
+      S.filter = null;
+      initHome();
+      return;
+    }
+    console.log("[ZenPin] search started:", term);
+    const words = term.split(/\s+/).filter(Boolean);
+
+    // Collect all local ideas
+    const pool = getAllLocalIdeas();
+
+    // Score each idea
+    function scoreIdea(idea) {
+      const haystack = [
+        idea.title    || "",
+        idea.category || "",
+        idea.description || "",
+        (idea.tags || []).join(" "),
+      ].join(" ").toLowerCase();
+      let score = 0;
+      words.forEach(w => {
+        if (haystack.includes(w)) score += 2;
+        // Fuzzy: check if word starts with term or vice versa
+        if (haystack.split(/\s+/).some(h => h.startsWith(w) || w.startsWith(h))) score += 1;
+      });
+      return score;
+    }
+
+    let results = pool
+      .map(idea => ({ idea, score: scoreIdea(idea) }))
+      .filter(x => x.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .map(x => x.idea);
+
+    // Fallback: category match
+    if (results.length < 6) {
+      const cat = detectCategory(term) || Object.keys(CATEGORY_MAP).find(k => term.includes(k));
+      if (cat) {
+        const cacheKey = CATEGORY_MAP[cat] || cat;
+        const catIdeas = getAllCuratedIdeas(cacheKey);
+        console.log("[ZenPin] search fallback category:", cacheKey);
+        // Merge without duplicates
+        const seenIds = new Set(results.map(i => i.id));
+        catIdeas.forEach(i => { if (!seenIds.has(i.id)) { results.push(i); seenIds.add(i.id); }});
+      }
+    }
+
+    console.log("[ZenPin] search results count:", results.length);
+
+    // Update grid
+    const grid = $("homeGrid") || $("exploreGrid");
+    if (grid) {
+      S.allIdeas = results;
+      S.loaded   = results.length;
+      renderGrid(grid, results);
+      grid.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    // Navigate to home to show results
+    if (S.page !== "home" && S.page !== "explore") go("home");
+  }
+
+  // Wire search input
+  const srchInput = $("globalSearch");
+  if (srchInput) {
+    srchInput.addEventListener("keydown", e => {
+      if (e.key === "Enter") { e.preventDefault(); runSearch(srchInput.value); }
+    });
+    // Live clear: if input is emptied, restore grid
+    srchInput.addEventListener("input", () => {
+      if (!srchInput.value.trim()) { console.log("[ZenPin] search cleared"); S.filter = null; initHome(); }
+    });
+  }
+  // Search icon click
+  const searchIco = document.querySelector(".nav-search-ico");
+  if (searchIco) searchIco.style.cursor = "pointer";
+  document.querySelector(".nav-search-wrap")?.addEventListener("click", e => {
+    if (e.target.closest(".nav-search-ico")) runSearch(srchInput?.value);
+  });
+
+  // Mobile search open
+  $("mobileSearchBtn")?.addEventListener("click", () => {
+    console.log("[ZenPin] mobile search opened");
+    const wrap = $("navSearchWrap");
+    if (wrap) {
+      wrap.style.display = wrap.style.display === "none" ? "flex" : "none";
+      if (wrap.style.display === "flex") $("globalSearch")?.focus();
+    }
+  });
+
+  // Keyboard shortcut: press "/" to focus search
+  document.addEventListener("keydown", e => {
+    if (e.key === "/" && !["INPUT","TEXTAREA"].includes(document.activeElement.tagName)) {
+      e.preventDefault();
+      $("globalSearch")?.focus();
+    }
   });
 
   // Signup — wire any element pointing to signup.html
