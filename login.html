@@ -147,6 +147,189 @@
 </head>
 <body>
 <div class="auth-floating-gallery" id="authFloatingGallery"></div>
+
+<!-- ─── DOG ANIMATION (left) ─────────────────────────────── -->
+<div class="auth-mascot auth-mascot-left" id="dogWrap" aria-hidden="true">
+  <div class="mascot-scene">
+    <!-- Ball -->
+    <div class="mascot-ball dog-ball">
+      <svg width="36" height="36" viewBox="0 0 36 36"><circle cx="18" cy="18" r="17" fill="#f97316" stroke="#c2410c" stroke-width="1.5"/>
+        <path d="M8 18 Q12 12 18 10 Q24 12 28 18" fill="none" stroke="#c2410c" stroke-width="2" opacity="0.4"/>
+        <path d="M10 22 Q14 28 18 28 Q22 28 26 22" fill="none" stroke="#c2410c" stroke-width="2" opacity="0.4"/>
+      </svg>
+    </div>
+    <!-- Dog body -->
+    <div class="mascot-dog">
+      <svg width="110" height="140" viewBox="0 0 110 140" fill="none">
+        <!-- tail -->
+        <path class="dog-tail" d="M82 90 Q105 70 100 55 Q97 46 90 52" stroke="#d97706" stroke-width="7" stroke-linecap="round" fill="none"/>
+        <!-- body -->
+        <ellipse cx="55" cy="95" rx="30" ry="26" fill="#fbbf24"/>
+        <!-- head -->
+        <circle cx="55" cy="58" r="24" fill="#fbbf24"/>
+        <!-- ears -->
+        <ellipse cx="35" cy="45" rx="9" ry="15" fill="#d97706" transform="rotate(-15 35 45)"/>
+        <ellipse cx="75" cy="45" rx="9" ry="15" fill="#d97706" transform="rotate(15 75 45)"/>
+        <ellipse cx="35" cy="47" rx="5" ry="11" fill="#f87171" opacity="0.5" transform="rotate(-15 35 47)"/>
+        <ellipse cx="75" cy="47" rx="5" ry="11" fill="#f87171" opacity="0.5" transform="rotate(15 75 47)"/>
+        <!-- eyes -->
+        <circle cx="44" cy="56" r="5" fill="#1e1b4b"/>
+        <circle cx="66" cy="56" r="5" fill="#1e1b4b"/>
+        <circle cx="46" cy="54" r="1.5" fill="white"/>
+        <circle cx="68" cy="54" r="1.5" fill="white"/>
+        <!-- nose -->
+        <ellipse cx="55" cy="67" rx="5" ry="3.5" fill="#1e1b4b"/>
+        <!-- mouth smile -->
+        <path d="M49 72 Q55 78 61 72" stroke="#1e1b4b" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <!-- blush -->
+        <ellipse cx="36" cy="65" rx="6" ry="4" fill="#fb923c" opacity="0.4"/>
+        <ellipse cx="74" cy="65" rx="6" ry="4" fill="#fb923c" opacity="0.4"/>
+        <!-- legs -->
+        <rect x="35" y="115" width="14" height="22" rx="7" fill="#fbbf24"/>
+        <rect x="61" y="115" width="14" height="22" rx="7" fill="#fbbf24"/>
+        <!-- front paws up -->
+        <rect class="dog-paw-left"  x="21" y="88" width="13" height="20" rx="6" fill="#fbbf24" transform-origin="27 88"/>
+        <rect class="dog-paw-right" x="76" y="88" width="13" height="20" rx="6" fill="#fbbf24" transform-origin="82 88"/>
+      </svg>
+    </div>
+  </div>
+  <p class="mascot-caption">Ready to play! 🐾</p>
+</div>
+
+<!-- ─── CAT ANIMATION (right) ────────────────────────────── -->
+<div class="auth-mascot auth-mascot-right" id="catWrap" aria-hidden="true">
+  <div class="mascot-scene">
+    <!-- Ball -->
+    <div class="mascot-ball cat-ball">
+      <svg width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="15" fill="#818cf8" stroke="#4f46e5" stroke-width="1.5"/>
+        <line x1="8" y1="16" x2="24" y2="16" stroke="white" stroke-width="2" opacity="0.5"/>
+        <line x1="16" y1="8" x2="16" y2="24" stroke="white" stroke-width="2" opacity="0.5"/>
+      </svg>
+    </div>
+    <!-- Cat body -->
+    <div class="mascot-cat">
+      <svg width="100" height="150" viewBox="0 0 100 150" fill="none">
+        <!-- tail -->
+        <path class="cat-tail" d="M72 105 Q95 95 90 75 Q87 62 78 68" stroke="#a78bfa" stroke-width="7" stroke-linecap="round" fill="none"/>
+        <!-- body -->
+        <ellipse cx="48" cy="100" rx="26" ry="22" fill="#c4b5fd"/>
+        <!-- head -->
+        <circle cx="48" cy="62" r="22" fill="#c4b5fd"/>
+        <!-- ears -->
+        <polygon points="28,48 22,28 38,44" fill="#a78bfa"/>
+        <polygon points="68,48 78,28 62,44" fill="#a78bfa"/>
+        <polygon points="30,46 25,32 38,44" fill="#f9a8d4" opacity="0.7"/>
+        <polygon points="66,46 75,32 62,44" fill="#f9a8d4" opacity="0.7"/>
+        <!-- eyes (closed/happy) -->
+        <path d="M36 60 Q40 56 44 60" stroke="#1e1b4b" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M52 60 Q56 56 60 60" stroke="#1e1b4b" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <!-- nose + whiskers -->
+        <ellipse cx="48" cy="68" rx="4" ry="3" fill="#f9a8d4"/>
+        <line x1="30" y1="67" x2="44" y2="69" stroke="#1e1b4b" stroke-width="1.5" opacity="0.5"/>
+        <line x1="30" y1="70" x2="44" y2="70" stroke="#1e1b4b" stroke-width="1.5" opacity="0.5"/>
+        <line x1="52" y1="69" x2="66" y2="67" stroke="#1e1b4b" stroke-width="1.5" opacity="0.5"/>
+        <line x1="52" y1="70" x2="66" y2="70" stroke="#1e1b4b" stroke-width="1.5" opacity="0.5"/>
+        <!-- mouth -->
+        <path d="M44 74 Q48 79 52 74" stroke="#1e1b4b" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+        <!-- blush -->
+        <ellipse cx="30" cy="68" rx="5" ry="3.5" fill="#f9a8d4" opacity="0.5"/>
+        <ellipse cx="66" cy="68" rx="5" ry="3.5" fill="#f9a8d4" opacity="0.5"/>
+        <!-- legs -->
+        <rect x="30" y="118" width="12" height="20" rx="6" fill="#c4b5fd"/>
+        <rect x="58" y="118" width="12" height="20" rx="6" fill="#c4b5fd"/>
+        <!-- paws up -->
+        <rect class="cat-paw-left"  x="18" y="92" width="12" height="18" rx="6" fill="#c4b5fd" transform-origin="24 92"/>
+        <rect class="cat-paw-right" x="70" y="92" width="12" height="18" rx="6" fill="#c4b5fd" transform-origin="76 92"/>
+      </svg>
+    </div>
+  </div>
+  <p class="mascot-caption">Catch it! 🐱</p>
+</div>
+
+<style>
+/* ── Mascot layout ── */
+.auth-mascot {
+  position: fixed; top: 50%; transform: translateY(-50%);
+  display: flex; flex-direction: column; align-items: center;
+  pointer-events: none; z-index: 0;
+  opacity: 0.92;
+}
+.auth-mascot-left  { left: 4vw; }
+.auth-mascot-right { right: 4vw; }
+@media (max-width: 1100px) { .auth-mascot { display: none !important; } }
+
+.mascot-caption {
+  font-size: 0.82rem; color: rgba(200,180,255,0.7);
+  margin-top: 12px; text-align: center;
+  font-family: sans-serif;
+}
+.mascot-scene { position: relative; width: 140px; height: 200px; }
+
+/* Dog ball bounces up and down */
+.dog-ball {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  top: 0;
+  animation: dogBallBounce 1.6s cubic-bezier(0.36,0,0.66,1) infinite alternate;
+}
+@keyframes dogBallBounce {
+  0%   { top: 10px; transform: translateX(-50%) scale(1,1); }
+  85%  { transform: translateX(-50%) scale(1.1,0.9); }
+  100% { top: 50px; transform: translateX(-50%) scale(1,1); }
+}
+/* Dog jumps up to catch */
+.mascot-dog {
+  position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+  animation: dogJump 1.6s cubic-bezier(0.36,0,0.66,1) infinite alternate;
+}
+@keyframes dogJump {
+  0%   { bottom: 0; transform: translateX(-50%) scale(1); }
+  100% { bottom: 48px; transform: translateX(-50%) scale(1.05); }
+}
+/* Dog paws raise */
+.dog-paw-left  { animation: pawRaise 1.6s ease-in-out infinite alternate; }
+.dog-paw-right { animation: pawRaise 1.6s ease-in-out infinite alternate; }
+@keyframes pawRaise {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(-30deg); }
+}
+/* Dog tail wag */
+.dog-tail { animation: tailWag 0.5s ease-in-out infinite alternate; transform-origin: 82px 90px; }
+@keyframes tailWag {
+  0%   { transform: rotate(-10deg); }
+  100% { transform: rotate(15deg); }
+}
+
+/* Cat ball floats */
+.cat-ball {
+  position: absolute; right: 10px; top: 0;
+  animation: catBallFloat 2s ease-in-out infinite alternate;
+}
+@keyframes catBallFloat {
+  0%   { top: 5px; }
+  100% { top: 55px; }
+}
+/* Cat jumps */
+.mascot-cat {
+  position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+  animation: catJump 2s ease-in-out infinite alternate;
+}
+@keyframes catJump {
+  0%   { bottom: 0; transform: translateX(-50%) rotate(-3deg); }
+  100% { bottom: 55px; transform: translateX(-50%) rotate(3deg); }
+}
+/* Cat tail sways */
+.cat-tail { animation: catTailSway 1.2s ease-in-out infinite alternate; transform-origin: 72px 105px; }
+@keyframes catTailSway {
+  0%   { transform: rotate(-8deg); }
+  100% { transform: rotate(12deg); }
+}
+/* Cat paws raise */
+.cat-paw-left  { animation: catPawLeft  2s ease-in-out infinite alternate; }
+.cat-paw-right { animation: catPawRight 2s ease-in-out infinite alternate; }
+@keyframes catPawLeft  { 0% { transform: rotate(0deg); } 100% { transform: rotate(-35deg); } }
+@keyframes catPawRight { 0% { transform: rotate(0deg); } 100% { transform: rotate(35deg); } }
+</style>
+<script>console.log("[ZenPin] login ambient animation loaded");</script>
 <div class="auth-bg-overlay"></div>
 
 <!-- Background -->
