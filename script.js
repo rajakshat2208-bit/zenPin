@@ -3930,7 +3930,7 @@ async function initAI() {
   if (window.AIModule) AIModule.renderHistory($("aiHistoryList"));
 }
 
-async // buildLocalBoard — instant local results from _curatedCache, no backend needed
+// buildLocalBoard — instant local results from _curatedCache, no backend needed
 function buildLocalBoard(topic) {
   const low = topic.toLowerCase();
   console.log("[ZenPin] board generation started:", topic);
