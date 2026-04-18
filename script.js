@@ -231,6 +231,7 @@ function requireLogin(action) {
 // NAVBAR — auth state
 // ─────────────────────────────────────────────────────────────
 function updateNavbar() {
+  if (window.innerWidth <= 768) console.log("[ZenPin] navbar mobile layout active");
   const loginBtn   = $("navLoginBtn");
   const userMenu   = $("navUserMenu");
   const usernameEl = $("navUsername");
@@ -239,6 +240,7 @@ function updateNavbar() {
   const user       = getUser();
 
   if (isLoggedIn() && user) {
+    console.log("[ZenPin] profile visible");
     if (loginBtn)   loginBtn.style.display  = "none";
     if (userMenu)   { userMenu.style.display = "flex"; }
     if (usernameEl) usernameEl.textContent   = user.username || "You";
@@ -251,11 +253,10 @@ function updateNavbar() {
       }
     }
     if (logoutBtn) logoutBtn.onclick = () => {
-      // Remove ALL possible token keys (old + new) to ensure clean logout
       localStorage.removeItem("zenpin_token");
       localStorage.removeItem("zenpin_user");
-      localStorage.removeItem("token");   // legacy key
-      localStorage.removeItem("user");    // legacy key
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
       S.savedIds.clear();
       S.likedIds.clear();
       updateNavbar();
@@ -263,6 +264,7 @@ function updateNavbar() {
       toast("Logged out. See you soon! 👋");
     };
   } else {
+    console.log("[ZenPin] sign in visible");
     if (loginBtn) loginBtn.style.display = "flex";
     if (userMenu) userMenu.style.display = "none";
   }
@@ -693,6 +695,7 @@ function go(page) {
   document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
   const el = document.getElementById("page-" + page);
   if (el) el.classList.add("active");
+  console.log("[ZenPin] page navigation working:", page);
   initAmbientForPage(page);
   document.querySelectorAll(".nav-link").forEach(l =>
     l.classList.toggle("active", l.dataset.page === page)
@@ -2028,6 +2031,10 @@ async function initHome() {
     const cacheKey = CATEGORY_MAP[cat] || cat;
     localIdeas = getAllCuratedIdeas(cacheKey);
     if (!localIdeas.length) localIdeas = getLocalDiscovery(cat);
+    if (!localIdeas.length) {
+      console.log("[ZenPin] fallback to all category");
+      localIdeas = getAllLocalIdeas();
+    }
   } else {
     localIdeas = getAllLocalIdeas();   // pre-shuffled, balanced, deduplicated
   }
@@ -2038,7 +2045,8 @@ async function initHome() {
 
   // ── Debug logging ─────────────────────────────────────────────
   const _t0 = performance.now();
-  console.log(`[ZenPin] Total ideas in dataset: ${S.allIdeas.length}`);
+  console.log(`[ZenPin] total ideas loaded: ${S.allIdeas.length}`);
+  console.log(`[ZenPin] selected category: ${cat || "all"}`);
 
   // Render the first page immediately — no network required
   // 48 cards = ~3 viewport heights, enough to fill the screen
@@ -2048,7 +2056,7 @@ async function initHome() {
   renderGrid(grid, firstPage);
   S.loaded = firstPage.length;
 
-  console.log(`[ZenPin] Initially rendered: ${firstPage.length} ideas (${(performance.now()-_t0).toFixed(0)}ms)`);
+  console.log(`[ZenPin] cards rendered: ${firstPage.length}`);
 
   // Show/hide end-of-feed sentinel based on dataset size
   _updateEndSentinel();
