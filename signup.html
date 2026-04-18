@@ -3,132 +3,370 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Sign up — ZenPin</title>
+  <title>Log in — ZenPin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
   <style>
-    :root{--purple:#7c3aed;--pink:#db2777;--orange:#f97316;--grad-brand:linear-gradient(135deg,#7c3aed 0%,#db2777 52%,#f97316 100%);--bg:#fafaf8;--surface:#ffffff;--surface-2:#f4f3f0;--border-2:rgba(0,0,0,.11);--text:#1a1714;--text-2:#6b6560;--text-3:#a39d97;--f-display:'Playfair Display',Georgia,serif;--f-ui:'Plus Jakarta Sans',system-ui,sans-serif;--r-md:16px;--r-pill:9999px;--ease:cubic-bezier(.4,0,.2,1)}
+    /* ── Tokens (match main app) ───────────────────────────────── */
+    :root {
+      --purple:#7c3aed; --pink:#db2777; --orange:#f97316;
+      --grad-brand:linear-gradient(135deg,#7c3aed 0%,#db2777 52%,#f97316 100%);
+      --bg:#fafaf8; --surface:#ffffff; --surface-2:#f4f3f0; --border-2:rgba(0,0,0,.11);
+      --text:#1a1714; --text-2:#6b6560; --text-3:#a39d97;
+      --f-display:'Playfair Display',Georgia,serif;
+      --f-ui:'Plus Jakarta Sans',system-ui,sans-serif;
+      --r-md:16px; --r-lg:22px; --r-pill:9999px;
+      --ease:cubic-bezier(.4,0,.2,1);
+      --ease-spring:cubic-bezier(.34,1.56,.64,1);
+    }
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:var(--f-ui);min-height:100vh;overflow-x:hidden;display:flex;align-items:center;justify-content:center;background:var(--bg);padding:24px 16px;-webkit-font-smoothing:antialiased}
-    .auth-bg{position:fixed;inset:0;z-index:0;background:linear-gradient(135deg,#f5f0ff 0%,#fdf2f8 50%,#fff7ed 100%);overflow:hidden}
-    .auth-blob{position:absolute;border-radius:50%;filter:blur(80px);will-change:transform}
-    .ab1{width:520px;height:520px;top:-160px;right:-130px;background:radial-gradient(circle,rgba(219,39,119,.32) 0%,transparent 70%);animation:ab1 16s ease-in-out infinite}
-    .ab2{width:460px;height:460px;bottom:-140px;left:-110px;background:radial-gradient(circle,rgba(124,58,237,.3) 0%,transparent 70%);animation:ab2 20s ease-in-out infinite}
-    .ab3{width:300px;height:300px;top:30%;right:60%;background:radial-gradient(circle,rgba(249,115,22,.22) 0%,transparent 70%);animation:ab3 13s ease-in-out infinite}
-    @keyframes ab1{0%,100%{transform:scale(1)}50%{transform:scale(1.2) rotate(30deg)}}
-    @keyframes ab2{0%,100%{transform:scale(1)}50%{transform:scale(1.25) rotate(-45deg)}}
-    @keyframes ab3{0%,100%{transform:translate(0,0)}50%{transform:translate(30px,40px)}}
+    body{font-family:var(--f-ui);min-height:100vh;overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--bg);-webkit-font-smoothing:antialiased}
+
+    /* ── Animated background ────────────────────────────────────── */
+    .auth-bg {
+      position:fixed;inset:0;z-index:0;
+      background:linear-gradient(135deg,#f5f0ff 0%,#fdf2f8 50%,#fff7ed 100%);
+      overflow:hidden;
+    }
+    .auth-blob {
+      position:absolute;border-radius:50%;filter:blur(80px);will-change:transform;
+    }
+    .ab1{width:500px;height:500px;top:-150px;left:-120px;background:radial-gradient(circle,rgba(124,58,237,.35) 0%,transparent 70%);animation:ab1 18s ease-in-out infinite}
+    .ab2{width:420px;height:420px;bottom:-130px;right:-100px;background:radial-gradient(circle,rgba(249,115,22,.3) 0%,transparent 70%);animation:ab2 14s ease-in-out infinite}
+    .ab3{width:340px;height:340px;top:40%;left:55%;background:radial-gradient(circle,rgba(219,39,119,.25) 0%,transparent 70%);animation:ab3 11s ease-in-out infinite}
+    @keyframes ab1{0%,100%{transform:scale(1)}50%{transform:scale(1.25) rotate(45deg)}}
+    @keyframes ab2{0%,100%{transform:scale(1)}50%{transform:scale(1.3) rotate(-60deg)}}
+    @keyframes ab3{0%,100%{transform:translate(0,0)}50%{transform:translate(-40px,-50px)}}
     .auth-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(124,58,237,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(124,58,237,.04) 1px,transparent 1px);background-size:42px 42px}
-    .auth-wrap{position:relative;z-index:1;width:100%;max-width:460px;animation:cardrise .7s var(--ease) both}
+
+    /* ── Layout ─────────────────────────────────────────────────── */
+    .auth-wrap {
+      position:relative;z-index:1;width:100%;max-width:440px;padding:20px;
+      animation:cardrise .7s var(--ease) both;
+    }
     @keyframes cardrise{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
-    .auth-card{background:rgba(255,255,255,.82);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);border:1px solid rgba(255,255,255,.9);border-radius:28px;padding:44px 40px;box-shadow:0 24px 80px rgba(0,0,0,.12),0 4px 16px rgba(0,0,0,.05),inset 0 1px 0 rgba(255,255,255,.9)}
-    .auth-logo-row{display:flex;align-items:center;gap:10px;margin-bottom:26px}
+
+    /* ── Glass card ─────────────────────────────────────────────── */
+    .auth-card {
+      background:rgba(255,255,255,.82);
+      backdrop-filter:blur(28px);
+      -webkit-backdrop-filter:blur(28px);
+      border:1px solid rgba(255,255,255,.9);
+      border-radius:28px;
+      padding:44px 40px;
+      box-shadow:0 24px 80px rgba(0,0,0,.12),0 4px 16px rgba(0,0,0,.05),inset 0 1px 0 rgba(255,255,255,.9);
+    }
+
+    /* ── Logo row ───────────────────────────────────────────────── */
+    .auth-logo-row{display:flex;align-items:center;gap:10px;margin-bottom:32px}
     .auth-gem{width:44px;height:44px;background:var(--grad-brand);border-radius:13px;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(124,58,237,.38);flex-shrink:0}
     .auth-wordmark{font-size:1.3rem;font-weight:700;background:var(--grad-brand);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-.02em}
-    .auth-title{font-family:var(--f-display);font-size:1.9rem;font-weight:900;letter-spacing:-.03em;line-height:1.1;margin-bottom:7px}
+
+    /* ── Headings ───────────────────────────────────────────────── */
+    .auth-title{font-family:var(--f-display);font-size:2rem;font-weight:900;letter-spacing:-.03em;line-height:1.1;margin-bottom:8px}
     .auth-title em{font-style:italic;background:var(--grad-brand);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
-    .auth-sub{font-size:.88rem;color:var(--text-2);margin-bottom:26px;line-height:1.6}
-    /* Skill */
-    .skill-label{font-size:.72rem;font-weight:800;color:var(--text-3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:7px}
-    .skill-row{display:flex;gap:8px;margin-bottom:18px}
-    .skill-opt{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:11px 6px;border:1.5px solid var(--border-2);border-radius:var(--r-md);cursor:pointer;transition:all .2s;font-size:.7rem;font-weight:700;color:var(--text-3);letter-spacing:.03em;text-transform:uppercase}
-    .skill-opt:hover{border-color:rgba(124,58,237,.35);background:rgba(124,58,237,.03);color:var(--purple)}
-    .skill-opt.selected{border-color:var(--purple);background:rgba(124,58,237,.07);color:var(--purple)}
-    /* Form */
-    .auth-form{display:flex;flex-direction:column;gap:13px}
+    .auth-sub{font-size:.88rem;color:var(--text-2);margin-bottom:30px;line-height:1.6}
+
+    /* ── Form ───────────────────────────────────────────────────── */
+    .auth-form{display:flex;flex-direction:column;gap:14px}
     .field-wrap{display:flex;flex-direction:column;gap:5px}
     .field-label{font-size:.72rem;font-weight:800;color:var(--text-3);letter-spacing:.06em;text-transform:uppercase}
     .field-inner{position:relative}
     .field-ico{position:absolute;left:15px;top:50%;transform:translateY(-50%);color:var(--text-3);pointer-events:none;transition:color .2s}
-    .field-inner:focus-within .field-ico{color:var(--purple)}
-    .auth-input{width:100%;height:50px;padding:0 16px 0 44px;background:rgba(255,255,255,.7);border:1.5px solid var(--border-2);border-radius:var(--r-md);font-family:var(--f-ui);font-size:.88rem;color:var(--text);outline:none;transition:all .2s var(--ease)}
+    .auth-input{
+      width:100%;height:50px;padding:0 16px 0 44px;
+      background:rgba(255,255,255,.7);
+      border:1.5px solid var(--border-2);
+      border-radius:var(--r-md);
+      font-family:var(--f-ui);font-size:.88rem;color:var(--text);
+      outline:none;transition:all .2s var(--ease);
+    }
     .auth-input::placeholder{color:var(--text-3)}
     .auth-input:focus{background:white;border-color:#a78bfa;box-shadow:0 0 0 4px rgba(167,139,250,.2)}
+    .auth-input:focus~.field-ico,.field-inner:focus-within .field-ico{color:var(--purple)}
+
+    /* Password toggle */
     .pw-toggle{position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-3);cursor:pointer;display:flex;padding:4px;transition:color .15s}
     .pw-toggle:hover{color:var(--purple)}
+
+    /* Error message */
     .field-error{font-size:.72rem;color:#ef4444;font-weight:600;display:none;align-items:center;gap:4px}
     .field-error.show{display:flex}
-    /* Strength */
-    .pw-strength{display:flex;gap:4px;margin-top:5px}
-    .pw-bar{flex:1;height:3px;border-radius:2px;background:var(--surface-2);transition:background .3s}
-    .pw-bar.weak{background:#ef4444}.pw-bar.fair{background:#f97316}.pw-bar.good{background:#eab308}.pw-bar.strong{background:#22c55e}
-    .pw-hint{font-size:.68rem;color:var(--text-3);margin-top:3px}
-    /* Terms */
-    .auth-terms{font-size:.75rem;color:var(--text-3);line-height:1.55}
-    .auth-terms a{color:var(--purple);text-decoration:none;font-weight:600}
-    /* Submit */
-    .auth-submit{height:52px;width:100%;margin-top:4px;background:var(--grad-brand);color:white;border:none;border-radius:var(--r-pill);font-family:var(--f-ui);font-size:.95rem;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 6px 22px rgba(124,58,237,.38);transition:all .25s var(--ease)}
+
+    /* ── Submit button ───────────────────────────────────────────── */
+    .auth-submit{
+      height:52px;width:100%;margin-top:4px;
+      background:var(--grad-brand);
+      color:white;border:none;border-radius:var(--r-pill);
+      font-family:var(--f-ui);font-size:.95rem;font-weight:800;
+      cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;
+      box-shadow:0 6px 22px rgba(124,58,237,.38);
+      transition:all .25s var(--ease);
+    }
     .auth-submit:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 10px 32px rgba(124,58,237,.5)}
     .auth-submit:disabled{opacity:.7;cursor:not-allowed;transform:none}
+
+    /* Spinner */
     .spinner{width:18px;height:18px;border:2.5px solid rgba(255,255,255,.35);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite;display:none}
     .auth-submit.loading .spinner{display:block}
     .auth-submit.loading .btn-label{display:none}
     @keyframes spin{to{transform:rotate(360deg)}}
-    /* Error banner */
-    .auth-error-banner{display:none;align-items:center;gap:10px;padding:12px 16px;background:#fef2f2;border:1px solid #fecaca;border-radius:var(--r-md);font-size:.82rem;color:#b91c1c;font-weight:600;margin-bottom:4px}
+
+    /* ── Global error banner ─────────────────────────────────────── */
+    .auth-error-banner{
+      display:none;align-items:center;gap:10px;
+      padding:12px 16px;
+      background:#fef2f2;border:1px solid #fecaca;border-radius:var(--r-md);
+      font-size:.82rem;color:#b91c1c;font-weight:600;margin-bottom:4px;
+    }
     .auth-error-banner.show{display:flex}
-    .auth-divider{display:flex;align-items:center;gap:12px;margin:12px 0 6px;font-size:.72rem;color:var(--text-3);font-weight:700;letter-spacing:.04em}
+
+    /* ── Divider ─────────────────────────────────────────────────── */
+    .auth-divider{display:flex;align-items:center;gap:12px;margin:8px 0;font-size:.72rem;color:var(--text-3);font-weight:700;letter-spacing:.04em}
     .auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:var(--border-2)}
-    .auth-footer{text-align:center;font-size:.82rem;color:var(--text-2)}
+
+    /* ── Footer link ─────────────────────────────────────────────── */
+    .auth-footer{text-align:center;margin-top:20px;font-size:.82rem;color:var(--text-2)}
     .auth-footer a{color:var(--purple);font-weight:700;text-decoration:none}
-    @media(max-width:480px){.auth-card{padding:32px 22px}.auth-title{font-size:1.65rem}.skill-opt{font-size:.62rem}}
+    .auth-footer a:hover{text-decoration:underline}
+
+    /* ── Success state ───────────────────────────────────────────── */
+    .auth-success{display:none;text-align:center;animation:cardrise .5s var(--ease) both}
+    .auth-success.show{display:block}
+    .success-check{width:64px;height:64px;background:linear-gradient(135deg,#10b981,#059669);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;box-shadow:0 8px 24px rgba(16,185,129,.35)}
+
+    /* ── Responsive ─────────────────────────────────────────────── */
+    @media(max-width:480px){
+      .auth-card{padding:32px 24px;border-radius:22px}
+      .auth-title{font-size:1.7rem}
+    }
   
     
     </style>
 </head>
 <body>
 <div class="auth-floating-gallery" id="authFloatingGallery"></div>
+
+<!-- ─── DOG ANIMATION (left) ─────────────────────────────── -->
+<div class="auth-mascot auth-mascot-left" id="dogWrap" aria-hidden="true">
+  <div class="mascot-scene">
+    <!-- Ball -->
+    <div class="mascot-ball dog-ball">
+      <svg width="36" height="36" viewBox="0 0 36 36"><circle cx="18" cy="18" r="17" fill="#f97316" stroke="#c2410c" stroke-width="1.5"/>
+        <path d="M8 18 Q12 12 18 10 Q24 12 28 18" fill="none" stroke="#c2410c" stroke-width="2" opacity="0.4"/>
+        <path d="M10 22 Q14 28 18 28 Q22 28 26 22" fill="none" stroke="#c2410c" stroke-width="2" opacity="0.4"/>
+      </svg>
+    </div>
+    <!-- Dog body -->
+    <div class="mascot-dog">
+      <svg width="110" height="140" viewBox="0 0 110 140" fill="none">
+        <!-- tail -->
+        <path class="dog-tail" d="M82 90 Q105 70 100 55 Q97 46 90 52" stroke="#d97706" stroke-width="7" stroke-linecap="round" fill="none"/>
+        <!-- body -->
+        <ellipse cx="55" cy="95" rx="30" ry="26" fill="#fbbf24"/>
+        <!-- head -->
+        <circle cx="55" cy="58" r="24" fill="#fbbf24"/>
+        <!-- ears -->
+        <ellipse cx="35" cy="45" rx="9" ry="15" fill="#d97706" transform="rotate(-15 35 45)"/>
+        <ellipse cx="75" cy="45" rx="9" ry="15" fill="#d97706" transform="rotate(15 75 45)"/>
+        <ellipse cx="35" cy="47" rx="5" ry="11" fill="#f87171" opacity="0.5" transform="rotate(-15 35 47)"/>
+        <ellipse cx="75" cy="47" rx="5" ry="11" fill="#f87171" opacity="0.5" transform="rotate(15 75 47)"/>
+        <!-- eyes -->
+        <circle cx="44" cy="56" r="5" fill="#1e1b4b"/>
+        <circle cx="66" cy="56" r="5" fill="#1e1b4b"/>
+        <circle cx="46" cy="54" r="1.5" fill="white"/>
+        <circle cx="68" cy="54" r="1.5" fill="white"/>
+        <!-- nose -->
+        <ellipse cx="55" cy="67" rx="5" ry="3.5" fill="#1e1b4b"/>
+        <!-- mouth smile -->
+        <path d="M49 72 Q55 78 61 72" stroke="#1e1b4b" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <!-- blush -->
+        <ellipse cx="36" cy="65" rx="6" ry="4" fill="#fb923c" opacity="0.4"/>
+        <ellipse cx="74" cy="65" rx="6" ry="4" fill="#fb923c" opacity="0.4"/>
+        <!-- legs -->
+        <rect x="35" y="115" width="14" height="22" rx="7" fill="#fbbf24"/>
+        <rect x="61" y="115" width="14" height="22" rx="7" fill="#fbbf24"/>
+        <!-- front paws up -->
+        <rect class="dog-paw-left"  x="21" y="88" width="13" height="20" rx="6" fill="#fbbf24" transform-origin="27 88"/>
+        <rect class="dog-paw-right" x="76" y="88" width="13" height="20" rx="6" fill="#fbbf24" transform-origin="82 88"/>
+      </svg>
+    </div>
+  </div>
+  <p class="mascot-caption">Ready to play! 🐾</p>
+</div>
+
+<!-- ─── CAT ANIMATION (right) ────────────────────────────── -->
+<div class="auth-mascot auth-mascot-right" id="catWrap" aria-hidden="true">
+  <div class="mascot-scene">
+    <!-- Ball -->
+    <div class="mascot-ball cat-ball">
+      <svg width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="15" fill="#818cf8" stroke="#4f46e5" stroke-width="1.5"/>
+        <line x1="8" y1="16" x2="24" y2="16" stroke="white" stroke-width="2" opacity="0.5"/>
+        <line x1="16" y1="8" x2="16" y2="24" stroke="white" stroke-width="2" opacity="0.5"/>
+      </svg>
+    </div>
+    <!-- Cat body -->
+    <div class="mascot-cat">
+      <svg width="100" height="150" viewBox="0 0 100 150" fill="none">
+        <!-- tail -->
+        <path class="cat-tail" d="M72 105 Q95 95 90 75 Q87 62 78 68" stroke="#a78bfa" stroke-width="7" stroke-linecap="round" fill="none"/>
+        <!-- body -->
+        <ellipse cx="48" cy="100" rx="26" ry="22" fill="#c4b5fd"/>
+        <!-- head -->
+        <circle cx="48" cy="62" r="22" fill="#c4b5fd"/>
+        <!-- ears -->
+        <polygon points="28,48 22,28 38,44" fill="#a78bfa"/>
+        <polygon points="68,48 78,28 62,44" fill="#a78bfa"/>
+        <polygon points="30,46 25,32 38,44" fill="#f9a8d4" opacity="0.7"/>
+        <polygon points="66,46 75,32 62,44" fill="#f9a8d4" opacity="0.7"/>
+        <!-- eyes (closed/happy) -->
+        <path d="M36 60 Q40 56 44 60" stroke="#1e1b4b" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M52 60 Q56 56 60 60" stroke="#1e1b4b" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <!-- nose + whiskers -->
+        <ellipse cx="48" cy="68" rx="4" ry="3" fill="#f9a8d4"/>
+        <line x1="30" y1="67" x2="44" y2="69" stroke="#1e1b4b" stroke-width="1.5" opacity="0.5"/>
+        <line x1="30" y1="70" x2="44" y2="70" stroke="#1e1b4b" stroke-width="1.5" opacity="0.5"/>
+        <line x1="52" y1="69" x2="66" y2="67" stroke="#1e1b4b" stroke-width="1.5" opacity="0.5"/>
+        <line x1="52" y1="70" x2="66" y2="70" stroke="#1e1b4b" stroke-width="1.5" opacity="0.5"/>
+        <!-- mouth -->
+        <path d="M44 74 Q48 79 52 74" stroke="#1e1b4b" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+        <!-- blush -->
+        <ellipse cx="30" cy="68" rx="5" ry="3.5" fill="#f9a8d4" opacity="0.5"/>
+        <ellipse cx="66" cy="68" rx="5" ry="3.5" fill="#f9a8d4" opacity="0.5"/>
+        <!-- legs -->
+        <rect x="30" y="118" width="12" height="20" rx="6" fill="#c4b5fd"/>
+        <rect x="58" y="118" width="12" height="20" rx="6" fill="#c4b5fd"/>
+        <!-- paws up -->
+        <rect class="cat-paw-left"  x="18" y="92" width="12" height="18" rx="6" fill="#c4b5fd" transform-origin="24 92"/>
+        <rect class="cat-paw-right" x="70" y="92" width="12" height="18" rx="6" fill="#c4b5fd" transform-origin="76 92"/>
+      </svg>
+    </div>
+  </div>
+  <p class="mascot-caption">Catch it! 🐱</p>
+</div>
+
+<style>
+/* ── Mascot layout ── */
+.auth-mascot {
+  position: fixed; top: 50%; transform: translateY(-50%);
+  display: flex; flex-direction: column; align-items: center;
+  pointer-events: none; z-index: 0;
+  opacity: 0.92;
+}
+.auth-mascot-left  { left: 4vw; }
+.auth-mascot-right { right: 4vw; }
+@media (max-width: 1100px) { .auth-mascot { display: none !important; } }
+
+.mascot-caption {
+  font-size: 0.82rem; color: rgba(200,180,255,0.7);
+  margin-top: 12px; text-align: center;
+  font-family: sans-serif;
+}
+.mascot-scene { position: relative; width: 140px; height: 200px; }
+
+/* Dog ball bounces up and down */
+.dog-ball {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  top: 0;
+  animation: dogBallBounce 1.6s cubic-bezier(0.36,0,0.66,1) infinite alternate;
+}
+@keyframes dogBallBounce {
+  0%   { top: 10px; transform: translateX(-50%) scale(1,1); }
+  85%  { transform: translateX(-50%) scale(1.1,0.9); }
+  100% { top: 50px; transform: translateX(-50%) scale(1,1); }
+}
+/* Dog jumps up to catch */
+.mascot-dog {
+  position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+  animation: dogJump 1.6s cubic-bezier(0.36,0,0.66,1) infinite alternate;
+}
+@keyframes dogJump {
+  0%   { bottom: 0; transform: translateX(-50%) scale(1); }
+  100% { bottom: 48px; transform: translateX(-50%) scale(1.05); }
+}
+/* Dog paws raise */
+.dog-paw-left  { animation: pawRaise 1.6s ease-in-out infinite alternate; }
+.dog-paw-right { animation: pawRaise 1.6s ease-in-out infinite alternate; }
+@keyframes pawRaise {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(-30deg); }
+}
+/* Dog tail wag */
+.dog-tail { animation: tailWag 0.5s ease-in-out infinite alternate; transform-origin: 82px 90px; }
+@keyframes tailWag {
+  0%   { transform: rotate(-10deg); }
+  100% { transform: rotate(15deg); }
+}
+
+/* Cat ball floats */
+.cat-ball {
+  position: absolute; right: 10px; top: 0;
+  animation: catBallFloat 2s ease-in-out infinite alternate;
+}
+@keyframes catBallFloat {
+  0%   { top: 5px; }
+  100% { top: 55px; }
+}
+/* Cat jumps */
+.mascot-cat {
+  position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+  animation: catJump 2s ease-in-out infinite alternate;
+}
+@keyframes catJump {
+  0%   { bottom: 0; transform: translateX(-50%) rotate(-3deg); }
+  100% { bottom: 55px; transform: translateX(-50%) rotate(3deg); }
+}
+/* Cat tail sways */
+.cat-tail { animation: catTailSway 1.2s ease-in-out infinite alternate; transform-origin: 72px 105px; }
+@keyframes catTailSway {
+  0%   { transform: rotate(-8deg); }
+  100% { transform: rotate(12deg); }
+}
+/* Cat paws raise */
+.cat-paw-left  { animation: catPawLeft  2s ease-in-out infinite alternate; }
+.cat-paw-right { animation: catPawRight 2s ease-in-out infinite alternate; }
+@keyframes catPawLeft  { 0% { transform: rotate(0deg); } 100% { transform: rotate(-35deg); } }
+@keyframes catPawRight { 0% { transform: rotate(0deg); } 100% { transform: rotate(35deg); } }
+</style>
+<script>console.log("[ZenPin] login ambient animation loaded");</script>
 <div class="auth-bg-overlay"></div>
+
+<!-- Background -->
 <div class="auth-bg">
-  <div class="auth-blob ab1"></div><div class="auth-blob ab2"></div><div class="auth-blob ab3"></div>
+  <div class="auth-blob ab1"></div>
+  <div class="auth-blob ab2"></div>
+  <div class="auth-blob ab3"></div>
   <div class="auth-grid"></div>
 </div>
 
+<!-- Card -->
 <div class="auth-wrap">
   <div class="auth-card">
+
+    <!-- Logo -->
     <div class="auth-logo-row">
       <div class="auth-gem">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="white" stroke="white" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="white" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>
+        </svg>
       </div>
       <span class="auth-wordmark">ZenPin</span>
     </div>
 
-    <h1 class="auth-title">Start creating<br><em>today.</em></h1>
-    <p class="auth-sub">Join thousands of creators discovering and building their best ideas.</p>
+    <!-- Heading -->
+    <h1 class="auth-title">Welcome<br><em>back.</em></h1>
+    <p class="auth-sub">Log in to your ZenPin account to continue creating.</p>
 
+    <!-- Error banner -->
     <div class="auth-error-banner" id="errorBanner">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
       <span id="errorText">Something went wrong.</span>
     </div>
 
-    <!-- Skill level -->
-    <div class="skill-label">Your creative level</div>
-    <div class="skill-row">
-      <div class="skill-opt selected" data-level="beginner">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-        Beginner
-      </div>
-      <div class="skill-opt" data-level="intermediate">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-        Intermediate
-      </div>
-      <div class="skill-opt" data-level="expert">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
-        Expert
-      </div>
-    </div>
+    <!-- Form -->
+    <form class="auth-form" id="loginForm" novalidate>
 
-    <form class="auth-form" id="signupForm" novalidate>
-      <!-- Username -->
-      <div class="field-wrap">
-        <label class="field-label" for="username">Username</label>
-        <div class="field-inner">
-          <svg class="field-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          <input class="auth-input" id="username" type="text" placeholder="yourname" autocomplete="username"/>
-        </div>
-        <div class="field-error" id="usernameErr"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/></svg><span>Username must be 2–30 characters</span></div>
-      </div>
       <!-- Email -->
       <div class="field-wrap">
         <label class="field-label" for="email">Email</label>
@@ -136,199 +374,259 @@
           <svg class="field-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
           <input class="auth-input" id="email" type="email" placeholder="you@example.com" autocomplete="email"/>
         </div>
-        <div class="field-error" id="emailErr"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/></svg><span>Enter a valid email</span></div>
+        <div class="field-error" id="emailErr">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/></svg>
+          <span>Enter a valid email address</span>
+        </div>
       </div>
+
       <!-- Password -->
       <div class="field-wrap">
         <label class="field-label" for="password">Password</label>
         <div class="field-inner">
-          <svg class="field-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          <input class="auth-input" id="password" type="password" placeholder="At least 8 characters" autocomplete="new-password"/>
-          <button type="button" class="pw-toggle" id="pwToggle">
+          <svg class="field-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <input class="auth-input" id="password" type="password" placeholder="Your password" autocomplete="current-password"/>
+          <button type="button" class="pw-toggle" id="pwToggle" aria-label="Show password">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="eyeIcon"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
           </button>
         </div>
-        <div class="pw-strength"><div class="pw-bar" id="b1"></div><div class="pw-bar" id="b2"></div><div class="pw-bar" id="b3"></div><div class="pw-bar" id="b4"></div></div>
-        <div class="pw-hint" id="pwHint"></div>
-        <div class="field-error" id="pwErr"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/></svg><span>At least 8 characters required</span></div>
-      </div>
-
-      <p class="auth-terms">By signing up you agree to our <a href="#">Terms</a> and <a href="#">Privacy Policy</a>.</p>
-
-      <!-- OTP verification step (shown after Send Code) -->
-      <div id="otpStep" style="display:none;margin-bottom:12px">
-        <label class="field-label" for="otpCode">Verification Code</label>
-        <div class="input-wrap" style="margin-top:6px">
-          <input class="auth-input" id="otpCode" type="text" inputmode="numeric"
-            maxlength="6" placeholder="6-digit code" autocomplete="one-time-code"/>
+        <div class="field-error" id="pwErr">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/></svg>
+          <span>Password is required</span>
         </div>
-        <p id="otpHint" style="font-size:.8rem;color:var(--text-3);margin-top:6px"></p>
       </div>
-      <div style="display:flex;gap:8px">
-        <button type="button" class="auth-submit" id="sendOtpBtn" style="flex:1">
+
+      <!-- Submit -->
+      <button type="submit" class="auth-submit" id="submitBtn">
+        <span class="btn-label">Log in to ZenPin</span>
+        <div class="spinner"></div>
+      </button>
+      <div style="text-align:center;margin-top:4px">
+        <button type="button" id="switchOtpBtn" style="background:none;border:none;color:var(--text-3);font-size:.82rem;cursor:pointer;text-decoration:underline;padding:4px 0">
+          Sign in with email code instead
+        </button>
+      </div>
+
+      <!-- OTP login step (hidden by default) -->
+      <div id="otpLoginStep" style="display:none;margin-top:4px">
+        <label class="field-label" for="otpLoginCode">6-Digit Code</label>
+        <div class="field-inner">
+          <input class="auth-input" id="otpLoginCode" type="text" inputmode="numeric"
+            maxlength="6" placeholder="123456" autocomplete="one-time-code"/>
+        </div>
+        <p id="otpLoginHint" style="font-size:.8rem;color:var(--text-3);margin-top:6px"></p>
+        <button type="button" class="auth-submit" id="otpLoginSendBtn" style="margin-top:8px">
           <span class="btn-label">Send Code</span>
           <div class="spinner"></div>
         </button>
-        <button type="submit" class="auth-submit" id="submitBtn" style="display:none;flex:1">
-          <span class="btn-label">Create Account</span>
+        <button type="button" class="auth-submit" id="otpLoginVerifyBtn"
+          style="display:none;margin-top:8px">
+          <span class="btn-label">Verify Code &amp; Sign In</span>
           <div class="spinner"></div>
         </button>
       </div>
+
     </form>
 
-    <div class="auth-divider">already a member?</div>
-    <div class="auth-footer"><a href="login.html">Log in to your account →</a></div>
+    <div class="auth-divider">or</div>
+
+    <div class="auth-footer">
+      Don't have an account? <a href="signup.html">Sign up free</a>
+    </div>
+
   </div>
 </div>
 
 <script>
-  if (localStorage.getItem("zenpin_token")) window.location.href = "index.html";
+  // ── Redirect if already logged in ─────────────────────────────
+  const _tok = localStorage.getItem("zenpin_token");
+  if (_tok) {
+    const _next = new URLSearchParams(window.location.search).get("next");
+    window.location.href = _next || "index.html";
+  }
 
   const API_URL = "https://zenpin-api.onrender.com";
-  let skillLevel = "beginner";
 
-  // Skill selector
-  document.querySelectorAll(".skill-opt").forEach(o => {
-    o.onclick = () => {
-      document.querySelectorAll(".skill-opt").forEach(x => x.classList.remove("selected"));
-      o.classList.add("selected");
-      skillLevel = o.dataset.level;
-    };
-  });
+  // Wake up Render on page load
+  fetch(API_URL + "/", { mode: "cors", credentials: "omit" }).catch(() => {});
 
-  // Password toggle
+  // ── Password toggle ───────────────────────────────────────────
   document.getElementById("pwToggle").onclick = function() {
     const inp = document.getElementById("password");
-    const sh = inp.type === "text";
-    inp.type = sh ? "password" : "text";
-    document.getElementById("eyeIcon").innerHTML = sh
+    const showing = inp.type === "text";
+    inp.type = showing ? "password" : "text";
+    document.getElementById("eyeIcon").innerHTML = showing
       ? `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`
       : `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>`;
   };
 
-  // Password strength
-  document.getElementById("password").oninput = function() {
-    const pw = this.value; let s = 0;
-    if (pw.length >= 8) s++;
-    if (/[A-Z]/.test(pw)) s++;
-    if (/[0-9]/.test(pw)) s++;
-    if (/[^A-Za-z0-9]/.test(pw)) s++;
-    const cls = ["","weak","fair","good","strong"];
-    const lbl = ["","Weak","Fair","Good","Strong 💪"];
-    ["b1","b2","b3","b4"].forEach((id,i) => {
-      document.getElementById(id).className = "pw-bar " + (i < s ? cls[s] : "");
-    });
-    document.getElementById("pwHint").textContent = pw.length ? lbl[s] : "";
-  };
+  // ── Validation ────────────────────────────────────────────────
+  function showErr(id, show) {
+    document.getElementById(id).classList.toggle("show", show);
+  }
+  function setError(msg) {
+    document.getElementById("errorText").textContent = msg;
+    document.getElementById("errorBanner").classList.add("show");
+  }
+  function clearError() {
+    document.getElementById("errorBanner").classList.remove("show");
+  }
 
-  // Helpers
-  const showErr = (id, v) => document.getElementById(id).classList.toggle("show", v);
-  const setBanner = m => { document.getElementById("errorText").textContent = m; document.getElementById("errorBanner").classList.add("show"); };
-  const clearBanner = () => document.getElementById("errorBanner").classList.remove("show");
-  document.getElementById("username").oninput = () => showErr("usernameErr", false);
-  document.getElementById("email").oninput    = () => showErr("emailErr", false);
+  // ── Form submit ───────────────────────────────────────────────
+  document.getElementById("loginForm").onsubmit = async function(e) {
+    e.preventDefault();
+    clearError();
 
-  // Submit
-  // Wake up Render immediately when page loads (prevents cold start on submit)
-  fetch(API_URL + "/", { mode: "cors", credentials: "omit" }).catch(() => {});
-
-  // ── OTP: Send Code button ──────────────────────────────────────
-  let _otpVerified = false;
-
-  document.getElementById("sendOtpBtn").onclick = async function() {
-    const email = document.getElementById("email").value.trim();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showErr("emailErr", true); return; }
-    showErr("emailErr", false);
-    this.disabled = true; this.classList.add("loading");
-    try {
-      const res  = await fetch(`${API_URL}/auth/otp/send`, {
-        method: "POST", headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ email })
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) { setBanner(data.detail || "Could not send code."); return; }
-      document.getElementById("otpStep").style.display = "block";
-      document.getElementById("submitBtn").style.display = "flex";
-      document.getElementById("sendOtpBtn").style.display = "none";
-      const hint = document.getElementById("otpHint");
-      if (data.demo_otp) {
-        hint.innerHTML = `<strong>Dev mode — your code: ${data.demo_otp}</strong>`;
-      } else {
-        hint.textContent = "Check your email for the 6-digit code.";
-      }
-    } catch { setBanner("Server error sending code. Please try again."); }
-    finally  { this.disabled = false; this.classList.remove("loading"); }
-  };
-
-  document.getElementById("signupForm").onsubmit = async function(e) {
-    e.preventDefault(); clearBanner();
-    const username = document.getElementById("username").value.trim();
     const email    = document.getElementById("email").value.trim();
     const password = document.getElementById("password").value;
-    const otp      = (document.getElementById("otpCode")?.value || "").trim();
+
+    // Validate
     let ok = true;
-    if (username.length < 2 || username.length > 30) { showErr("usernameErr", true); ok = false; }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))  { showErr("emailErr", true);    ok = false; }
-    if (password.length < 8)                          { showErr("pwErr", true);       ok = false; }
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    showErr("emailErr", !emailOk); if (!emailOk) ok = false;
+    showErr("pwErr", !password);   if (!password) ok = false;
     if (!ok) return;
 
-    // Verify OTP before creating account
-    if (!_otpVerified && otp) {
-      try {
-        const vRes  = await fetch(`${API_URL}/auth/otp/verify`, {
-          method: "POST", headers: {"Content-Type":"application/json"},
-          body: JSON.stringify({ email, otp })
-        });
-        const vData = await vRes.json().catch(() => ({}));
-        if (!vRes.ok) { setBanner(vData.detail || "Invalid code."); return; }
-        _otpVerified = true;
-      } catch { setBanner("Could not verify code. Please retry."); return; }
-    }
-
+    // Submit
     const btn = document.getElementById("submitBtn");
     btn.classList.add("loading"); btn.disabled = true;
-    setBanner(""); 
 
-    // Retry logic — Render free tier sometimes needs 2 attempts after cold start
+    // Retry logic — handles Render cold starts
     let lastErr = null;
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 30000); // 30s timeout
-        const res = await fetch(`${API_URL}/auth/signup`, {
+        const timeout = setTimeout(() => controller.abort(), 30000);
+        const res = await fetch(`${API_URL}/auth/login`, {
           method: "POST",
           mode: "cors",
           credentials: "omit",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username, email, password }),
+          body: JSON.stringify({ email, password }),
           signal: controller.signal,
         });
         clearTimeout(timeout);
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
-          setBanner(typeof data.detail === "string" ? data.detail : "Signup failed.");
+          setError(data.detail || "Login failed. Check your email and password.");
+          btn.classList.remove("loading"); btn.disabled = false;
           return;
         }
         localStorage.setItem("zenpin_token", data.token);
         localStorage.setItem("zenpin_user", JSON.stringify(data.user));
-        localStorage.setItem("zenpin_skill", skillLevel);
-        window.location.href = "index.html";
+        const next = new URLSearchParams(window.location.search).get("next");
+        window.location.href = next || "index.html";
         return;
       } catch (err) {
         lastErr = err;
         if (attempt < 3) {
-          setBanner(`Server is waking up... retrying (${attempt}/3)`);
-          await new Promise(r => setTimeout(r, 3000)); // wait 3s between retries
+          setError(`Server is waking up... retrying (${attempt}/3)`);
+          await new Promise(r => setTimeout(r, 3000));
         }
       }
     }
-    setBanner("Could not reach server after 3 attempts. Please try again in 30 seconds.");
-    console.error("Signup failed:", lastErr);
+    setError("Could not reach server after 3 attempts. Please try again in 30 seconds.");
+    console.error("Login failed:", lastErr);
     btn.classList.remove("loading"); btn.disabled = false;
   };
 
+  // Live field clearing
+  document.getElementById("email").oninput    = () => showErr("emailErr", false);
+  document.getElementById("password").oninput = () => showErr("pwErr", false);
+
+  // ── OTP login flow ────────────────────────────────────────────
+  let _otpLoginMode = false;
+
+  document.getElementById("switchOtpBtn").onclick = function() {
+    _otpLoginMode = !_otpLoginMode;
+    const pwWrap = document.getElementById("password").closest(".field-wrap");
+    const otpStep = document.getElementById("otpLoginStep");
+    pwWrap.style.display = _otpLoginMode ? "none" : "";
+    document.getElementById("submitBtn").style.display = _otpLoginMode ? "none" : "";
+    otpStep.style.display = _otpLoginMode ? "block" : "none";
+    this.textContent = _otpLoginMode
+      ? "Sign in with password instead"
+      : "Sign in with email code instead";
+    clearError();
+  };
+
+  document.getElementById("otpLoginSendBtn").onclick = async function() {
+    const email = document.getElementById("email").value.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      showErr("emailErr", true); return;
+    }
+    const btn = this;
+    btn.classList.add("loading"); btn.disabled = true;
+    clearError();
+    try {
+      const res  = await fetch(`${API_URL}/auth/otp/send`, {
+        method: "POST", mode: "cors", credentials: "omit",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setError(data.detail || "Could not send code."); return; }
+      const hint = document.getElementById("otpLoginHint");
+      if (data.demo_otp) {
+        hint.innerHTML = `<strong style="color:var(--purple)">Dev mode — your code: ${data.demo_otp}</strong>`;
+      } else {
+        hint.textContent = "Code sent — check your inbox.";
+      }
+      document.getElementById("otpLoginVerifyBtn").style.display = "";
+      btn.textContent = "Resend Code";
+    } catch (err) {
+      setError("Server error. Please try again.");
+    } finally {
+      btn.classList.remove("loading"); btn.disabled = false;
+    }
+  };
+
+  document.getElementById("otpLoginVerifyBtn").onclick = async function() {
+    const email = document.getElementById("email").value.trim();
+    const otp   = document.getElementById("otpLoginCode").value.trim();
+    if (!otp || otp.length < 6) {
+      document.getElementById("otpLoginHint").textContent = "Enter the 6-digit code."; return;
+    }
+    const btn = this;
+    btn.classList.add("loading"); btn.disabled = true;
+    clearError();
+    try {
+      // Verify OTP
+      const vRes  = await fetch(`${API_URL}/auth/otp/verify`, {
+        method: "POST", mode: "cors", credentials: "omit",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, otp }),
+      });
+      const vData = await vRes.json().catch(() => ({}));
+      if (!vRes.ok) { setError(vData.detail || "Incorrect code."); return; }
+
+      // OTP valid — do a passwordless login attempt
+      // Try signup-with-otp first; if user exists it will fail gracefully
+      // then fall back to a regular login with a dummy password that won't work,
+      // so we need the backend to support OTP-verified sessions.
+      // For now: verify OTP then call /auth/login with stored credentials,
+      // OR use /auth/signup-with-otp if the user is new.
+      // Simple approach: after OTP verify, redirect with token if backend returns one.
+      if (vData.token) {
+        localStorage.setItem("zenpin_token", vData.token);
+        localStorage.setItem("zenpin_user", JSON.stringify(vData.user || {}));
+        const next = new URLSearchParams(window.location.search).get("next");
+        window.location.href = next || "index.html";
+        return;
+      }
+      // If no token from verify, show success and let user complete password login
+      document.getElementById("otpLoginHint").innerHTML =
+        `<span style="color:#10b981">✓ Identity confirmed. Enter your password to complete sign-in.</span>`;
+      document.getElementById("switchOtpBtn").click(); // switch back to password mode
+    } catch (err) {
+      setError("Verification failed. Please try again.");
+    } finally {
+      btn.classList.remove("loading"); btn.disabled = false;
+    }
+  };
+
   /* ── Floating gallery background ───────────────────────── */
-    window.buildAuthGallery && window.buildAuthGallery('signup');// Mouse parallax — depth-layered movement
+    window.buildAuthGallery && window.buildAuthGallery('login');// Mouse parallax — depth-layered movement
 
 </script>
 </body>
