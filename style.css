@@ -3778,20 +3778,25 @@ body  { font-family: var(--font-body); }
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   MOBILE SEARCH OVERLAY (mobile-search-open state)
+   MOBILE SEARCH OVERLAY — inside @media so it beats the 768px hide rule
    ═══════════════════════════════════════════════════════════════ */
-.mobile-search-open .nav-search-wrap {
-  display: flex !important;
-  position: fixed !important;
-  top: 12px !important;
-  left: 12px !important;
-  right: 12px !important;
-  z-index: 10001 !important;
-  background: rgba(20,14,35,0.96) !important;
-  border: 1px solid rgba(168,85,247,0.35) !important;
-  border-radius: 16px !important;
-  padding: 10px 14px !important;
-  box-shadow: 0 0 30px rgba(168,85,247,0.25) !important;
+@media (max-width: 768px) {
+  body.mobile-search-open .nav-search-wrap {
+    display: flex !important;
+    position: fixed !important;
+    top: 10px !important;
+    left: 10px !important;
+    right: 10px !important;
+    z-index: 10020 !important;
+    height: 52px !important;
+    padding: 0 12px !important;
+    border-radius: 16px !important;
+    background: rgba(18,12,30,0.96) !important;
+    border: 1px solid rgba(168,85,247,0.35) !important;
+    backdrop-filter: blur(18px) !important;
+    -webkit-backdrop-filter: blur(18px) !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.35) !important;
+  }
 }
 
 /* 8-icon mobile nav grid */
