@@ -24,6 +24,11 @@ const S = {
   discoveryPage: {},      // tracks current discovery page per category e.g. {anime: 3}
 };
 
+// ── Modal navigation globals ────────────────────────────────────
+let currentModalItems = [];  // mirrors the currently rendered grid
+let currentModalIndex = 0;   // index of the currently open idea
+
+
 // ════════════════════════════════════════════════════════════
 // UserPrefs — lightweight personalization engine
 //
@@ -402,6 +407,7 @@ function renderGrid(container, ideas) {
   container.appendChild(frag);
 
   console.log(`[ZenPin] renderGrid: ${ideas.length} ideas → #${container.id || "grid"}`);
+  currentModalItems = ideas.slice();
   window.dispatchEvent(new CustomEvent("zenpin:gridupdate"));
 
   // Preload first 6 above-the-fold images immediately
@@ -3872,7 +3878,7 @@ function setupChat() {
         img.alt     = idea.title     || "";
         img.loading = "lazy";
         img.className = "chat-img-card";
-        img.onclick = () => { console.log("[ZenPin] image clicked:", idea.id); openModal(idea.id); };
+        img.onclick = () => { console.log("[ZenPin] image clicked:", idea.id); const _ci = currentModalItems.findIndex(i => String(i.id)===String(idea.id)); if(_ci>-1){currentModalIndex=_ci;}else{currentModalItems=[idea];currentModalIndex=0;} openModal(idea); };
         img.onerror = () => { img.style.display = "none"; };
         strip.appendChild(img);
       });
@@ -4383,23 +4389,24 @@ function downloadImage(url, title = "zenpin-image") {
     });
 }
 
-async function openModal(id) {
-  const numId = Number(id) || id;
-  let idea =
-    S.allIdeas.find(i => i.id === numId || String(i.id) === String(id)) ||
-    (S.ideas && S.ideas.find(i => String(i.id) === String(id))) ||
-    null;
-
-  if (!idea) {
-    try { idea = await apiFetch("GET", `/ideas/${numId}`); }
-    catch { idea = null; }
+async function openModal(idOrIdea) {
+  let idea = null;
+  if (idOrIdea && typeof idOrIdea === "object" && (idOrIdea.image_url || idOrIdea.img)) {
+    idea = idOrIdea;
+  } else {
+    const id = idOrIdea, numId = Number(id) || id;
+    idea = currentModalItems.find(i => String(i.id) === String(id)) ||
+           S.allIdeas.find(i => i.id === numId || String(i.id) === String(id)) ||
+           (S.ideas && S.ideas.find(i => String(i.id) === String(id))) ||
+           null;
+    if (!idea) {
+      try { idea = await apiFetch("GET", `/ideas/${numId}`); }
+      catch { idea = null; }
+    }
   }
-  if (!idea) {
-    console.warn("[ZenPin] openModal: idea not found for id", id);
-    return;
-  }
+  if (!idea) { console.warn("[ZenPin] openModal: not found", idOrIdea); return; }
   console.log("[ZenPin] modal opened:", idea.id, idea.image_url?.slice(-40));
-  S.modalId = numId;
+  S.modalId = idea.id;
   // Opening a card = interest signal (+1 weight)
   if (idea.category) UserPrefs.bump(idea.category, 1);
 
@@ -5446,7 +5453,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (card && !e.target.closest(".card-ico-btn")) {
       const _clickedId = card.dataset.id;
       console.log("[ZenPin] image clicked:", _clickedId);
-      openModal(Number(_clickedId) || _clickedId);
+      const _idx = currentModalItems.findIndex(i => String(i.id) === String(_clickedId));
+      if (_idx > -1) {
+        currentModalIndex = _idx;
+        console.log("[ZenPin] modal opened index:", _idx);
+        openModal(currentModalItems[_idx]);
+      } else {
+        const _fb = S.allIdeas.find(i => String(i.id) === String(_clickedId));
+        if (_fb) {
+          currentModalItems = S.allIdeas.slice();
+          currentModalIndex = S.allIdeas.findIndex(i => String(i.id) === String(_clickedId));
+          openModal(_fb);
+        }
+      }
       return;
     }
     // Related thumb
@@ -5992,11 +6011,21 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Mobile search open
   $("mobileSearchBtn")?.addEventListener("click", () => {
-    console.log("[ZenPin] mobile search opened");
-    const wrap = $("navSearchWrap");
-    if (wrap) {
-      wrap.style.display = wrap.style.display === "none" ? "flex" : "none";
-      if (wrap.style.display === "flex") $("globalSearch")?.focus();
+    const input = $("globalSearch");
+    go("explore");
+    setTimeout(() => {
+      input?.focus();
+      input?.scrollIntoView({ behavior: "smooth", block: "center" });
+      document.body.classList.add("mobile-search-open");
+      console.log("[ZenPin] mobile search opened");
+    }, 150);
+  });
+  // Close mobile search overlay when clicking outside
+  document.addEventListener("click", e => {
+    if (document.body.classList.contains("mobile-search-open") &&
+        !e.target.closest(".nav-search-wrap") &&
+        e.target.id !== "mobileSearchBtn") {
+      document.body.classList.remove("mobile-search-open");
     }
   });
 
@@ -6474,5 +6503,26 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.addEventListener("pointermove",  () => clearTimeout(_ctxTimer));
 
   // ── START ─────────────────────────────────────────────────
+
+  // ── Modal prev/next wiring ─────────────────────────────────
+  $("modalPrevBtn")?.addEventListener("click", () => {
+    if (!currentModalItems.length) return;
+    currentModalIndex = (currentModalIndex - 1 + currentModalItems.length) % currentModalItems.length;
+    console.log("[ZenPin] modal prev index:", currentModalIndex);
+    openModal(currentModalItems[currentModalIndex]);
+  });
+  $("modalNextBtn")?.addEventListener("click", () => {
+    if (!currentModalItems.length) return;
+    currentModalIndex = (currentModalIndex + 1) % currentModalItems.length;
+    console.log("[ZenPin] modal next index:", currentModalIndex);
+    openModal(currentModalItems[currentModalIndex]);
+  });
+  document.addEventListener("keydown", e => {
+    if (!$("modalBackdrop")?.classList.contains("open")) return;
+    if (e.key === "ArrowLeft")  { e.preventDefault(); $("modalPrevBtn")?.click(); }
+    if (e.key === "ArrowRight") { e.preventDefault(); $("modalNextBtn")?.click(); }
+  });
+  console.log("[ZenPin] mobile profile button visible");
+
   go("home");
 });
