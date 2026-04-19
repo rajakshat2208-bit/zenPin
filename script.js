@@ -426,7 +426,8 @@ function appendGrid(container, ideas, startIdx) {
   const tmp = document.createElement("div");
   tmp.innerHTML = ideas.map((idea, i) => cardHTML(idea, startIdx + i)).join("");
   while (tmp.firstChild) container.appendChild(tmp.firstChild);
-  // Notify lazy observers about new cards
+  // Keep currentModalItems in sync so load-more cards are navigable
+  currentModalItems = currentModalItems.concat(ideas);
   window.dispatchEvent(new CustomEvent("zenpin:gridupdate"));
 }
 
@@ -5459,10 +5460,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.log("[ZenPin] modal opened index:", _idx);
         openModal(currentModalItems[_idx]);
       } else {
+        // idea not yet in currentModalItems (e.g. loaded late or from backend)
+        // Search allIdeas then add it so navigation context is correct
         const _fb = S.allIdeas.find(i => String(i.id) === String(_clickedId));
         if (_fb) {
-          currentModalItems = S.allIdeas.slice();
-          currentModalIndex = S.allIdeas.findIndex(i => String(i.id) === String(_clickedId));
+          // Push into items so prev/next still works from this point
+          currentModalItems = [...currentModalItems, _fb];
+          currentModalIndex = currentModalItems.length - 1;
           openModal(_fb);
         }
       }
@@ -6010,21 +6014,25 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   // Mobile search open
-  $("mobileSearchBtn")?.addEventListener("click", () => {
-    const input = $("globalSearch");
+  // Mobile search — spec-exact implementation
+  document.getElementById("mobileSearchBtn")?.addEventListener("click", () => {
     go("explore");
     setTimeout(() => {
-      input?.focus();
-      input?.scrollIntoView({ behavior: "smooth", block: "center" });
       document.body.classList.add("mobile-search-open");
+      const input = document.getElementById("globalSearch");
+      input?.focus();
+      input?.select();
       console.log("[ZenPin] mobile search opened");
-    }, 150);
+    }, 120);
   });
-  // Close mobile search overlay when clicking outside
   document.addEventListener("click", e => {
-    if (document.body.classList.contains("mobile-search-open") &&
-        !e.target.closest(".nav-search-wrap") &&
-        e.target.id !== "mobileSearchBtn") {
+    const wrap = document.querySelector(".nav-search-wrap");
+    const btn  = document.getElementById("mobileSearchBtn");
+    if (
+      document.body.classList.contains("mobile-search-open") &&
+      wrap && !wrap.contains(e.target) &&
+      btn  && !btn.contains(e.target)
+    ) {
       document.body.classList.remove("mobile-search-open");
     }
   });
