@@ -3741,3 +3741,73 @@ body  { font-family: var(--font-body); }
   .masonry { column-count: 4 !important; column-gap: 4px !important; }
   .mn-btn { width: 36px; height: 36px; }
 }
+
+
+/* ═══════════════════════════════════════════════════════════════
+   MODAL ARROW BUTTONS — mobile-friendly positioning
+   ═══════════════════════════════════════════════════════════════ */
+.modal-nav-btn {
+  position: fixed !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 50% !important;
+  background: rgba(20,12,40,0.80) !important;
+  border: 1px solid rgba(160,100,255,0.30) !important;
+  color: #f0e8ff !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  z-index: 10010 !important;
+  backdrop-filter: blur(8px) !important;
+  transition: background 0.2s, box-shadow 0.2s !important;
+}
+.modal-nav-btn:hover {
+  background: rgba(120,60,220,0.70) !important;
+  box-shadow: 0 0 18px rgba(140,80,255,0.45) !important;
+}
+.modal-prev-btn { left: 12px !important; }
+.modal-next-btn { right: 12px !important; }
+
+@media (max-width: 640px) {
+  .modal-prev-btn { left: 8px !important; top: 25dvh !important; }
+  .modal-next-btn { right: 8px !important; top: 25dvh !important; }
+  .modal-nav-btn  { width: 40px !important; height: 40px !important; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MOBILE SEARCH OVERLAY (mobile-search-open state)
+   ═══════════════════════════════════════════════════════════════ */
+.mobile-search-open .nav-search-wrap {
+  display: flex !important;
+  position: fixed !important;
+  top: 12px !important;
+  left: 12px !important;
+  right: 12px !important;
+  z-index: 10001 !important;
+  background: rgba(20,14,35,0.96) !important;
+  border: 1px solid rgba(168,85,247,0.35) !important;
+  border-radius: 16px !important;
+  padding: 10px 14px !important;
+  box-shadow: 0 0 30px rgba(168,85,247,0.25) !important;
+}
+
+/* 8-icon mobile nav grid */
+@media (max-width: 768px) {
+  .mobile-nav-bar {
+    display: grid !important;
+    grid-template-columns: repeat(8, 1fr) !important;
+    padding: 4px 2px env(safe-area-inset-bottom, 4px) !important;
+  }
+  .mn-btn {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+}
+@media (max-width: 400px) {
+  .mobile-nav-bar { grid-template-columns: repeat(8, 1fr) !important; }
+  .mn-btn { width: 34px !important; height: 34px !important; }
+  .mn-btn svg { width: 15px !important; height: 15px !important; }
+}
