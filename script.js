@@ -4395,26 +4395,27 @@ async function openModal(idOrIdea) {
   if (idOrIdea && typeof idOrIdea === "object" && (idOrIdea.image_url || idOrIdea.img)) {
     idea = idOrIdea;
   } else {
-    const id = idOrIdea, numId = Number(id) || id;
-    idea = currentModalItems.find(i => String(i.id) === String(id)) ||
-           S.allIdeas.find(i => i.id === numId || String(i.id) === String(id)) ||
-           (S.ideas && S.ideas.find(i => String(i.id) === String(id))) ||
+    const _lookupId = idOrIdea, _numId = Number(_lookupId) || _lookupId;
+    idea = currentModalItems.find(i => String(i.id) === String(_lookupId)) ||
+           S.allIdeas.find(i => i.id === _numId || String(i.id) === String(_lookupId)) ||
+           (S.ideas && S.ideas.find(i => String(i.id) === String(_lookupId))) ||
            null;
     if (!idea) {
-      try { idea = await apiFetch("GET", `/ideas/${numId}`); }
+      try { idea = await apiFetch("GET", `/ideas/${_numId}`); }
       catch { idea = null; }
     }
   }
   if (!idea) { console.warn("[ZenPin] openModal: not found", idOrIdea); return; }
-  console.log("[ZenPin] modal opened:", idea.id, idea.image_url?.slice(-40));
-  S.modalId = idea.id;
-  // Opening a card = interest signal (+1 weight)
+  // Use idea.id everywhere — never bare 'id' which is undefined when idea object was passed
+  const _ideaId = idea.id;
+  console.log("[ZenPin] modal opened index:", currentModalIndex, "id:", _ideaId);
+  S.modalId = _ideaId;
   if (idea.category) UserPrefs.bump(idea.category, 1);
 
   const diff  = idea.difficulty  || idea.diff  || 3;
   const creat = idea.creativity  || idea.creat || 3;
   const use   = idea.usefulness  || idea.use   || 3;
-  const saved = S.savedIds.has(id);
+  const saved = S.savedIds.has(_ideaId);
 
   $("modalImg").src           = idea.image_url || idea.img;
   $("modalImg").alt           = idea.title;
@@ -4466,17 +4467,25 @@ async function openModal(idOrIdea) {
     dlBtn.onclick = () => downloadImage(idea.image_url, idea.title);
   }
 
-  // Related ideas
-  try {
-    const { ideas: related } = await apiFetch("GET", `/ideas?category=${encodeURIComponent(idea.category)}&limit=9`);
-    $("relatedRow").innerHTML = related.filter(r => r.id !== id).slice(0, 6).map(r => `
-      <div class="related-thumb" data-id="${r.id}">
-        <img src="${r.image_url || r.img}" alt="${r.title}" loading="lazy"/>
-      </div>`).join("");
-  } catch {}
-
+  // Open modal IMMEDIATELY — do not wait for related ideas fetch
   $("modalBackdrop").classList.add("open");
   document.body.style.overflow = "hidden";
+  console.log("[ZenPin] modal opened index:", currentModalIndex);
+
+  // Related ideas — async, loads after modal is visible
+  try {
+    const relRes = await apiFetch("GET", `/ideas?category=${encodeURIComponent(idea.category)}&limit=9`);
+    const related = relRes?.ideas || [];
+    const relRow = $("relatedRow");
+    if (relRow) {
+      relRow.innerHTML = related.filter(r => r.id !== _ideaId).slice(0, 6).map(r => `
+        <div class="related-thumb" data-id="${r.id}">
+          <img src="${r.image_url || r.img}" alt="${r.title || ""}" loading="lazy"/>
+        </div>`).join("");
+    }
+  } catch (_relErr) {
+    // Related ideas unavailable (Render sleeping) — modal already open, not an issue
+  }
 }
 
 function closeModal() {
@@ -5939,6 +5948,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
     console.log("[ZenPin] search started:", term);
+    console.log("[ZenPin] search pool size:", pool.length);
     const words = term.split(/\s+/).filter(Boolean);
 
     // Collect all local ideas
@@ -5981,6 +5991,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     console.log("[ZenPin] search results count:", results.length);
+    if (results.length === 0) console.log("[ZenPin] search no results for:", term);
 
     // Update grid
     const grid = $("homeGrid") || $("exploreGrid");
@@ -6015,25 +6026,29 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Mobile search open
   // Mobile search — spec-exact implementation
-  document.getElementById("mobileSearchBtn")?.addEventListener("click", () => {
+  document.getElementById("mobileSearchBtn")?.addEventListener("click", e => {
+    e.stopPropagation();
     go("explore");
     setTimeout(() => {
       document.body.classList.add("mobile-search-open");
       const input = document.getElementById("globalSearch");
-      input?.focus();
-      input?.select();
+      if (input) {
+        input.value = "";
+        input.focus();
+        input.select();
+      }
       console.log("[ZenPin] mobile search opened");
     }, 120);
   });
   document.addEventListener("click", e => {
+    if (!document.body.classList.contains("mobile-search-open")) return;
     const wrap = document.querySelector(".nav-search-wrap");
     const btn  = document.getElementById("mobileSearchBtn");
-    if (
-      document.body.classList.contains("mobile-search-open") &&
-      wrap && !wrap.contains(e.target) &&
-      btn  && !btn.contains(e.target)
-    ) {
+    const clickedWrap = wrap && wrap.contains(e.target);
+    const clickedBtn  = btn  && btn.contains(e.target);
+    if (!clickedWrap && !clickedBtn) {
       document.body.classList.remove("mobile-search-open");
+      console.log("[ZenPin] mobile search closed");
     }
   });
 
