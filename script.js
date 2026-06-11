@@ -5697,7 +5697,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // ── Keyboard shortcuts ─────────────────────────────────────
   document.addEventListener("keydown", e => {
-    if (e.key === "Escape") { closeModal(); document.body.classList.remove("mobile-search-open"); }
+    if (e.key === "Escape") { closeModal(); closeMobileSearch(); }
     if (e.key === "/" && document.activeElement !== $("globalSearch")) {
       e.preventDefault();
       $("globalSearch")?.focus();
@@ -6140,20 +6140,43 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.log("[ZenPin] duplicate search elements found:", dup);
   })();
 
-  document.getElementById("mobileSearchBtn")?.addEventListener("click", e => {
-    e.stopPropagation();  // prevent immediate close by document handler
+  // ── Mobile search open/close ────────────────────────────────
+  let _mobileSearchCloseBtn = null;
+
+  function openMobileSearch() {
     document.body.classList.add("mobile-search-open");
     const input = document.getElementById("globalSearch");
-    if (input) { input.value = ""; input.focus(); input.select(); }
+    if (input) { input.value = ""; setTimeout(() => { input.focus(); input.select(); }, 80); }
+
+    // Inject close (X) button into the search wrap if not already there
+    const wrap = document.querySelector(".nav-search-wrap");
+    if (wrap && !wrap.querySelector(".mobile-search-close")) {
+      _mobileSearchCloseBtn = document.createElement("button");
+      _mobileSearchCloseBtn.className = "mobile-search-close";
+      _mobileSearchCloseBtn.setAttribute("aria-label", "Close search");
+      _mobileSearchCloseBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+      _mobileSearchCloseBtn.addEventListener("click", e => { e.stopPropagation(); closeMobileSearch(); });
+      wrap.appendChild(_mobileSearchCloseBtn);
+    }
     console.log("[ZenPin] mobile search opened");
+  }
+
+  function closeMobileSearch() {
+    document.body.classList.remove("mobile-search-open");
+    if (_mobileSearchCloseBtn) { _mobileSearchCloseBtn.remove(); _mobileSearchCloseBtn = null; }
+    console.log("[ZenPin] mobile search closed");
+  }
+
+  document.getElementById("mobileSearchBtn")?.addEventListener("click", e => {
+    e.stopPropagation();
+    openMobileSearch();
   });
   document.addEventListener("click", e => {
     if (!document.body.classList.contains("mobile-search-open")) return;
     const wrap = document.querySelector(".nav-search-wrap");
     const btn  = document.getElementById("mobileSearchBtn");
     if (!(wrap && wrap.contains(e.target)) && !(btn && btn.contains(e.target))) {
-      document.body.classList.remove("mobile-search-open");
-      console.log("[ZenPin] mobile search closed");
+      closeMobileSearch();
     }
   });
 
