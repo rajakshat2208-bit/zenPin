@@ -333,15 +333,23 @@ function cardHTML(idea, idx) {
   const catKey = (idea.category||"scenery").toLowerCase();
 
   // Image resolution priority:
-  //   1. Local curated file  (assets/discovery/{folder}/)  — via getLocalImage()
-  //   2. idea.image_url       (user upload or backend image)
-  //   3. LoremFlickr          (always category-correct fallback)
-  //   4. Picsum               (onerror data-fb1)
-  //   5. SVG gradient         (onerror data-fb2, never fails)
+  //   1. idea.image_url — the EXACT image this idea object represents (curated path or user upload)
+  //      Using this directly guarantees the card shows the same image the modal will open.
+  //   2. getLocalImage() fallback — only for ideas with missing/placeholder image_url
+  //   3. Picsum          (onerror data-fb1)
+  //   4. SVG gradient    (onerror data-fb2, never fails)
   const stableSlot = Math.abs(idea.id) % 50;
-  const imgSrc     = getLocalImage(idea);                     // local-first
-  const picsumFb   = idea.thumb_url || getPicsumUrl(catKey, stableSlot);
-  const svgFb      = makePlaceholder(catKey, stableSlot, idea.title);
+  // Use idea.image_url directly so the card and the modal always show the SAME image.
+  // getLocalImage() uses a hash-modulo rotation that can select a different image than
+  // idea.image_url, causing the "click image A, modal opens image B" bug.
+  const _rawUrl = idea.image_url || idea.img || "";
+  const _isPlaceholder = !_rawUrl ||
+    _rawUrl.includes("loremflickr") ||
+    _rawUrl.includes("picsum") ||
+    _rawUrl.includes("unsplash");
+  const imgSrc   = _isPlaceholder ? getLocalImage(idea) : _rawUrl;
+  const picsumFb = idea.thumb_url || getPicsumUrl(catKey, stableSlot);
+  const svgFb    = makePlaceholder(catKey, stableSlot, idea.title);
 
   const sourceBadge = idea.source === "creator"
     ? `<div class="card-source-badge creator">Creator</div>`
@@ -350,7 +358,7 @@ function cardHTML(idea, idx) {
     : "";
 
   return `
-<div class="idea-card" data-id="${idea.id}" style="--i:${idx}">
+<div class="idea-card" data-id="${idea.id}" data-modal-index="${idx}" style="--i:${idx}">
   <div class="card-img-wrap">
     <img class="card-img lazy-img"
       src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs="
@@ -1427,21 +1435,21 @@ const _curatedCache = (() => {
   // ════════════════════════════════════════════════════════
   const cache = {
     // ── Uploaded folders (active) ──────────────────────────
-    "cars":         seq("cars",         "car",          30),
-    "bikes":        seq("Bikes",        "bike",         30), // folder=Bikes (capital B on GitHub Pages)
-    "anime":        seq("anime",        "anime",        27), // 27 confirmed files (anime28-30 not present)
-    "gaming":       seq("gaming",       "gaming",       28),
-    "scenery":      seq("scenery",      "scenery",      30),
-    "superhero":    seq("superhero",    "superhero",    25), // key=superhero (matches CATEGORY_MAP)
-    "workspace":    seq("workspace",    "workspace",    25),
-    "fashion":      seq("fashion",      "fashion",      60),
-    "food":         seq("food",         "food",         25),
-    "pets":         seq("pets",         "pet",          25),
-    "nature":       seq("nature",       "nature",       25),
-    "architecture": seq("architecture", "architecture", 25),
-    "accessories":  seq("accessories",  "accessory",   60), // files: accessory1.jpg…accessory30.jpg
-    "art":          seq("art",          "art",          60), // art/ folder
-    "interior":     seq("interior",     "interior",     25), // Interior Design → interior
+    "cars":         seq("cars",         "car",           69), // 69 verified files
+    "bikes":        seq("Bikes",        "bike",          72), // folder=Bikes (capital B on GitHub Pages), 72 verified
+    "anime":        seq("anime",        "anime",         59), // 59 verified files
+    "gaming":       seq("gaming",       "gaming",        28), // 28 verified files
+    "scenery":      seq("scenery",      "scenery",       54), // 54 verified files
+    "superhero":    seq("superhero",    "superhero",     69), // 69 verified files
+    "workspace":    seq("workspace",    "workspace",     30), // 30 verified files
+    "fashion":      seq("fashion",      "fashion",       90), // 90 verified files
+    "food":         seq("food",         "food",          30), // 30 verified files
+    "pets":         seq("pets",         "pet",           29), // 29 verified files
+    "nature":       seq("nature",       "nature",        60), // 60 verified files
+    "architecture": seq("architecture", "architecture",  32), // 32 verified files
+    "accessories":  seq("accessories",  "accessory",     90), // 90 verified files
+    "art":          seq("art",          "art",           90), // 90 verified files
+    "interior":     seq("interior",     "interior",      30)  // 30 verified files
     // ── Activate additional folders as you upload them ─────
     // Set count to match actual files in each folder.
     // If a folder doesn't exist yet, set count to 0.
@@ -3782,6 +3790,98 @@ const BRAIN = [
    r:"I never sleep, eat, or get tired — one of the perks of being an AI! 😄 I'm here 24/7, always ready whenever inspiration strikes you. The real question is: what do YOU dream about creating?"},
   {k:["tell me more","tell me something else","more please","what else","what else can you tell me","go on","continue"],
    r:"I'd love to! 😊 Just give me a topic or direction — a category, a question, a creative challenge — and I'll dive deep. What shall we explore next?"},
+
+  // ── Greetings ─────────────────────────────────────────────────
+  {k:["hi","hello","hey","hi there","hello there","hey there","hiya","howdy","greetings","sup","what's up","wassup","yo","good morning","good afternoon","good evening","good night","morning","evening","afternoon"],
+   r:"Hey there! 👋 Welcome to ZenPin! I'm Zen, your creative assistant. I can help you find inspiration, answer questions about the platform, or just have a good conversation. What are you looking for today?"},
+  {k:["how are you","how are you doing","how do you do","how's it going","how are things","you okay","are you okay","you good","you alright"],
+   r:"I'm doing wonderfully, thank you for asking! 😊 Always energised and ready to help. More importantly — how are YOU doing? What brings you to ZenPin today?"},
+  {k:["who are you","what are you","introduce yourself","tell me about yourself","what's your name","your name","are you ai","are you a bot","are you human","are you real"],
+   r:"I'm Zen 🌟 — ZenPin's built-in creative AI assistant! I know everything about this platform, all 15 image categories, design principles, style advice, and more. I can also just chat if you're in the mood. Ask me anything — inspiration, how-to help, or a good conversation!"},
+
+  // ── Thank you / polite responses ─────────────────────────────
+  {k:["thank you","thanks","thank you so much","thanks a lot","many thanks","cheers","thx","ty","tysm","thank u","thanks so much","appreciate it","appreciated","helpful","that helped","that was helpful","you're helpful","you are helpful"],
+   r:"You're so welcome! 🤍 That's exactly what I'm here for. Is there anything else I can help you discover or create?"},
+  {k:["you're welcome","no problem","np","sure","of course","anytime","my pleasure","happy to help"],
+   r:"Glad I could be here for you! 😊 Anytime you need inspiration or help navigating ZenPin, just ask."},
+  {k:["sorry","i'm sorry","apologies","my bad","excuse me","pardon"],
+   r:"No need to apologise at all! 😊 We're good. Ask me anything you'd like — I'm here to help."},
+  {k:["okay","ok","alright","got it","understood","makes sense","i see","i get it","cool","nice","great","awesome","perfect","wonderful","amazing","brilliant","wow"],
+   r:"Happy to hear that! 😊 What would you like to explore next?"},
+  {k:["bye","goodbye","see you","see ya","cya","later","take care","farewell","good bye","ttyl"],
+   r:"Take care! 💜 Come back whenever inspiration strikes — ZenPin and I will be right here. Happy creating!"},
+
+  // ── ZenPin platform questions ─────────────────────────────────
+  {k:["what is zenpin","about zenpin","what does zenpin do","tell me about zenpin","explain zenpin","zenpin platform","what is this site","what is this app","what is this website"],
+   r:"ZenPin is a visual inspiration platform — think Pinterest but smarter and more personal 🎨 You can browse thousands of curated images across 15 categories (anime, fashion, cars, architecture, art and more), save ideas to boards, collaborate with others, generate AI-powered inspiration boards, and chat with me for creative guidance. It's a creative hub built for people who live and breathe aesthetics!"},
+  {k:["how does zenpin work","how to use zenpin","getting started","how to start","zenpin tutorial","guide to zenpin","zenpin help","how do i use this"],
+   r:"Getting started with ZenPin is easy! 🚀 1. **Browse** the Home or Explore feed to discover images. 2. **Click any image** to open a full view with details. 3. **Save** images you love to your Boards. 4. **Use the AI** features to generate boards or analyse images. 5. **Search** by keyword or ask me for recommendations. That's the full loop — browse, save, create!"},
+  {k:["how to create board","creating a board","make a board","new board","add board","boards feature","what are boards","how boards work"],
+   r:"Boards are your personal inspiration collections! 📌 To create one: go to the **Boards** page, click **Create Board**, give it a name and theme. Then save any image to it using the save button on any card. You can create multiple boards for different moods, projects, or aesthetics — the more specific, the more useful they become."},
+  {k:["how to save image","save a pin","how do i save","bookmark image","add to board","save to board"],
+   r:"Saving is super easy! 🔖 Hover over any image card and click the **bookmark icon** (top right of the card). It saves instantly to your default board. To save to a specific board, click the card to open the full view, then use the save button there. You'll need to be logged in to save."},
+  {k:["how to search","search tips","search for images","find images","look for images","how to find","search feature"],
+   r:"Searching ZenPin: 🔍 Type keywords in the **search bar** (top of the page) — try things like 'minimalist workspace', 'anime wallpaper', or 'vintage fashion'. You can also use **category chips** to filter by theme. On mobile, tap the search icon in the bottom nav. Or just ask me! I can surface images from any of the 15 categories directly."},
+  {k:["how to login","how to sign in","sign in help","login help","can't login","login not working","sign in issue","login problem","forgot password","reset password"],
+   r:"To log in: click **Sign In** in the top navigation or the Sign In button in the mobile nav. Enter your email and password. If you forgot your password, use the **Forgot Password** link on the login page. If you're having trouble, try clearing your browser cache (Ctrl+Shift+Delete) and trying again. Still stuck? Describe the error and I'll help!"},
+  {k:["how to sign up","create account","register","new account","join zenpin","how to register","make account"],
+   r:"Joining ZenPin is free and takes 30 seconds! 🎉 Click **Sign Up** in the top navigation. Enter your name, email, and choose a password. You'll get a verification code — enter it to activate your account. Once in, you can immediately start saving, creating boards, and using all AI features!"},
+  {k:["how to upload","upload image","add image","post image","share image","upload photo","add photo"],
+   r:"To upload your own image or idea: make sure you're **logged in**, then click the **Create** button (the + icon in the nav). Fill in the details — title, category, description — and attach your image. It'll appear in your profile and can be saved to boards. The community can then discover and save your creations too!"},
+  {k:["what are categories","all categories","list categories","available categories","how many categories","category list"],
+   r:"ZenPin has **15 curated categories** 🎨 — each with up to 100 hand-picked images:
+
+🚗 Cars · 🏍️ Bikes · 🎌 Anime · 👗 Fashion · 🎮 Gaming · 🌿 Nature · 🏛️ Architecture · 🍕 Food · 🐾 Pets · 🌅 Scenery · 🦸 Superhero · 💼 Workspace · 💍 Accessories · 🎨 Art · 🏠 Interior Design
+
+Browse them all in the Explore tab or ask me to show you any category!"},
+  {k:["collaboration","collaborate","collab feature","how to collaborate","team board","shared board","work with others"],
+   r:"The **Collaboration** page lets you work on boards with other ZenPin users in real time! 🤝 You can invite people to contribute to a shared board, leave comments, and build a collective mood board together. Great for design teams, project planning, or just creating with friends. Find it in the top navigation!"},
+  {k:["dashboard","my dashboard","profile dashboard","what is dashboard","dashboard feature"],
+   r:"Your **Dashboard** is your personal creative command centre 📊 It shows your saved ideas, boards, activity stats, and AI-generated recommendations tailored to your taste. The more you save and interact, the smarter your recommendations get. Access it from the top navigation when you're logged in."},
+  {k:["ai generate board","generate board","ai board","create board with ai","ai inspiration","generate inspiration","ai feature","zenpin ai","what ai features"],
+   r:"The **AI Generate Board** feature is one of ZenPin's most powerful tools! 🤖✨ Type any theme or concept (e.g. 'dark academia study room', 'Japanese street fashion', 'minimalist car garage') and the AI builds a full inspiration board from ZenPin's image library plus AI curation. Find it in the AI tab. Try something specific — the more detail in your prompt, the better the results!"},
+  {k:["image analyzer","analyze image","analyse image","what is image analyzer","image analysis","ai analyze"],
+   r:"The **Image Analyzer** uses AI to break down any image 🔬 — it identifies the visual style, dominant colour palette, mood, creative techniques used, and even gives you steps to recreate the look. Upload any image or use one from ZenPin. Find it in the AI tab. Perfect for when you see something you love and want to understand WHY it works."},
+  {k:["voice search","search by voice","how does voice search work","microphone search","speak to search"],
+   r:"ZenPin has **voice search** built in! 🎤 Click the microphone icon in the search bar (desktop) and speak your query naturally — 'show me anime wallpapers' or 'find minimalist workspaces'. Your browser will ask for microphone permission the first time. Works best in Chrome. Say exactly what you're looking for!"},
+  {k:["dark mode","light mode","theme","change theme","switch theme","night mode","how to change mode"],
+   r:"Switching modes is instant! 🌙 On **desktop**, click the moon/sun icon in the top navigation. On **mobile**, tap the moon icon in the bottom navigation bar. Your preference is saved automatically so ZenPin remembers it next time. Dark mode is especially beautiful with ZenPin's ambient visual backgrounds!"},
+  {k:["mobile app","zenpin mobile","mobile version","use on phone","phone app","tablet","responsive"],
+   r:"ZenPin works beautifully on mobile! 📱 Open it in your mobile browser and you'll get a dedicated mobile navigation bar at the bottom with quick access to all features. You can also **add it to your home screen** for an app-like experience — on Chrome tap ⋮ → 'Add to Home Screen', on Safari tap Share → 'Add to Home Screen'."},
+
+  // ── Troubleshooting ───────────────────────────────────────────
+  {k:["images not loading","images broken","images not showing","blank images","pictures not showing","photos not loading","broken images"],
+   r:"Image loading issues — let's fix it! 🔧 First try **hard refresh** (Ctrl+Shift+R on Windows / Cmd+Shift+R on Mac). If that doesn't work: 1. Check your internet connection. 2. Clear browser cache (Settings → Clear browsing data). 3. Try a different browser. If images are still blank, the CDN may be loading — wait 10 seconds and scroll down to trigger them. Still broken? Tell me which page!"},
+  {k:["page not loading","site not loading","zenpin down","website down","not working","site broken","page broken","app not working","loading forever","stuck loading"],
+   r:"ZenPin not loading — troubleshoot steps 🔧 1. Check your internet — try loading another site. 2. Hard refresh: Ctrl+Shift+R (Win) / Cmd+Shift+R (Mac). 3. Clear cache: Ctrl+Shift+Delete. 4. Try incognito/private window. 5. Try a different browser. 6. Check if GitHub Pages is having an outage. Most issues resolve with a hard refresh + cache clear!"},
+  {k:["can't save","save not working","save button broken","saving issue","bookmark not working"],
+   r:"Save button not working? 🔖 Make sure you're **logged in** — saving requires an account. If you are logged in, try: 1. Hard refresh the page (Ctrl+Shift+R). 2. Check if you're offline. 3. Clear cache and try again. If it's still broken, there may be a temporary server issue — try again in a few minutes."},
+  {k:["login not working","can't log in","login error","wrong password","account locked","authentication failed","sign in failed"],
+   r:"Login trouble — let's sort it 🔐 First: double-check CAPS LOCK is off and check for typos. Try the **Forgot Password** link to reset. If you get an error message, tell me exactly what it says. Sometimes clearing cookies fixes it (Settings → Clear browsing data → Cookies). Still stuck? Try signing up with the same email — the system may prompt a password reset."},
+  {k:["search not working","search broken","search giving wrong results","nothing found","no results","search returns nothing"],
+   r:"Search issues 🔍 Try these: 1. Use simpler terms — 'car' instead of 'red sports car interior'. 2. Check spelling. 3. Try a category chip filter instead of typing. 4. Hard refresh the page. 5. Ask ME directly — I can surface images from any category! If you searched and got totally wrong images, try again after clearing the search bar completely."},
+  {k:["slow","laggy","zenpin slow","loading slow","performance","runs slowly","takes forever"],
+   r:"Slow performance fixes: ⚡ 1. Close unused tabs (especially video tabs). 2. Clear browser cache. 3. Disable browser extensions temporarily. 4. Check your internet speed. 5. Try Chrome if you're not already using it — it handles lazy-loaded image grids best. ZenPin loads hundreds of images — a fast connection and modern browser make a big difference!"},
+
+  // ── Category image requests ───────────────────────────────────
+  {k:["show me pets","pet photos","cute animals","cat photos","dog photos","animal photos","pet inspiration","cute pets"],
+   r:"Aww, pet content incoming! 🐾 ZenPin's Pets section has adorable cats, dogs, and more — perfect for pet lovers and anyone who needs their heart warmed. Let me show you some!",cat:"pets"},
+  {k:["show me food","food photos","food photography","food inspiration","food aesthetic","cooking photos","recipe photos"],
+   r:"Food photography at its finest! 🍕 ZenPin's Food section has stunning culinary shots — from street food to fine dining. Whether you want cooking inspiration or just beautiful imagery, it's all here!",cat:"food"},
+  {k:["show me interior","interior design","room ideas","home decor","living room ideas","bedroom ideas","interior inspiration"],
+   r:"Interior design inspiration loading! 🏠 ZenPin's Interior Design section has everything from cosy Scandinavian living rooms to dramatic dark-academia studies. Find your perfect space aesthetic!",cat:"interior"},
+  {k:["show me nature","nature photos","landscape photos","outdoor photography","nature inspiration","scenery photos","mountains","forests","oceans"],
+   r:"Time to breathe! 🌿 ZenPin's Nature section has stunning landscapes, forests, oceans and more — perfect for finding calm and natural beauty. Let me show you!",cat:"nature"},
+  {k:["show me accessories","accessories inspiration","jewellery inspiration","jewelry inspiration","fashion accessories","bags","watches","style accessories"],
+   r:"Accessory inspiration time! 💍 ZenPin's Accessories section features beautiful jewellery, bags, watches and styling ideas — perfect for elevating any outfit. Have a look!",cat:"accessories"},
+  {k:["show me art","art inspiration","artwork","paintings","illustrations","creative art","digital art inspiration","art gallery"],
+   r:"Art time! 🎨 ZenPin's Art section is packed with stunning paintings, digital illustrations, and creative works across every style. Something in here will spark your next creative project!",cat:"art"},
+  {k:["show me architecture","architecture inspiration","buildings","architectural photography","famous buildings"],
+   r:"Architectural wonders incoming! 🏛️ ZenPin's Architecture section features iconic buildings, modern structures, and breathtaking spaces from around the world. Prepare to be inspired!",cat:"architecture"},
+  {k:["show me superhero","superhero art","superhero","comic art","marvel","dc","hero art","superhero aesthetic"],
+   r:"Hero time! 🦸 ZenPin's Superhero section is packed with incredible fan art, dramatic hero aesthetics, and comic-inspired visuals. Whether Marvel or DC, you'll love this!",cat:"superhero"},
+  {k:["show me workspace","workspace inspiration","desk setup","home office","study setup","work from home","desk aesthetic","office setup"],
+   r:"Workspace goals incoming! 💼 ZenPin's Workspace section has the most aesthetically pleasing desk setups, home offices, and study spaces. Perfect for upgrading your own setup!",cat:"workspace"},
 ];
 const CAT_KEYWORDS = {
   bikes:       ["bike","motorcycle","motorbike","two wheel","superbike","cruiser"],
@@ -4093,6 +4193,10 @@ function buildLocalBoard(topic) {
     { keys: ["dark","moody","cinematic","dramatic","gothic","emo"], cat:"anime" },
     { keys: ["pink","pastel","kawaii","cute","girly","soft aesthetic"], cat:"fashion" },
     { keys: ["outdoor","hiking","camping","adventure","explore","mountains"], cat:"scenery" },
+    // tech/gadget topics → workspace (closest available _curatedCache key)
+    { keys: ["tech","gadget","apple","iphone","macbook","laptop","monitor","keyboard"], cat:"workspace" },
+    // travel/trip topics → scenery (closest available _curatedCache key)
+    { keys: ["trip","vacation","wanderlust","holiday","destination","journey"], cat:"scenery" },
   ];
 
   let matchedCat = null;
@@ -5125,6 +5229,12 @@ function initZenchat() {
         img.alt     = idea.title || "";
         img.loading = "lazy";
         img.onerror = () => { card.style.display="none"; };
+        img.style.cursor = "pointer";
+        card.onclick = () => {
+          const _zcIdx = currentModalItems.findIndex(i => String(i.id) === String(idea.id));
+          if (_zcIdx > -1) { currentModalIndex = _zcIdx; openModal(currentModalItems[_zcIdx]); }
+          else { currentModalItems = [idea]; currentModalIndex = 0; openModal(idea); }
+        };
         card.appendChild(img);
         grid.appendChild(card);
       });
@@ -5218,7 +5328,7 @@ function initZenchat() {
       reply = "I didn't quite catch that — could you rephrase? Try asking about a category or 'what can you do?'";
     }
 
-    console.log("[ZenPin] zenchat fallback reply used");
+    if (!hit) console.log("[ZenPin] zenchat fallback reply used");
     appendZcMsg("bot", reply, ideaCards);
   }
 
@@ -5461,29 +5571,38 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Open modal
     const card = e.target.closest(".idea-card[data-id]");
     if (card && !e.target.closest(".card-ico-btn")) {
-      const _clickedId = card.dataset.id;
-      console.log("[ZenPin] image clicked:", _clickedId);
-      const _idx = currentModalItems.findIndex(i => String(i.id) === String(_clickedId));
-      if (_idx > -1) {
-        currentModalIndex = _idx;
-        console.log("[ZenPin] modal opened index:", _idx);
-        openModal(currentModalItems[_idx]);
+      const _clickedId  = card.dataset.id;
+      const _modalIdx   = parseInt(card.dataset.modalIndex, 10);
+      console.log("[ZenPin] clicked id:", _clickedId, "index:", _modalIdx);
+      // Use data-modal-index for instant, zero-lookup access (no id comparison needed)
+      if (!isNaN(_modalIdx) && _modalIdx >= 0 && _modalIdx < currentModalItems.length &&
+          String(currentModalItems[_modalIdx].id) === String(_clickedId)) {
+        // Fast path: index AND id both match — guaranteed correct image
+        currentModalIndex = _modalIdx;
+        console.log("[ZenPin] modal opening id:", _clickedId, "index sync check: OK");
+        openModal(currentModalItems[_modalIdx]);
       } else {
-        // idea not yet in currentModalItems (e.g. loaded late or from backend)
-        // Search allIdeas then add it so navigation context is correct
-        const _fb = S.allIdeas.find(i => String(i.id) === String(_clickedId));
-        if (_fb) {
-          // Push into items so prev/next still works from this point
-          currentModalItems = [...currentModalItems, _fb];
-          currentModalIndex = currentModalItems.length - 1;
-          openModal(_fb);
+        // Slow path: index stale (after concat/append) — fall back to id search
+        const _fbIdx = currentModalItems.findIndex(i => String(i.id) === String(_clickedId));
+        console.log("[ZenPin] modal index sync check: stale, fallback idx =", _fbIdx);
+        if (_fbIdx > -1) {
+          currentModalIndex = _fbIdx;
+          openModal(currentModalItems[_fbIdx]);
         }
+        // If still not found, ignore the click — never open wrong image
       }
       return;
     }
     // Related thumb
     const rel = e.target.closest(".related-thumb[data-id]");
-    if (rel) openModal(Number(rel.dataset.id));
+    if (rel) {
+      // Related thumbs come from backend — don't lookup in currentModalItems
+      // They open as standalone; prev/next won't navigate (different context)
+      const relId = rel.dataset.id;
+      const relIdea = currentModalItems.find(i => String(i.id) === String(relId)) ||
+                      S.allIdeas.find(i => String(i.id) === String(relId));
+      if (relIdea) openModal(relIdea);
+    }
   });
 
   // ── Modal ──────────────────────────────────────────────────
@@ -5582,7 +5701,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // ── Keyboard shortcuts ─────────────────────────────────────
   document.addEventListener("keydown", e => {
-    if (e.key === "Escape") closeModal();
+    if (e.key === "Escape") { closeModal(); document.body.classList.remove("mobile-search-open"); }
     if (e.key === "/" && document.activeElement !== $("globalSearch")) {
       e.preventDefault();
       $("globalSearch")?.focus();
@@ -5948,11 +6067,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
     console.log("[ZenPin] search started:", term);
-    console.log("[ZenPin] search pool size:", pool.length);
-    const words = term.split(/\s+/).filter(Boolean);
 
     // Collect all local ideas
     const pool = getAllLocalIdeas();
+    const words = term.split(/\s+/).filter(Boolean);
+    console.log("[ZenPin] search pool size:", pool.length);
 
     // Score each idea
     function scoreIdea(idea) {
@@ -6006,17 +6125,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (S.page !== "home" && S.page !== "explore") go("home");
   }
 
-  // Wire search input
+  // globalSearch Enter and live-clear are both handled by the searchInput listeners above.
+  // No additional listeners needed here.
   const srchInput = $("globalSearch");
-  if (srchInput) {
-    srchInput.addEventListener("keydown", e => {
-      if (e.key === "Enter") { e.preventDefault(); runSearch(srchInput.value); }
-    });
-    // Live clear: if input is emptied, restore grid
-    srchInput.addEventListener("input", () => {
-      if (!srchInput.value.trim()) { console.log("[ZenPin] search cleared"); S.filter = null; initHome(); }
-    });
-  }
   // Search icon click
   const searchIco = document.querySelector(".nav-search-ico");
   if (searchIco) searchIco.style.cursor = "pointer";
@@ -6026,27 +6137,25 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Mobile search open
   // Mobile search — spec-exact implementation
+  // Audit duplicate search elements at startup
+  (() => {
+    const dup = Math.max(0, document.querySelectorAll("#globalSearch").length - 1 +
+                            document.querySelectorAll("#mobileSearchBtn").length - 1);
+    console.log("[ZenPin] duplicate search elements found:", dup);
+  })();
+
   document.getElementById("mobileSearchBtn")?.addEventListener("click", e => {
-    e.stopPropagation();
-    go("explore");
-    setTimeout(() => {
-      document.body.classList.add("mobile-search-open");
-      const input = document.getElementById("globalSearch");
-      if (input) {
-        input.value = "";
-        input.focus();
-        input.select();
-      }
-      console.log("[ZenPin] mobile search opened");
-    }, 120);
+    e.stopPropagation();  // prevent immediate close by document handler
+    document.body.classList.add("mobile-search-open");
+    const input = document.getElementById("globalSearch");
+    if (input) { input.value = ""; input.focus(); input.select(); }
+    console.log("[ZenPin] mobile search opened");
   });
   document.addEventListener("click", e => {
     if (!document.body.classList.contains("mobile-search-open")) return;
     const wrap = document.querySelector(".nav-search-wrap");
     const btn  = document.getElementById("mobileSearchBtn");
-    const clickedWrap = wrap && wrap.contains(e.target);
-    const clickedBtn  = btn  && btn.contains(e.target);
-    if (!clickedWrap && !clickedBtn) {
+    if (!(wrap && wrap.contains(e.target)) && !(btn && btn.contains(e.target))) {
       document.body.classList.remove("mobile-search-open");
       console.log("[ZenPin] mobile search closed");
     }
