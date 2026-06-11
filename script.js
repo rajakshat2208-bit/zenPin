@@ -3829,11 +3829,7 @@ const BRAIN = [
   {k:["how to upload","upload image","add image","post image","share image","upload photo","add photo"],
    r:"To upload your own image or idea: make sure you're **logged in**, then click the **Create** button (the + icon in the nav). Fill in the details — title, category, description — and attach your image. It'll appear in your profile and can be saved to boards. The community can then discover and save your creations too!"},
   {k:["what are categories","all categories","list categories","available categories","how many categories","category list"],
-   r:"ZenPin has **15 curated categories** 🎨 — each with up to 100 hand-picked images:
-
-🚗 Cars · 🏍️ Bikes · 🎌 Anime · 👗 Fashion · 🎮 Gaming · 🌿 Nature · 🏛️ Architecture · 🍕 Food · 🐾 Pets · 🌅 Scenery · 🦸 Superhero · 💼 Workspace · 💍 Accessories · 🎨 Art · 🏠 Interior Design
-
-Browse them all in the Explore tab or ask me to show you any category!"},
+   r:"ZenPin has **15 curated categories** 🎨 — each with up to 100 hand-picked images:\n\n🚗 Cars · 🏍️ Bikes · 🎌 Anime · 👗 Fashion · 🎮 Gaming · 🌿 Nature · 🏛️ Architecture · 🍕 Food · 🐾 Pets · 🌅 Scenery · 🦸 Superhero · 💼 Workspace · 💍 Accessories · 🎨 Art · 🏠 Interior Design\n\nBrowse them all in the Explore tab or ask me to show you any category!"},
   {k:["collaboration","collaborate","collab feature","how to collaborate","team board","shared board","work with others"],
    r:"The **Collaboration** page lets you work on boards with other ZenPin users in real time! 🤝 You can invite people to contribute to a shared board, leave comments, and build a collective mood board together. Great for design teams, project planning, or just creating with friends. Find it in the top navigation!"},
   {k:["dashboard","my dashboard","profile dashboard","what is dashboard","dashboard feature"],
