@@ -3763,28 +3763,302 @@ body  { font-family: var(--font-body); }
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   MOBILE SEARCH OVERLAY — inside @media so it beats the 768px hide rule
+   MOBILE FULL-SCREEN SEARCH SCREEN
+   Only active on ≤768px. Replaces the old floating overlay.
    ═══════════════════════════════════════════════════════════════ */
+
+/* ── Base: screen is hidden ─────────────────────────────────── */
+.ms-screen {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 10500;
+  flex-direction: column;
+  overflow: hidden;
+  /* Dark glassmorphism — matches ZenPin dark palette */
+  background: rgba(8, 5, 18, 0.97);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+/* Only show on mobile */
 @media (max-width: 768px) {
-  body.mobile-search-open .nav-search-wrap {
-    display: flex !important;
-    align-items: center !important;
-    position: fixed !important;
-    top: calc(var(--nav-h) + 8px) !important;   /* clears the 68px nav bar */
-    left: 4% !important;
-    right: 4% !important;
-    width: 92% !important;
-    z-index: 10020 !important;
-    height: 52px !important;
-    padding: 0 14px !important;
-    border-radius: 16px !important;
-    background: rgba(18,12,30,0.97) !important;
-    border: 1px solid rgba(168,85,247,0.4) !important;
-    backdrop-filter: blur(20px) !important;
-    -webkit-backdrop-filter: blur(20px) !important;
-    box-shadow: 0 12px 36px rgba(0,0,0,0.45), 0 0 0 1px rgba(168,85,247,0.15) !important;
-    gap: 10px !important;
+  .ms-screen {
+    display: none; /* JS adds .ms-screen--open to show */
   }
+  .ms-screen.ms-screen--open {
+    display: flex;
+    animation: ms-slidein 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+
+@keyframes ms-slidein {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Top bar ─────────────────────────────────────────────────── */
+.ms-topbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px 10px;
+  padding-top: calc(12px + env(safe-area-inset-top, 0px));
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(140, 100, 255, 0.12);
+}
+
+.ms-back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 40px; height: 40px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.09);
+  color: rgba(200, 170, 255, 0.9);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.ms-back:active { background: rgba(168,85,247,0.2); }
+
+.ms-input-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 48px;
+  padding: 0 14px;
+  background: rgba(255,255,255,0.07);
+  border: 1.5px solid rgba(168,85,247,0.25);
+  border-radius: 14px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.ms-input-wrap:focus-within {
+  border-color: rgba(168,85,247,0.6);
+  box-shadow: 0 0 0 3px rgba(168,85,247,0.12);
+}
+
+.ms-search-ico {
+  flex-shrink: 0;
+  color: rgba(168,85,247,0.7);
+}
+
+.ms-input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  font-size: 1.05rem;
+  font-weight: 400;
+  color: rgba(240, 225, 255, 0.95);
+  caret-color: #a855f7;
+  min-width: 0;
+}
+.ms-input::placeholder { color: rgba(180,150,255,0.4); }
+
+/* Remove browser search clear button — we have our own */
+.ms-input::-webkit-search-cancel-button { display: none; }
+
+.ms-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.12);
+  border: none;
+  color: rgba(200,180,255,0.8);
+  cursor: pointer;
+}
+.ms-clear:active { background: rgba(168,85,247,0.3); }
+
+.ms-voice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 40px; height: 40px;
+  border-radius: 12px;
+  background: rgba(168,85,247,0.1);
+  border: 1px solid rgba(168,85,247,0.25);
+  color: rgba(168,85,247,0.85);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.ms-voice:active { background: rgba(168,85,247,0.3); }
+.ms-voice.listening {
+  background: rgba(168,85,247,0.25);
+  color: #a855f7;
+  animation: ms-pulse 1s ease-in-out infinite;
+}
+@keyframes ms-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(168,85,247,0.4); }
+  50%       { box-shadow: 0 0 0 8px rgba(168,85,247,0); }
+}
+
+/* ── Scroll area (suggestions + results) ────────────────────── */
+.ms-suggestions,
+.ms-results {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 0 calc(80px + env(safe-area-inset-bottom, 0px));
+}
+
+/* ── Section labels ─────────────────────────────────────────── */
+.ms-section-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(168,85,247,0.6);
+  padding: 16px 16px 8px;
+}
+
+/* ── Trending chips ─────────────────────────────────────────── */
+.ms-trending {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0 16px 4px;
+}
+.ms-trend-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 7px 14px;
+  border-radius: 20px;
+  background: rgba(168,85,247,0.1);
+  border: 1px solid rgba(168,85,247,0.22);
+  color: rgba(210,185,255,0.9);
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.ms-trend-chip:active {
+  background: rgba(168,85,247,0.25);
+  border-color: rgba(168,85,247,0.5);
+}
+
+/* ── Category chips ─────────────────────────────────────────── */
+.ms-cat-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0 16px 4px;
+}
+.ms-cat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 16px;
+  border-radius: 22px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: rgba(220,200,255,0.9);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+.ms-cat-chip:active {
+  transform: scale(0.96);
+  background: rgba(168,85,247,0.2);
+  border-color: rgba(168,85,247,0.45);
+}
+
+/* ── Visual preview grid (2-col masonry) ────────────────────── */
+.ms-preview-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 0 16px 8px;
+}
+
+.ms-preview-card {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  cursor: pointer;
+  background: rgba(255,255,255,0.05);
+  aspect-ratio: 3/4;
+  transition: transform 0.18s, box-shadow 0.18s;
+}
+.ms-preview-card:active { transform: scale(0.97); }
+
+/* Alternate row heights for masonry feel */
+.ms-preview-card:nth-child(odd)  { aspect-ratio: 3/4; }
+.ms-preview-card:nth-child(even) { aspect-ratio: 2/3; margin-top: 20px; }
+
+.ms-preview-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: opacity 0.3s;
+  opacity: 0;
+}
+.ms-preview-card img.loaded { opacity: 1; }
+
+.ms-preview-label {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  padding: 24px 10px 10px;
+  background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+/* ── Results ─────────────────────────────────────────────────── */
+.ms-results-meta {
+  font-size: 0.75rem;
+  color: rgba(168,85,247,0.7);
+  padding: 12px 16px 4px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.ms-results-grid {
+  padding: 8px 12px;
+  column-count: 2;
+  column-gap: 8px;
+}
+.ms-results-grid .card-wrap {
+  break-inside: avoid;
+  margin-bottom: 8px;
+}
+.ms-results-grid .idea-card {
+  border-radius: 12px;
+  overflow: hidden;
+  width: 100%;
+}
+
+/* ── Empty state ─────────────────────────────────────────────── */
+.ms-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  color: rgba(180,150,255,0.5);
+  text-align: center;
+  gap: 12px;
+}
+.ms-empty svg { opacity: 0.4; }
+.ms-empty p   { font-size: 0.95rem; line-height: 1.5; }
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 }
 
 /* 8-icon mobile nav grid */
@@ -3805,62 +4079,4 @@ body  { font-family: var(--font-body); }
   .mn-btn svg { width: 15px !important; height: 15px !important; }
 }
 
-/* Mobile search overlay close button (injected by JS) */
-.mobile-search-close {
-  display: none;  /* hidden by default */
-}
-body.mobile-search-open .mobile-search-close {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  flex-shrink: 0 !important;
-  order: 4 !important;
-  width: 32px !important;
-  height: 32px !important;
-  border-radius: 8px !important;
-  background: rgba(255,255,255,0.07) !important;
-  border: 1px solid rgba(255,255,255,0.12) !important;
-  color: rgba(255,255,255,0.7) !important;
-  cursor: pointer !important;
-  transition: background 0.15s !important;
-}
-body.mobile-search-open .mobile-search-close:hover {
-  background: rgba(168,85,247,0.2) !important;
-  color: #fff !important;
-}
-
-/* Mobile search overlay: full-width layout — icon LEFT, input CENTRE, voice RIGHT */
-body.mobile-search-open .nav-search-kbd {
-  display: none !important;  /* hide keyboard shortcut hint */
-}
-body.mobile-search-open .nav-voice-btn {
-  display: flex !important;  /* show voice button on right */
-  flex-shrink: 0 !important;
-  order: 3 !important;
-  width: 36px !important;
-  height: 36px !important;
-  border-radius: 10px !important;
-  background: rgba(168,85,247,0.12) !important;
-  color: rgba(168,85,247,0.9) !important;
-  align-items: center !important;
-  justify-content: center !important;
-  border: 1px solid rgba(168,85,247,0.25) !important;
-}
-body.mobile-search-open .nav-search-ico {
-  flex-shrink: 0 !important;
-  order: 1 !important;
-  color: rgba(168,85,247,0.85) !important;
-  width: 18px !important;
-  height: 18px !important;
-}
-body.mobile-search-open .nav-search-input {
-  flex: 1 1 auto !important;
-  order: 2 !important;
-  padding: 0 8px !important;
-  font-size: 1rem !important;
-  min-width: 0 !important;
-  background: transparent !important;
-  border: none !important;
-  outline: none !important;
-  color: inherit !important;
-}
+/* mobile-search-close removed — replaced by full-screen search screen */
