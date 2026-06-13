@@ -418,9 +418,14 @@ function renderGrid(container, ideas) {
   currentModalItems = ideas.slice();
   window.dispatchEvent(new CustomEvent("zenpin:gridupdate"));
 
-  // Preload first 6 above-the-fold images immediately
+  // Preload first 6 above-the-fold images immediately.
+  // Use idea.image_url directly — same source as cardHTML — so we
+  // preload the exact URL the card will display, not a rotated variant.
   ideas.slice(0, 6).forEach(idea => {
-    const url = getLocalImage(idea);
+    const _raw = idea.image_url || idea.img || "";
+    const _isPlaceholder = !_raw || _raw.includes("loremflickr") ||
+                           _raw.includes("picsum") || _raw.includes("unsplash");
+    const url = _isPlaceholder ? getLocalImage(idea) : _raw;
     if (url && !url.includes("picsum")) {
       const img   = new Image();
       img.loading = "eager";
@@ -5697,7 +5702,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // ── Keyboard shortcuts ─────────────────────────────────────
   document.addEventListener("keydown", e => {
-    if (e.key === "Escape") { closeModal(); closeMobileSearch(); }
+    if (e.key === "Escape") { closeModal(); if (window._closeMobileSearch) window._closeMobileSearch(); }
     if (e.key === "/" && document.activeElement !== $("globalSearch")) {
       e.preventDefault();
       $("globalSearch")?.focus();
@@ -6140,45 +6145,265 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.log("[ZenPin] duplicate search elements found:", dup);
   })();
 
-  // ── Mobile search open/close ────────────────────────────────
-  let _mobileSearchCloseBtn = null;
+  // ══════════════════════════════════════════════════════════════
+  // MOBILE FULL-SCREEN SEARCH SCREEN
+  // ══════════════════════════════════════════════════════════════
+  (function initMobileSearch() {
 
-  function openMobileSearch() {
-    document.body.classList.add("mobile-search-open");
-    const input = document.getElementById("globalSearch");
-    if (input) { input.value = ""; setTimeout(() => { input.focus(); input.select(); }, 80); }
+    const screen   = document.getElementById("mobileSearchScreen");
+    const msInput  = document.getElementById("msInput");
+    const msClear  = document.getElementById("msClear");
+    const msBack   = document.getElementById("msBack");
+    const msVoice  = document.getElementById("msVoice");
+    const msSugg   = document.getElementById("msSuggestions");
+    const msRes    = document.getElementById("msResults");
+    const msResGrid= document.getElementById("msResultsGrid");
+    const msResMeta= document.getElementById("msResultsMeta");
 
-    // Inject close (X) button into the search wrap if not already there
-    const wrap = document.querySelector(".nav-search-wrap");
-    if (wrap && !wrap.querySelector(".mobile-search-close")) {
-      _mobileSearchCloseBtn = document.createElement("button");
-      _mobileSearchCloseBtn.className = "mobile-search-close";
-      _mobileSearchCloseBtn.setAttribute("aria-label", "Close search");
-      _mobileSearchCloseBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
-      _mobileSearchCloseBtn.addEventListener("click", e => { e.stopPropagation(); closeMobileSearch(); });
-      wrap.appendChild(_mobileSearchCloseBtn);
+    if (!screen) { console.warn("[ZenPin] mobile search screen not found"); return; }
+
+    // ── Preview grid: dynamic — reads directly from _curatedCache ─
+    //
+    // No hardcoded paths. Each entry derives its image URL at
+    // runtime by picking a random index from the category's url
+    // array in _curatedCache. When new images are added and the
+    // seq() count is updated, they automatically become eligible.
+    //
+    // Display order and labels are the only things defined here.
+    const PREVIEW_CAT_DEFS = [
+      { label: "Anime",        key: "anime"        },
+      { label: "Fashion",      key: "fashion"      },
+      { label: "Cars",         key: "cars"         },
+      { label: "Gaming",       key: "gaming"       },
+      { label: "Nature",       key: "nature"       },
+      { label: "Workspace",    key: "workspace"    },
+      { label: "Architecture", key: "architecture" },
+      { label: "Food",         key: "food"         },
+      { label: "Art",          key: "art"          },
+      { label: "Interior",     key: "interior"     },
+      { label: "Scenery",      key: "scenery"      },
+      { label: "Bikes",        key: "bikes"        },
+      { label: "Pets",         key: "pets"         },
+      { label: "Superhero",    key: "superhero"    },
+      { label: "Accessories",  key: "accessories"  },
+    ];
+
+    // Pick a random url from a cache key's url array.
+    // Seeded by Math.random() so it varies on each page load.
+    function _pickPreviewUrl(key) {
+      const urls = _curatedCache[key];
+      if (!urls || !urls.length) return null;
+      const idx = Math.floor(Math.random() * urls.length);
+      return urls[idx];
     }
-    console.log("[ZenPin] mobile search opened");
-  }
 
-  function closeMobileSearch() {
-    document.body.classList.remove("mobile-search-open");
-    if (_mobileSearchCloseBtn) { _mobileSearchCloseBtn.remove(); _mobileSearchCloseBtn = null; }
-    console.log("[ZenPin] mobile search closed");
-  }
+    let _previewBuilt = false;
+    function buildPreviewGrid() {
+      if (_previewBuilt) return;
+      _previewBuilt = true;
+      const grid = document.getElementById("msPreviewGrid");
+      if (!grid) return;
+      grid.innerHTML = "";
 
-  document.getElementById("mobileSearchBtn")?.addEventListener("click", e => {
-    e.stopPropagation();
-    openMobileSearch();
-  });
-  document.addEventListener("click", e => {
-    if (!document.body.classList.contains("mobile-search-open")) return;
-    const wrap = document.querySelector(".nav-search-wrap");
-    const btn  = document.getElementById("mobileSearchBtn");
-    if (!(wrap && wrap.contains(e.target)) && !(btn && btn.contains(e.target))) {
-      closeMobileSearch();
+      PREVIEW_CAT_DEFS.forEach(({ label, key }) => {
+        const img = _pickPreviewUrl(key);
+        if (!img) return; // skip if category has no images yet
+
+        const card = document.createElement("div");
+        card.className = "ms-preview-card";
+        card.setAttribute("data-cat", key);
+
+        const image = document.createElement("img");
+        image.loading = "lazy";
+        image.alt     = label;
+        image.src     = img;
+        image.onload  = () => image.classList.add("loaded");
+        image.onerror = () => {
+          // Fall back to index 0 of the same category (always exists if count > 0)
+          const fallback = _curatedCache[key]?.[0];
+          if (fallback && image.src !== fallback) {
+            image.src = fallback;
+          } else {
+            image.classList.add("loaded"); // give up gracefully
+          }
+        };
+
+        const lbl = document.createElement("div");
+        lbl.className   = "ms-preview-label";
+        lbl.textContent = label;
+
+        card.appendChild(image);
+        card.appendChild(lbl);
+        card.addEventListener("click", () => runMobileSearch(key));
+        grid.appendChild(card);
+      });
     }
-  });
+
+    // ── Open / close ───────────────────────────────────────────
+    function openMobileSearch() {
+      screen.classList.add("ms-screen--open");
+      screen.setAttribute("aria-hidden", "false");
+      document.body.style.overflow = "hidden";
+      buildPreviewGrid();
+      showSuggestions();
+      // Focus input after animation frame
+      requestAnimationFrame(() => {
+        setTimeout(() => { if (msInput) msInput.focus(); }, 120);
+      });
+      console.log("[ZenPin] mobile search screen opened");
+    }
+
+    function closeMobileSearch() {
+      screen.classList.remove("ms-screen--open");
+      screen.setAttribute("aria-hidden", "true");
+      document.body.style.overflow = "";
+      if (msInput) msInput.value = "";
+      if (msClear) msClear.style.display = "none";
+      showSuggestions();
+      console.log("[ZenPin] mobile search screen closed");
+    }
+
+    // Make closeMobileSearch accessible to the global Escape handler
+    window._closeMobileSearch = closeMobileSearch;
+
+    // ── Show/hide sections ─────────────────────────────────────
+    function showSuggestions() {
+      if (msSugg) msSugg.style.display = "";
+      if (msRes)  msRes.style.display  = "none";
+    }
+    function showResults() {
+      if (msSugg) msSugg.style.display = "none";
+      if (msRes)  msRes.style.display  = "";
+    }
+
+    // ── Run a search inside the screen ─────────────────────────
+    function runMobileSearch(term) {
+      if (!term || !term.trim()) return;
+      const q = term.trim();
+      if (msInput) msInput.value = q;
+      if (msClear) msClear.style.display = "flex";
+
+      showResults();
+      if (msResMeta) msResMeta.textContent = `Results for "${q}"`;
+      if (msResGrid) msResGrid.innerHTML = `<div style="padding:24px;text-align:center;color:rgba(168,85,247,0.5)">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite">
+          <circle cx="12" cy="12" r="10" stroke-dasharray="31.4" stroke-dashoffset="10"/>
+        </svg></div>`;
+
+      // Use existing runSearch logic — but render into msResultsGrid
+      const pool = getAllLocalIdeas();
+      const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+      const scored = pool.map(idea => {
+        const hay = [idea.title||"", idea.category||"", idea.description||"",
+                     (idea.tags||[]).join(" ")].join(" ").toLowerCase();
+        let score = words.reduce((s,w) => s + (hay.includes(w) ? (hay.startsWith(w)?3:1) : 0), 0);
+        if ((idea.category||"").toLowerCase() === q.toLowerCase()) score += 5;
+        return { idea, score };
+      }).filter(x => x.score > 0).sort((a,b) => b.score - a.score);
+
+      const results = scored.slice(0, 40).map(x => x.idea);
+
+      // Also merge category-specific curated ideas if term matches a category
+      const ck = CATEGORY_MAP[q] || CATEGORY_MAP[q.toLowerCase()];
+      if (ck) {
+        const extra = getAllCuratedIdeas(ck).filter(i => !results.find(r => r.id === i.id));
+        results.push(...extra.slice(0, 20));
+      }
+
+      if (!results.length) {
+        if (msResGrid) msResGrid.innerHTML = `<div class="ms-empty">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+          <p>Nothing found for <strong>"${q}"</strong><br>Try a different keyword or pick a category below.</p></div>`;
+        if (msResMeta) msResMeta.textContent = `0 results for "${q}"`;
+        return;
+      }
+
+      if (msResMeta) msResMeta.textContent = `${results.length} results for "${q}"`;
+      if (msResGrid) {
+        msResGrid.innerHTML = "";
+        results.forEach((idea, i) => {
+          const wrap = document.createElement("div");
+          wrap.className = "card-wrap";
+          wrap.innerHTML = cardHTML(idea, i);
+          // Clicking a card opens the global modal
+          wrap.addEventListener("click", e => {
+            if (e.target.closest("[data-action]")) return;
+            const idx = i;
+            currentModalItems = results.slice();
+            currentModalIndex = idx;
+            openModal(idea);
+          });
+          msResGrid.appendChild(wrap);
+        });
+        // Trigger lazy loading for newly added images
+        window.dispatchEvent(new CustomEvent("zenpin:gridupdate"));
+      }
+    }
+
+    // ── Input events ───────────────────────────────────────────
+    msInput?.addEventListener("input", () => {
+      const val = msInput.value.trim();
+      if (msClear) msClear.style.display = val ? "flex" : "none";
+      if (!val) showSuggestions();
+    });
+
+    msInput?.addEventListener("keydown", e => {
+      if (e.key === "Enter" && msInput.value.trim()) {
+        e.preventDefault();
+        runMobileSearch(msInput.value.trim());
+      }
+    });
+
+    msClear?.addEventListener("click", e => {
+      e.stopPropagation();
+      if (msInput) msInput.value = "";
+      msClear.style.display = "none";
+      msInput?.focus();
+      showSuggestions();
+    });
+
+    // ── Back / close ───────────────────────────────────────────
+    msBack?.addEventListener("click", closeMobileSearch);
+
+    // ── Trending chips ─────────────────────────────────────────
+    document.getElementById("msTrending")?.addEventListener("click", e => {
+      const chip = e.target.closest(".ms-trend-chip");
+      if (chip?.dataset.q) runMobileSearch(chip.dataset.q);
+    });
+
+    // ── Category chips ─────────────────────────────────────────
+    document.getElementById("msCatChips")?.addEventListener("click", e => {
+      const chip = e.target.closest(".ms-cat-chip");
+      if (chip?.dataset.q) runMobileSearch(chip.dataset.q);
+    });
+
+    // ── Voice search ───────────────────────────────────────────
+    msVoice?.addEventListener("click", () => {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) { toast("Voice search not supported in this browser", true); return; }
+      const rec = new SR();
+      rec.lang = "en-US"; rec.interimResults = false; rec.maxAlternatives = 1;
+      msVoice.classList.add("listening");
+      rec.onresult = e => {
+        const text = e.results[0][0].transcript;
+        if (msInput) msInput.value = text;
+        if (msClear) msClear.style.display = "flex";
+        runMobileSearch(text);
+      };
+      rec.onend = () => msVoice.classList.remove("listening");
+      rec.onerror = () => msVoice.classList.remove("listening");
+      rec.start();
+    });
+
+    // ── Wire the mobile nav search button ──────────────────────
+    document.getElementById("mobileSearchBtn")?.addEventListener("click", e => {
+      e.stopPropagation();
+      openMobileSearch();
+    });
+
+  })(); // end initMobileSearch
 
   // Keyboard shortcut: press "/" to focus search
   document.addEventListener("keydown", e => {
