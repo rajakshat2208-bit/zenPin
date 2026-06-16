@@ -6311,16 +6311,31 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
 
       if (!results.length) {
-        if (msResGrid) msResGrid.innerHTML = `<div class="ms-empty">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-          </svg>
-          <p>Nothing found for <strong>"${q}"</strong><br>Try a different keyword or pick a category below.</p></div>`;
-        if (msResMeta) msResMeta.textContent = `0 results for "${q}"`;
+        const _suggestEmoji = {"anime":"🎌","fashion":"👗","cars":"🚗","gaming":"🎮","nature":"🌿","workspace":"💼","art":"🎨"};
+        const _suggestChips = Object.entries(_suggestEmoji).map(([c,e]) =>
+          `<button class="ms-empty-chip" data-q="${c}">${e} ${c}</button>`
+        ).join("");
+        if (msResGrid) {
+          msResGrid.innerHTML = `<div class="ms-empty">
+            <div class="ms-empty-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+              </svg>
+            </div>
+            <div class="ms-empty-headline">No results for "${q}"</div>
+            <div class="ms-empty-sub">Try a shorter keyword or browse a category below.</div>
+            <div class="ms-empty-suggestions" id="msEmptySuggestions">${_suggestChips}</div>
+          </div>`;
+          // Wire empty-state suggestion chips
+          msResGrid.querySelectorAll(".ms-empty-chip[data-q]").forEach(btn => {
+            btn.addEventListener("click", () => runMobileSearch(btn.dataset.q));
+          });
+        }
+        if (msResMeta) msResMeta.innerHTML = `<strong>0</strong> results for "${q}"`;
         return;
       }
 
-      if (msResMeta) msResMeta.textContent = `${results.length} results for "${q}"`;
+      if (msResMeta) msResMeta.innerHTML = `<strong>${results.length}</strong> results for &#8220;${q}&#8221;`;
       if (msResGrid) {
         msResGrid.innerHTML = "";
         results.forEach((idea, i) => {
@@ -6403,7 +6418,177 @@ document.addEventListener("DOMContentLoaded", async () => {
       openMobileSearch();
     });
 
+    // ── Recent searches (localStorage, max 8) ────────────────
+    const RECENT_KEY = "zp_recent_searches";
+    const MAX_RECENT = 8;
+
+    function getRecents() {
+      try { return JSON.parse(localStorage.getItem(RECENT_KEY) || "[]"); } catch { return []; }
+    }
+    function saveRecent(term) {
+      if (!term || term.length < 2) return;
+      let recents = getRecents().filter(r => r.toLowerCase() !== term.toLowerCase());
+      recents.unshift(term);
+      recents = recents.slice(0, MAX_RECENT);
+      try { localStorage.setItem(RECENT_KEY, JSON.stringify(recents)); } catch {}
+    }
+    function removeRecent(term) {
+      const recents = getRecents().filter(r => r !== term);
+      try { localStorage.setItem(RECENT_KEY, JSON.stringify(recents)); } catch {}
+    }
+    function renderMobileRecents() {
+      const recents = getRecents();
+      const section = document.getElementById("msRecentSection");
+      const list    = document.getElementById("msRecentList");
+      if (!section || !list) return;
+      if (!recents.length) { section.style.display = "none"; return; }
+      section.style.display = "";
+      list.innerHTML = recents.map(r => `
+        <div class="ms-recent-chip" data-q="${r.replace(/"/g,'&quot;')}">
+          <span class="ms-recent-chip-icon">↩</span>
+          <span>${r}</span>
+          <button class="ms-recent-chip-x" data-remove="${r.replace(/"/g,'&quot;')}" aria-label="Remove">✕</button>
+        </div>`).join("");
+      // Click to search
+      list.querySelectorAll(".ms-recent-chip").forEach(chip => {
+        chip.addEventListener("click", e => {
+          if (e.target.closest(".ms-recent-chip-x")) return;
+          runMobileSearch(chip.dataset.q);
+        });
+      });
+      // Click X to remove
+      list.querySelectorAll(".ms-recent-chip-x").forEach(btn => {
+        btn.addEventListener("click", e => {
+          e.stopPropagation();
+          removeRecent(btn.dataset.remove);
+          renderMobileRecents();
+        });
+      });
+    }
+    document.getElementById("msClearRecents")?.addEventListener("click", () => {
+      try { localStorage.removeItem(RECENT_KEY); } catch {}
+      renderMobileRecents();
+    });
+
+    // Render recents when screen opens
+    const _origOpenMobile = openMobileSearch;
+    openMobileSearch = function() {
+      _origOpenMobile();
+      renderMobileRecents();
+    };
+    window._closeMobileSearch = closeMobileSearch;
+
+    // Save to recents when search is run — wrap runMobileSearch
+    const _origRunMobile = runMobileSearch;
+    runMobileSearch = function(term) {
+      if (term && term.trim().length >= 2) saveRecent(term.trim());
+      _origRunMobile(term);
+    };
+
+    // ── Results section: animated transition ────────────────
+    const _origShowResults = showResults;
+    showResults = function() {
+      if (msSugg) {
+        msSugg.classList.add("hiding");
+        setTimeout(() => { msSugg.style.display = "none"; msSugg.classList.remove("hiding"); }, 180);
+      }
+      if (msRes) {
+        msRes.style.display = "";
+        msRes.classList.add("appearing");
+        msRes.addEventListener("animationend", () => msRes.classList.remove("appearing"), { once: true });
+      }
+    };
+
   })(); // end initMobileSearch
+
+  // ── Desktop search dropdown — recent searches + chips ────
+  (function initDesktopDropdown() {
+    const wrap    = document.getElementById("navSearchWrap");
+    const input   = document.getElementById("globalSearch");
+    const dropdown= document.getElementById("searchDropdown");
+    if (!wrap || !input || !dropdown) return;
+
+    const RECENT_KEY = "zp_recent_searches";
+    const MAX_RECENT = 8;
+
+    function getRecents() {
+      try { return JSON.parse(localStorage.getItem(RECENT_KEY) || "[]"); } catch { return []; }
+    }
+    function saveRecent(term) {
+      if (!term || term.length < 2) return;
+      let r = getRecents().filter(x => x.toLowerCase() !== term.toLowerCase());
+      r.unshift(term); r = r.slice(0, MAX_RECENT);
+      try { localStorage.setItem(RECENT_KEY, JSON.stringify(r)); } catch {}
+    }
+    function removeRecent(term) {
+      const r = getRecents().filter(x => x !== term);
+      try { localStorage.setItem(RECENT_KEY, JSON.stringify(r)); } catch {}
+    }
+    function renderDesktopRecents() {
+      const recents = getRecents();
+      const section = document.getElementById("sdRecentSection");
+      const list    = document.getElementById("sdRecentList");
+      if (!section || !list) return;
+      if (!recents.length) { section.style.display = "none"; return; }
+      section.style.display = "";
+      list.innerHTML = recents.map(r => `
+        <div class="sd-recent-chip" data-q="${r.replace(/"/g,'&quot;')}">
+          <span>↩ ${r}</span>
+          <button class="sd-recent-chip-x" data-remove="${r.replace(/"/g,'&quot;')}" aria-label="Remove">✕</button>
+        </div>`).join("");
+      list.querySelectorAll(".sd-recent-chip").forEach(chip => {
+        chip.addEventListener("mousedown", e => {
+          if (e.target.closest(".sd-recent-chip-x")) return;
+          e.preventDefault();
+          input.value = chip.dataset.q;
+          // Trigger existing search
+          input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+        });
+      });
+      list.querySelectorAll(".sd-recent-chip-x").forEach(btn => {
+        btn.addEventListener("mousedown", e => {
+          e.preventDefault(); e.stopPropagation();
+          removeRecent(btn.dataset.remove);
+          renderDesktopRecents();
+        });
+      });
+    }
+    document.getElementById("sdClearAll")?.addEventListener("mousedown", e => {
+      e.preventDefault();
+      try { localStorage.removeItem(RECENT_KEY); } catch {}
+      renderDesktopRecents();
+    });
+
+    // Chip clicks in dropdown
+    dropdown.querySelectorAll(".sd-chip").forEach(chip => {
+      chip.addEventListener("mousedown", e => {
+        e.preventDefault();
+        const q = chip.dataset.q;
+        if (!q) return;
+        input.value = q;
+        input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+        input.blur();
+      });
+    });
+
+    // Show recents on focus
+    input.addEventListener("focus", renderDesktopRecents);
+
+    // Save recent when Enter is pressed on the desktop search
+    input.addEventListener("keydown", e => {
+      if (e.key === "Enter") {
+        const term = input.value.trim();
+        if (term.length >= 2) saveRecent(term);
+      }
+    });
+
+    // Close dropdown on click outside (it hides via CSS :focus-within automatically,
+    // but ensure it's hidden on Escape too)
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape") input.blur();
+    });
+
+  })();
 
   // Keyboard shortcut: press "/" to focus search
   document.addEventListener("keydown", e => {
