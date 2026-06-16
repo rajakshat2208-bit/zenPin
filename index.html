@@ -41,13 +41,59 @@
 
     <!-- Search (desktop) -->
     <div class="nav-search-wrap" id="navSearchWrap">
-      <svg class="nav-search-ico" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <svg class="nav-search-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
       <input class="nav-search-input" id="globalSearch" type="text"
         placeholder="Search images…" autocomplete="off"/>
       <button class="nav-voice-btn" id="voiceSearchBtn" title="Voice search" aria-label="Voice search">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
       </button>
       <span class="nav-search-kbd" id="searchKbd">/</span>
+    </div>
+
+    <!-- Desktop Search Dropdown (focus-triggered, pure CSS-driven) -->
+    <div class="search-dropdown" id="searchDropdown" aria-hidden="true">
+      <div class="sd-inner">
+        <!-- Recent searches — populated by JS -->
+        <div class="sd-section" id="sdRecentSection" style="display:none">
+          <div class="sd-section-head">
+            <span>Recent</span>
+            <button class="sd-clear-all" id="sdClearAll">Clear all</button>
+          </div>
+          <div class="sd-recent-list" id="sdRecentList"></div>
+        </div>
+        <!-- Trending -->
+        <div class="sd-section">
+          <div class="sd-section-head"><span>Trending</span></div>
+          <div class="sd-chips">
+            <button class="sd-chip" data-q="anime wallpapers">🔥 Anime wallpapers</button>
+            <button class="sd-chip" data-q="gaming setup">🔥 Gaming setup</button>
+            <button class="sd-chip" data-q="luxury cars">🔥 Luxury cars</button>
+            <button class="sd-chip" data-q="workspace ideas">🔥 Workspace ideas</button>
+            <button class="sd-chip" data-q="interior design">🔥 Interior design</button>
+            <button class="sd-chip" data-q="food photography">🔥 Food photography</button>
+            <button class="sd-chip" data-q="nature aesthetics">🔥 Nature aesthetics</button>
+            <button class="sd-chip" data-q="fashion inspo">🔥 Fashion inspo</button>
+          </div>
+        </div>
+        <!-- Categories -->
+        <div class="sd-section">
+          <div class="sd-section-head"><span>Browse categories</span></div>
+          <div class="sd-chips">
+            <button class="sd-chip" data-q="anime">🎌 Anime</button>
+            <button class="sd-chip" data-q="fashion">👗 Fashion</button>
+            <button class="sd-chip" data-q="cars">🚗 Cars</button>
+            <button class="sd-chip" data-q="gaming">🎮 Gaming</button>
+            <button class="sd-chip" data-q="nature">🌿 Nature</button>
+            <button class="sd-chip" data-q="workspace">💼 Workspace</button>
+            <button class="sd-chip" data-q="architecture">🏛️ Architecture</button>
+            <button class="sd-chip" data-q="art">🎨 Art</button>
+            <button class="sd-chip" data-q="food">🍕 Food</button>
+            <button class="sd-chip" data-q="interior">🏠 Interior</button>
+            <button class="sd-chip" data-q="pets">🐾 Pets</button>
+            <button class="sd-chip" data-q="scenery">🌅 Scenery</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- AI Search Results Panel -->
@@ -154,12 +200,21 @@
       </button>
     </div>
     <button class="ms-voice" id="msVoice" aria-label="Voice search">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="13" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
     </button>
   </div>
 
   <!-- ── Suggestions (shown before typing) ── -->
   <div class="ms-suggestions" id="msSuggestions">
+
+    <!-- Recent searches — populated by JS from localStorage -->
+    <div id="msRecentSection" style="display:none">
+      <div class="ms-section-head">
+        <span class="ms-section-label" style="padding:0">Recent</span>
+        <button class="ms-clear-recents" id="msClearRecents">Clear all</button>
+      </div>
+      <div class="ms-recent-list" id="msRecentList"></div>
+    </div>
 
     <!-- Trending pills -->
     <div class="ms-section-label">Trending</div>
@@ -1006,20 +1061,20 @@
 
       <div class="modal-action-row">
         <button class="btn-primary" id="modalSaveBtn">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-          Save Idea
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+          <span>Save</span>
         </button>
         <button class="btn-ghost" id="modalAnalyzeBtn" title="Analyze with AI">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M11 8v3l2 2"/></svg>
-          Analyze
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M11 8v3l2 2"/></svg>
+          <span>Analyze</span>
         </button>
         <button class="btn-ghost modal-share-btn" id="modalShareBtn">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-          Share
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          <span>Share</span>
         </button>
         <button class="btn-ghost" id="modalDownloadBtn" title="Download image">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Download
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>Download</span>
         </button>
       </div>
 
