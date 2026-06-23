@@ -48,49 +48,48 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
       </button>
       <span class="nav-search-kbd" id="searchKbd">/</span>
-    </div>
-
-    <!-- Desktop Search Dropdown (focus-triggered, pure CSS-driven) -->
-    <div class="search-dropdown" id="searchDropdown" aria-hidden="true">
-      <div class="sd-inner">
-        <!-- Recent searches — populated by JS -->
-        <div class="sd-section" id="sdRecentSection" style="display:none">
-          <div class="sd-section-head">
-            <span>Recent</span>
-            <button class="sd-clear-all" id="sdClearAll">Clear all</button>
+      <!-- Desktop Search Dropdown — inside nav-search-wrap so :focus-within fires -->
+      <div class="search-dropdown" id="searchDropdown" aria-hidden="true">
+        <div class="sd-inner">
+          <!-- Recent searches — populated by JS -->
+          <div class="sd-section" id="sdRecentSection" style="display:none">
+            <div class="sd-section-head">
+              <span>Recent</span>
+              <button class="sd-clear-all" id="sdClearAll">Clear all</button>
+            </div>
+            <div class="sd-recent-list" id="sdRecentList"></div>
           </div>
-          <div class="sd-recent-list" id="sdRecentList"></div>
-        </div>
-        <!-- Trending -->
-        <div class="sd-section">
-          <div class="sd-section-head"><span>Trending</span></div>
-          <div class="sd-chips">
-            <button class="sd-chip" data-q="anime wallpapers">🔥 Anime wallpapers</button>
-            <button class="sd-chip" data-q="gaming setup">🔥 Gaming setup</button>
-            <button class="sd-chip" data-q="luxury cars">🔥 Luxury cars</button>
-            <button class="sd-chip" data-q="workspace ideas">🔥 Workspace ideas</button>
-            <button class="sd-chip" data-q="interior design">🔥 Interior design</button>
-            <button class="sd-chip" data-q="food photography">🔥 Food photography</button>
-            <button class="sd-chip" data-q="nature aesthetics">🔥 Nature aesthetics</button>
-            <button class="sd-chip" data-q="fashion inspo">🔥 Fashion inspo</button>
+          <!-- Trending -->
+          <div class="sd-section">
+            <div class="sd-section-head"><span>Trending</span></div>
+            <div class="sd-chips">
+              <button class="sd-chip" data-q="anime wallpapers">🔥 Anime wallpapers</button>
+              <button class="sd-chip" data-q="gaming setup">🔥 Gaming setup</button>
+              <button class="sd-chip" data-q="luxury cars">🔥 Luxury cars</button>
+              <button class="sd-chip" data-q="workspace ideas">🔥 Workspace ideas</button>
+              <button class="sd-chip" data-q="interior design">🔥 Interior design</button>
+              <button class="sd-chip" data-q="food photography">🔥 Food photography</button>
+              <button class="sd-chip" data-q="nature aesthetics">🔥 Nature aesthetics</button>
+              <button class="sd-chip" data-q="fashion inspo">🔥 Fashion inspo</button>
+            </div>
           </div>
-        </div>
-        <!-- Categories -->
-        <div class="sd-section">
-          <div class="sd-section-head"><span>Browse categories</span></div>
-          <div class="sd-chips">
-            <button class="sd-chip" data-q="anime">🎌 Anime</button>
-            <button class="sd-chip" data-q="fashion">👗 Fashion</button>
-            <button class="sd-chip" data-q="cars">🚗 Cars</button>
-            <button class="sd-chip" data-q="gaming">🎮 Gaming</button>
-            <button class="sd-chip" data-q="nature">🌿 Nature</button>
-            <button class="sd-chip" data-q="workspace">💼 Workspace</button>
-            <button class="sd-chip" data-q="architecture">🏛️ Architecture</button>
-            <button class="sd-chip" data-q="art">🎨 Art</button>
-            <button class="sd-chip" data-q="food">🍕 Food</button>
-            <button class="sd-chip" data-q="interior">🏠 Interior</button>
-            <button class="sd-chip" data-q="pets">🐾 Pets</button>
-            <button class="sd-chip" data-q="scenery">🌅 Scenery</button>
+          <!-- Categories -->
+          <div class="sd-section">
+            <div class="sd-section-head"><span>Browse categories</span></div>
+            <div class="sd-chips">
+              <button class="sd-chip" data-q="anime">🎌 Anime</button>
+              <button class="sd-chip" data-q="fashion">👗 Fashion</button>
+              <button class="sd-chip" data-q="cars">🚗 Cars</button>
+              <button class="sd-chip" data-q="gaming">🎮 Gaming</button>
+              <button class="sd-chip" data-q="nature">🌿 Nature</button>
+              <button class="sd-chip" data-q="workspace">💼 Workspace</button>
+              <button class="sd-chip" data-q="architecture">🏛️ Architecture</button>
+              <button class="sd-chip" data-q="art">🎨 Art</button>
+              <button class="sd-chip" data-q="food">🍕 Food</button>
+              <button class="sd-chip" data-q="interior">🏠 Interior</button>
+              <button class="sd-chip" data-q="pets">🐾 Pets</button>
+              <button class="sd-chip" data-q="scenery">🌅 Scenery</button>
+            </div>
           </div>
         </div>
       </div>
@@ -295,8 +294,8 @@
       </h1>
 
       <p class="hero-sub">
-        Discover millions of creative ideas, organise them into beautiful boards,
-        and collaborate with a global community of creators.
+        Discover 800+ curated images across 15 categories. Save ideas to boards,
+        generate AI-powered inspiration, and explore a visual creative platform.
       </p>
 
       <div class="hero-cta-row">
@@ -476,19 +475,19 @@
     <!-- Stats row -->
     <div class="dash-stats-row">
       <div class="dash-stat-card">
-        <div class="dash-stat-num" id="dashPosts">—</div>
+        <div class="dash-stat-num" id="dashPosts">0</div>
         <div class="dash-stat-label">Posts</div>
       </div>
       <div class="dash-stat-card">
-        <div class="dash-stat-num" id="dashSaves">—</div>
+        <div class="dash-stat-num" id="dashSaves">0</div>
         <div class="dash-stat-label">Saves</div>
       </div>
       <div class="dash-stat-card">
-        <div class="dash-stat-num" id="dashLikes">—</div>
+        <div class="dash-stat-num" id="dashLikes">0</div>
         <div class="dash-stat-label">Likes</div>
       </div>
       <div class="dash-stat-card">
-        <div class="dash-stat-num" id="dashBoards">—</div>
+        <div class="dash-stat-num" id="dashBoards">0</div>
         <div class="dash-stat-label">Boards</div>
       </div>
     </div>
@@ -559,11 +558,11 @@
   <div class="inner-page-header">
     <div>
       <h2 class="inner-page-title">Collaboration Hub</h2>
-      <p class="inner-page-sub">Build together in real-time</p>
+      <p class="inner-page-sub">Pin ideas to a shared canvas and vote on your favourites</p>
     </div>
     <div class="collab-live-badge">
       <span class="live-dot-pulse"></span>
-      3 people online
+      Canvas Mode
     </div>
   </div>
 
