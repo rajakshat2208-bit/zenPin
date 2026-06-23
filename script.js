@@ -1464,10 +1464,7 @@ const _curatedCache = (() => {
   console.log(`📸 _curatedCache ready — ${total} local images across ${Object.keys(cache).length} categories`);
   return cache;
 })();
-// Verify counts
-console.log("[ZenPin] loaded 60 fashion images");
-console.log("[ZenPin] loaded 60 art images");
-console.log("[ZenPin] loaded 60 accessories images");
+// _curatedCache verified — counts match actual files in assets/discovery/
 
 // ── Convert URL array → card objects that renderGrid understands ─
 function curatedUrlsToIdeas(urls, category, startId = 0) {
@@ -2324,27 +2321,35 @@ async function initBoards() {
     grid.innerHTML = `<div class="load-error">Could not load boards.</div>`;
   }
 
-  // Collab boards (static demo — extend with backend later)
+  // Collab boards — shown only when user has real boards from backend
   if (collabList) {
-    collabList.innerHTML = DEMO_COLLAB_BOARDS.map((cb, i) => {
-      const avs = cb.members.map((m, j) => `<div class="cboard-av" style="background:${BOARD_COLORS[j%4]}">${m}</div>`).join("");
-      return `<div class="cboard-card" style="--i:${i}">
-        <div class="cboard-header">
-          <div class="cboard-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
-          <div class="cboard-name">${cb.name}</div>
-        </div>
-        <p class="cboard-desc">${cb.desc}</p>
-        <div class="cboard-members">${avs}<span class="cboard-member-cnt">${cb.members.length} collaborators</span></div>
-      </div>`;
-    }).join("");
+    if (!isLoggedIn()) {
+      collabList.innerHTML = `<div class="cboard-empty"><p>Sign in to create and share collaborative boards.</p></div>`;
+    } else {
+      try {
+        const { boards } = await apiFetch("GET", "/boards");
+        const sharedBoards = (boards || []).filter(b => b.is_shared || b.collab);
+        if (sharedBoards.length) {
+          collabList.innerHTML = sharedBoards.map((b, i) => `
+            <div class="cboard-card" style="--i:${i}">
+              <div class="cboard-header">
+                <div class="cboard-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></div>
+                <div class="cboard-name">${b.name}</div>
+              </div>
+              <p class="cboard-desc">${b.description || "A collaborative board"}</p>
+              <div class="cboard-members"><span class="cboard-member-cnt">${b.idea_count || 0} ideas</span></div>
+            </div>`).join("");
+        } else {
+          collabList.innerHTML = `<div class="cboard-empty"><p>No shared boards yet — create a board and share it with others.</p></div>`;
+        }
+      } catch {
+        collabList.innerHTML = `<div class="cboard-empty"><p>Create boards and share them here.</p></div>`;
+      }
+    }
   }
 }
 
-const DEMO_COLLAB_BOARDS = [
-  { name:"Studio Redesign 2025",  desc:"Collaborative moodboard for our studio refresh.",         members:["Y","A","S","M"] },
-  { name:"Brand Campaign Q3",     desc:"Visual direction for upcoming campaign assets.",           members:["Y","J","K"]     },
-  { name:"Product Launch Vibes",  desc:"Gathering references for the new product identity.",      members:["Y","A","L","P"] },
-];
+
 
 function showNewBoardModal() {
   if (!requireLogin("Sign in to create boards")) return;
@@ -2386,29 +2391,43 @@ function showNewBoardModal() {
 async function initCollab() {
   const pinList = $("pinIdeaList");
   if (pinList) {
+    // Try backend first; fall back to local curated images so the sidebar is never empty
+    let pinIdeas = [];
     try {
       const { ideas } = await apiFetch("GET", "/ideas?limit=12");
-      pinList.innerHTML = ideas.map(idea => `
-        <div class="pin-idea-item" data-pin-id="${idea.id}">
-          <img class="pin-idea-thumb" src="${idea.image_url || idea.img}" alt="${idea.title}" loading="lazy"/>
-          <span class="pin-idea-name">${idea.title}</span>
-        </div>`).join("");
+      pinIdeas = ideas;
     } catch {
-      pinList.innerHTML = `<p class="empty-note">Could not load ideas.</p>`;
+      // Backend unavailable — use local curated images as pin candidates
+      pinIdeas = getAllLocalIdeas().slice(0, 12);
+    }
+    if (pinIdeas.length) {
+      pinList.innerHTML = pinIdeas.map(idea => `
+        <div class="pin-idea-item" data-pin-id="${idea.id}">
+          <img class="pin-idea-thumb" src="${idea.image_url || idea.img}" alt="${idea.title || 'Idea'}" loading="lazy"/>
+          <span class="pin-idea-name">${idea.title || 'Untitled'}</span>
+        </div>`).join("");
+    } else {
+      pinList.innerHTML = `<p class="empty-note">No ideas available.</p>`;
     }
   }
 
-  // Pre-seed canvas with a few pins
+  // Pre-seed canvas with a few local pins so it's never blank
   try {
-    const { ideas } = await apiFetch("GET", "/ideas?limit=4");
+    let seedIdeas = [];
+    try {
+      const { ideas } = await apiFetch("GET", "/ideas?limit=4");
+      seedIdeas = ideas;
+    } catch {
+      seedIdeas = getAllLocalIdeas().slice(0, 4);
+    }
     const canvas = $("collabCanvas");
     const hint   = $("canvasHint");
-    if (hint) hint.style.display = "none";
+    if (hint && seedIdeas.length) hint.style.display = "none";
     const positions = [
       {top:"10%",left:"6%"},{top:"35%",left:"30%"},
       {top:"12%",left:"55%"},{top:"52%",left:"10%"},
     ];
-    ideas.forEach((idea, i) => addPin(idea, positions[i]?.top || "20%", positions[i]?.left || "20%"));
+    seedIdeas.forEach((idea, i) => addPin(idea, positions[i]?.top || "20%", positions[i]?.left || "20%"));
   } catch {}
 
   // Voting UI
