@@ -1197,79 +1197,147 @@ input, select { font-family: var(--f-ui); }
 /* ============================================================
    MODAL — IdeaDetailModal
 ============================================================ */
+/* ════════════════════════════════════════════════════════════
+   IMAGE MODAL — INTRINSIC ASPECT-RATIO LAYOUT
+   Philosophy: the image drives the layout, not the viewport.
+   Portrait images grow tall. Landscape images stay short.
+   Square images centre. Zero hard-coded heights.
+   Matches: Pinterest, Unsplash, Apple Photos, Google Photos.
+   ════════════════════════════════════════════════════════════ */
+
 .modal-backdrop {
   position: fixed; inset: 0;
-  background: rgba(0,0,0,0.72);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  background: rgba(4,2,14,0.78);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   z-index: 950;
   display: none;
-  align-items: center; justify-content: center;
-  padding: 20px;
+  align-items: center;
+  justify-content: center;
+  /*
+   * Side padding makes room for the prev/next arrows outside the card.
+   * 72px each side = 48px arrow width + 24px gap.
+   * Without this, arrows sit inside the card on narrower viewports.
+   */
+  padding: 24px 80px;
+  box-sizing: border-box;
 }
-.modal-backdrop.open { display: flex; animation: mfade 0.25s var(--ease) both; }
-@keyframes mfade { from{opacity:0} to{opacity:1} }
+@media (max-width: 1100px) { .modal-backdrop { padding: 24px 60px; } }
+@media (max-width: 900px)  { .modal-backdrop { padding: 20px 52px; } }
+.modal-backdrop.open { display: flex; animation: mfade 0.22s ease both; }
+@keyframes mfade { from { opacity: 0; } to { opacity: 1; } }
 
-/* ── Modal navigation arrows ── */
+/* ── Close button ──────────────────────────────────────────── */
+.modal-x-btn {
+  position: fixed;
+  top: 16px; right: 16px;
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  background: rgba(10,6,22,0.75);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.15);
+  display: flex; align-items: center; justify-content: center;
+  color: rgba(240,230,255,0.9);
+  cursor: pointer;
+  z-index: 1002;
+  transition: background 0.18s, transform 0.22s;
+}
+.modal-x-btn:hover { background: rgba(124,58,237,0.5); transform: rotate(90deg); }
+
+/* ── Prev / Next arrows ────────────────────────────────────── */
 .modal-nav-btn {
   position: fixed;
   top: 50%;
   transform: translateY(-50%);
-  width: 48px;
-  height: 48px;
+  width: 46px; height: 46px;
   border-radius: 50%;
-  background: rgba(255,255,255,0.12);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255,255,255,0.2);
-  color: #fff;
+  background: rgba(10,6,22,0.72);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(160,100,255,0.25);
+  color: rgba(240,230,255,0.9);
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex; align-items: center; justify-content: center;
   z-index: 1001;
-  transition: background 0.2s, transform 0.2s;
+  transition: background 0.18s, box-shadow 0.18s, transform 0.18s;
 }
 .modal-nav-btn:hover {
-  background: rgba(124,58,237,0.4);
-  transform: translateY(-50%) scale(1.08);
+  background: rgba(124,58,237,0.55);
+  box-shadow: 0 0 20px rgba(140,80,255,0.35);
+  transform: translateY(-50%) scale(1.06);
 }
-.modal-prev-btn { left: 20px; }
-.modal-next-btn { right: 20px; }
-@media (max-width: 600px) {
-  .modal-prev-btn { left: 8px; width: 38px; height: 38px; }
-  .modal-next-btn { right: 8px; width: 38px; height: 38px; }
-}
+/* Arrows sit outside the card thanks to backdrop side padding */
+.modal-prev-btn { left: 16px; }
+.modal-next-btn { right: 16px; }
 
-.modal-x-btn {
-  position: absolute; top: 18px; right: 18px;
-  width: 44px; height: 44px; border-radius: 50%;
-  background: rgba(255,255,255,0.14);
-  backdrop-filter: blur(10px);
-  display: flex; align-items: center; justify-content: center;
-  color: white; z-index: 10;
-  transition: background var(--t-fast), transform var(--t-mid) var(--ease-spring);
-}
-.modal-x-btn:hover { background: rgba(255,255,255,0.24); transform: rotate(90deg); }
-
+/* ── Card shell ────────────────────────────────────────────── */
 .modal-card {
-  background: var(--surface);
-  border-radius: var(--r-xl);
+  position: relative;              /* needed for tap-zone position:absolute children */
+  background: var(--surface, #fff);
+  border-radius: 20px;
   overflow: hidden;
-  width: 100%; max-width: 1000px;
-  max-height: 90vh;
-  display: grid; grid-template-columns: 1fr 1fr;
-  box-shadow: var(--sh-modal);
-  animation: mslide 0.38s cubic-bezier(0.34,1.1,0.64,1) both;
+  width: 100%;
+  max-width: 1100px;
+  display: grid;
+  grid-template-columns: 1fr 380px; /* image fills, detail is fixed-width panel */
+  box-shadow: 0 24px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(160,100,255,0.08);
+  animation: mslide 0.34s cubic-bezier(0.34,1.1,0.64,1) both;
 }
-@keyframes mslide { from{transform:translateY(30px) scale(0.97);opacity:0} to{transform:translateY(0) scale(1);opacity:1} }
+@keyframes mslide {
+  from { transform: translateY(24px) scale(0.98); opacity: 0; }
+  to   { transform: translateY(0)    scale(1);    opacity: 1; }
+}
 
-.modal-image-col { overflow: hidden; }
-.modal-img { width: 100%; height: 100%; object-fit: cover; min-height: 380px; }
+/* ── Image column ──────────────────────────────────────────── */
+/*
+ * THE KEY TECHNIQUE (same as Pinterest and Unsplash):
+ *
+ * The image column has NO explicit height and NO min-height.
+ * The <img> inside uses:
+ *   width: 100%     → fills the column width
+ *   height: auto    → browser calculates height from natural aspect ratio
+ *   max-height: var(--modal-img-maxh)  → prevents extremely tall images
+ *                                         from pushing off screen
+ *
+ * Result:
+ *   Portrait (2:3)  → tall image, tall column, uses most of viewport height
+ *   Landscape (16:9)→ short image, short column, detail col is taller and scrolls
+ *   Square (1:1)    → medium, balanced
+ *
+ * No JavaScript needed. The browser's intrinsic sizing handles everything.
+ */
+:root {
+  --modal-img-maxh: 88vh; /* maximum image height — prevents full-bleed on desktop */
+}
+.modal-image-col {
+  background: #06030f;           /* dark base for letterbox bars */
+  display: flex;
+  align-items: center;           /* vertically centre — works for all aspect ratios */
+  justify-content: center;
+  overflow: hidden;
+}
+.modal-img {
+  width: 100%;                   /* fill the column width */
+  height: auto;                  /* aspect ratio drives height — NO CROPPING */
+  max-height: var(--modal-img-maxh);
+  object-fit: contain;           /* if max-height clips, show full image within */
+  display: block;
+}
 
+/* ── Detail column ─────────────────────────────────────────── */
 .modal-detail-col {
-  padding: 28px 28px 28px;
-  overflow-y: auto; scrollbar-width: thin;
-  display: flex; flex-direction: column; gap: 18px;
+  padding: 26px 26px 26px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  /*
+   * The detail column height matches the image column height.
+   * If detail content is taller, it scrolls. If image is taller,
+   * detail col stretches (CSS grid default: stretch).
+   * This means the card height is always the image height.
+   */
+  max-height: var(--modal-img-maxh);
 }
 
 .modal-category-tag {
@@ -1410,8 +1478,14 @@ input, select { font-family: var(--f-ui); }
 @media (max-width: 1280px) { .masonry { column-count: 4; } .ai-masonry { column-count: 3; } }
 @media (max-width: 1024px) {
   .masonry { column-count: 3; }
-  .modal-card { grid-template-columns: 1fr; max-width: 480px; }
-  .modal-img { min-height: 260px; max-height: 300px; }
+  /* Tablet: single column, detail panel goes below image */
+  .modal-card {
+    grid-template-columns: 1fr;
+    max-width: 560px;
+  }
+  /* Image still drives height via intrinsic sizing; cap at 65vh on tablet */
+  :root { --modal-img-maxh: 65vh; }
+  .modal-detail-col { max-height: 45vh; }
   .nav-links { display: none; }
   .collab-layout { grid-template-columns: 1fr; }
   .ai-masonry { column-count: 2; }
@@ -1446,15 +1520,10 @@ input, select { font-family: var(--f-ui); }
   /* AI generator */
   .ai-input-row { flex-direction: column; }
   .ai-gen-btn { width: 100%; justify-content: center; }
-  /* Modal full-width on phone */
-  .modal-card {
-    width: 95vw;
-    max-width: 95vw;
-    border-radius: 18px;
-    grid-template-columns: 1fr;
-  }
-  .modal-detail-col { padding: 16px 14px; }
-  .modal-img { min-height: 220px; max-height: 260px; }
+  /* Small phones: tighter image cap and detail padding */
+  :root { --modal-img-maxh: 58dvh; }
+  .modal-detail-col { padding: 14px 12px; }
+  /* Note: .modal-card width/border-radius set in the 640px block above */
   /* Auth card */
   .auth-card {
     width: calc(100vw - 28px);
@@ -2958,68 +3027,145 @@ body  { font-family: var(--font-body); }
 /* Hide description everywhere — clean look */
 .modal-desc { display: none !important; }
 
-/* Desktop: keep existing 2-col grid */
-/* Mobile: 50% image top / 50% controls bottom */
+/* ════════════════════════════════════════════════════════════
+   MOBILE MODAL (≤640px) — BOTTOM SHEET
+   No !important needed: these rules are inside the media query
+   which gives them higher specificity than the base rules.
+   ════════════════════════════════════════════════════════════ */
 @media (max-width: 640px) {
-  .modal-backdrop { padding: 0 !important; align-items: stretch; }
+  /* Mobile image cap — used by .modal-img and .modal-tap-prev/next height */
+  :root { --modal-img-maxh: 60dvh; }
+
+  /* Drag handle */
+  .modal-card::before {
+    content: '';
+    display: block;
+    width: 40px; height: 4px;
+    border-radius: 2px;
+    background: rgba(255,255,255,0.18);
+    margin: 10px auto 4px;
+    flex-shrink: 0;
+  }
+
+  /* Backdrop anchors card to bottom */
+  .modal-backdrop {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  /* Card: bottom sheet */
   .modal-card {
-    grid-template-columns: 1fr !important;
-    grid-template-rows: 50dvh 50dvh !important;
-    max-height: 100dvh !important;
-    height: 100dvh !important;
-    border-radius: 0 !important;
-    max-width: 100% !important;
-    width: 100% !important;
+    grid-template-columns: 1fr;
+    width: 100%;
+    max-width: 100%;
+    max-height: 96dvh;
+    height: auto;
+    border-radius: 22px 22px 0 0;
+    overflow: clip;
+    animation: mslide-mobile 0.3s cubic-bezier(0.32,0.72,0,1) both;
   }
-  .modal-image-col { height: 50dvh !important; overflow: hidden !important; }
+  @keyframes mslide-mobile {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+  }
+
+  /* Image column */
+  .modal-image-col {
+    width: 100%;
+    height: auto;
+    background: #060312;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  /*
+   * Intrinsic sizing — CSS handles this without JavaScript.
+   * width:100% + height:auto → browser uses natural aspect ratio.
+   * max-height:60dvh → portrait cap, keeps action bar reachable.
+   * object-fit:contain → no cropping if max-height clips.
+   */
   .modal-img {
-    width: 100% !important; height: 100% !important;
-    object-fit: cover !important; min-height: unset !important;
+    width: 100%;
+    height: auto;
+    max-height: var(--modal-img-maxh);  /* uses :root value set above */
+    object-fit: contain;
+    display: block;
+    min-height: unset;
   }
+
+  /* Detail column */
   .modal-detail-col {
-    height: 50dvh !important;
-    overflow-y: auto !important;
-    padding: 14px 16px !important;
-    gap: 10px !important;
+    height: auto;
+    max-height: calc(96dvh - 40px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 10px 16px 24px;
+    gap: 10px;
   }
-  /* On mobile hide heavy sections, keep title + actions */
+
+  /* Hide heavy sections on mobile */
   .modal-section,
   .modal-ratings-row,
   #modalMeta,
   #modalExecGuide,
   .related-row-wrap,
-  .modal-category-tag { display: none !important; }
-  /* Action buttons: single row, equal sizing, no overflow */
+  .modal-category-tag { display: none; }
+
+  /* Action buttons */
   .modal-action-row {
-    display: grid !important;
-    grid-template-columns: repeat(4, 1fr) !important;
-    gap: 6px !important;
-    width: 100% !important;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    width: 100%;
   }
   .modal-action-row .btn-primary,
   .modal-action-row .btn-ghost {
-    flex: none !important;
-    width: 100% !important;
-    height: 42px !important;
-    min-height: 42px !important;
-    padding: 0 6px !important;
-    font-size: 0.76rem !important;
-    font-weight: 600 !important;
-    white-space: nowrap !important;
-    justify-content: center !important;
-    gap: 5px !important;
-    border-radius: 12px !important;
-    letter-spacing: 0.01em !important;
+    height: 44px;
+    min-height: 44px;
+    padding: 0 4px;
+    font-size: 0.76rem;
+    font-weight: 600;
+    white-space: nowrap;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    border-radius: 12px;
   }
-  /* Show icon only on very small screens to prevent text overflow */
   @media (max-width: 360px) {
     .modal-action-row .btn-primary span,
     .modal-action-row .btn-ghost span { display: none; }
   }
-  /* Nav arrows at vertical center of the IMAGE half */
-  .modal-nav-btn { top: 25dvh !important; transform: translateY(-50%) !important; }
-  .modal-x-btn   { top: 12px !important; right: 12px !important; }
+
+  /*
+   * Arrows hidden on mobile — Pinterest, Instagram, Google Photos pattern.
+   * Tap left/right half of the image to navigate (handled by JS tap zones).
+   * This also removes the need for JS to compute arrow vertical position.
+   */
+  .modal-nav-btn { display: none; }
+  .modal-x-btn { top: 12px; right: 12px; position: fixed; }
 }
+
+  /* Tap zones — hidden by default, shown inside this media query */
+  .modal-tap-prev,
+  .modal-tap-next {
+    display: block;
+    position: absolute;
+    top: 0;
+    width: 35%;
+    height: var(--modal-img-maxh);  /* matches image cap — covers just the image */
+    z-index: 5;
+    background: transparent;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .modal-tap-prev { left: 0; }
+  .modal-tap-next { right: 0; }
+}  /* end @media (max-width: 640px) */
+
+/* Tap zones hidden on desktop — arrows handle navigation there */
+.modal-tap-prev, .modal-tap-next { display: none; }
 
 /* ════════════════════════════════════════════════════════════
    EDIT PROFILE MODAL — READABLE DARK ROMANTIC STYLE
@@ -4212,35 +4358,13 @@ body  { font-family: var(--font-body); }
 /* ═══════════════════════════════════════════════════════════════
    MODAL ARROW BUTTONS — mobile-friendly positioning
    ═══════════════════════════════════════════════════════════════ */
-.modal-nav-btn {
-  position: fixed !important;
-  top: 50% !important;
-  transform: translateY(-50%) !important;
-  width: 44px !important;
-  height: 44px !important;
-  border-radius: 50% !important;
-  background: rgba(20,12,40,0.80) !important;
-  border: 1px solid rgba(160,100,255,0.30) !important;
-  color: #f0e8ff !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  cursor: pointer !important;
-  z-index: 10010 !important;
-  backdrop-filter: blur(8px) !important;
-  transition: background 0.2s, box-shadow 0.2s !important;
-}
-.modal-nav-btn:hover {
-  background: rgba(120,60,220,0.70) !important;
-  box-shadow: 0 0 18px rgba(140,80,255,0.45) !important;
-}
-.modal-prev-btn { left: 12px !important; }
-.modal-next-btn { right: 12px !important; }
-
-@media (max-width: 640px) {
-  .modal-prev-btn { left: 8px !important; top: 25dvh !important; }
-  .modal-next-btn { right: 8px !important; top: 25dvh !important; }
-  .modal-nav-btn  { width: 40px !important; height: 40px !important; }
+/* Modal nav arrows — consolidated, no duplicate rules */
+/* Base styles are in the main .modal-nav-btn block above (~line 1214). */
+/* Mobile overrides are inside @media (max-width:640px) above. */
+/* Only desktop-specific positioning override needed here: */
+@media (min-width: 641px) {
+  .modal-prev-btn { left: 16px !important; }
+  .modal-next-btn { right: 16px !important; }
 }
 
 /* ═══════════════════════════════════════════════════════════════
