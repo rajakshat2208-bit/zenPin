@@ -1029,17 +1029,20 @@
 <!-- ============================================================
      IDEA DETAIL MODAL
 ============================================================ -->
-<div class="modal-backdrop" id="modalBackdrop">
-  <button class="modal-x-btn" id="modalCloseBtn">
+<div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true" aria-label="Image viewer">
+  <button class="modal-x-btn" id="modalCloseBtn" aria-label="Close image viewer">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
   </button>
-  <button class="modal-nav-btn modal-prev-btn" id="modalPrevBtn" title="Previous (←)">
+  <button class="modal-nav-btn modal-prev-btn" id="modalPrevBtn" title="Previous (←)" aria-label="Previous image">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
   </button>
-  <button class="modal-nav-btn modal-next-btn" id="modalNextBtn" title="Next (→)">
+  <button class="modal-nav-btn modal-next-btn" id="modalNextBtn" title="Next (→)" aria-label="Next image">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
   </button>
   <div class="modal-card" id="modalCard">
+    <!-- Mobile tap zones — replace arrows on small screens -->
+    <div class="modal-tap-prev" id="modalTapPrev" aria-hidden="true"></div>
+    <div class="modal-tap-next" id="modalTapNext" aria-hidden="true"></div>
     <div class="modal-image-col">
       <img class="modal-img" id="modalImg" src="" alt=""/>
     </div>
