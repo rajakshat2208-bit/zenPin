@@ -4596,6 +4596,25 @@ async function openModal(idOrIdea) {
   document.body.style.overflow = "hidden";
   console.log("[ZenPin] modal opened index:", currentModalIndex);
 
+  // Image sizing is handled entirely by CSS:
+  // .modal-img { width:100%; height:auto; max-height:var(--modal-img-maxh); object-fit:contain }
+  // The browser computes height from the image's natural aspect ratio natively.
+  // On mobile, prev/next arrows are hidden — tap zones handle navigation instead.
+
+  // Wire mobile tap zones (one-time, idempotent)
+  if (!$("modalTapPrev")?._wired) {
+    const tapPrev = $("modalTapPrev");
+    const tapNext = $("modalTapNext");
+    if (tapPrev) {
+      tapPrev.addEventListener("click", () => $("modalPrevBtn")?.click());
+      tapPrev._wired = true;
+    }
+    if (tapNext) {
+      tapNext.addEventListener("click", () => $("modalNextBtn")?.click());
+      tapNext._wired = true;
+    }
+  }
+
   // Related ideas — async, loads after modal is visible
   try {
     const relRes = await apiFetch("GET", `/ideas?category=${encodeURIComponent(idea.category)}&limit=9`);
