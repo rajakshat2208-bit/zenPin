@@ -1332,11 +1332,14 @@ input, select { font-family: var(--f-ui); }
   flex-direction: column;
   gap: 16px;
   /*
-   * The detail column height matches the image column height.
-   * If detail content is taller, it scrolls. If image is taller,
-   * detail col stretches (CSS grid default: stretch).
-   * This means the card height is always the image height.
+   * align-self:start stops the grid from stretching this column to
+   * match the image column height. Without it, the col's rendered
+   * height always equals the track height, content never overflows,
+   * and overflow-y:auto never activates — scrollbar is dead.
+   * With align-self:start, height = content height, capped by max-height,
+   * and overflow-y:auto triggers correctly when content exceeds the cap.
    */
+  align-self: start;
   max-height: var(--modal-img-maxh);
 }
 
@@ -4273,24 +4276,48 @@ body  { font-family: var(--font-body); }
   .nav-actions   { display: none !important; }
   .nav-search-wrap { display: none !important; }
   .nav-hamburger { display: none !important; }
-  /* Show logo only in top bar */
-  .nav-inner { justify-content: center; padding: 0 12px; min-height: 44px; }
+
+  /* ── Top bar: taller with safe-area padding, dark to match mobile theme ── */
+  .navbar {
+    /* Height adapts to notch/Dynamic Island with safe-area-inset-top */
+    height: calc(52px + env(safe-area-inset-top, 0px));
+    padding-top: env(safe-area-inset-top, 0px);
+    /* Dark glass — consistent with bottom nav bar */
+    background: rgba(8, 5, 18, 0.88);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border-bottom: 1px solid rgba(140, 100, 255, 0.1);
+    box-shadow: none;
+  }
+  .navbar.scrolled {
+    background: rgba(8, 5, 18, 0.96);
+    box-shadow: 0 1px 12px rgba(0,0,0,0.3);
+  }
+
+  /* Show logo only in top bar — vertically centred within content area */
+  .nav-inner {
+    justify-content: center;
+    padding: 0 16px;
+    height: 52px;          /* content height, excludes safe-area padding */
+    min-height: unset;
+  }
   .nav-logo  { margin: 0 auto; }
 
-  /* Bottom mobile nav bar */
+  /* ── Bottom mobile nav bar — single authoritative block ─────── */
   .mobile-nav-bar {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
     position: fixed;
     bottom: 0; left: 0; right: 0;
-    background: rgba(10,6,22,0.97);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border-top: 1px solid rgba(140,100,255,0.18);
-    padding: 6px 4px env(safe-area-inset-bottom,6px);
+    background: rgba(8, 5, 18, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(140, 100, 255, 0.10);
+    /* Reduced top/bottom padding: more breathing without wasting height */
+    padding: 6px 4px env(safe-area-inset-bottom, 8px);
     z-index: 1000;
-    justify-content: space-around;
     align-items: center;
-    gap: 2px;
+    gap: 0;
   }
 
   .mn-btn {
@@ -4298,44 +4325,61 @@ body  { font-family: var(--font-body); }
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    width: 40px; height: 40px;
-    border-radius: 12px;
+    width: 100%;
+    min-width: 0;
+    height: 44px;             /* 44px = Apple HIG minimum touch target */
+    border-radius: 10px;
     background: none;
     border: none;
     cursor: pointer;
-    color: rgba(180,150,255,0.65);
-    transition: color 0.2s, background 0.2s, box-shadow 0.2s;
+    color: rgba(170, 140, 220, 0.6);
+    transition: color 0.18s, background 0.18s;
     position: relative;
-    flex-shrink: 0;
   }
+
+  /* Active/hover: subtle fill, no glow */
   .mn-btn:hover,
   .mn-btn.active {
-    color: #e0c8ff;
-    background: rgba(120,60,200,0.22);
-    box-shadow: 0 0 12px rgba(140,80,255,0.30);
+    color: rgba(220, 195, 255, 0.95);
+    background: rgba(140, 80, 255, 0.10);
+    box-shadow: none;          /* removed heavy glow */
   }
-  .mn-btn.active::after {
+
+  /* Active indicator: slim pill above icon instead of dot below */
+  .mn-btn.active::before {
     content: '';
     position: absolute;
-    bottom: 3px;
+    top: 2px;
     left: 50%; transform: translateX(-50%);
-    width: 4px; height: 4px;
-    border-radius: 50%;
-    background: #a78bfa;
+    width: 20px; height: 2px;
+    border-radius: 1px;
+    background: rgba(168, 85, 247, 0.85);
   }
-  /* Create button special style */
-  .mn-create {
-    background: linear-gradient(135deg, #6d28d9, #a855f7) !important;
-    color: #fff !important;
-    width: 42px; height: 42px;
-    border-radius: 14px !important;
-    box-shadow: 0 4px 14px rgba(120,60,220,0.4) !important;
-  }
-  .mn-create:hover { transform: scale(1.08); }
+  .mn-btn.active::after { display: none; } /* remove old dot */
 
-  /* Page content padding at bottom so grid not hidden behind nav bar */
-  .page { padding-bottom: 70px !important; }
-  .hero { padding-bottom: 30px !important; }
+  /* SVG icon sizing — consistent 18px */
+  .mn-btn svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+  /* Create button: gradient but subtle, no heavy glow */
+  .mn-create {
+    background: rgba(109, 40, 217, 0.25) !important;
+    color: rgba(200, 160, 255, 0.95) !important;
+    border: 1px solid rgba(168, 85, 247, 0.25) !important;
+    border-radius: 12px !important;
+    box-shadow: none !important;
+  }
+  .mn-create:hover {
+    background: rgba(109, 40, 217, 0.38) !important;
+    transform: scale(1.04);
+  }
+
+  /* Page: top padding matches new mobile navbar height (52px + safe area) */
+  .page {
+    padding-top: calc(52px + env(safe-area-inset-top, 0px)) !important;
+    padding-bottom: 80px !important;    /* clears bottom nav */
+  }
+  /* Hero: extra top breathing room so it doesn't feel glued to the navbar */
+  .hero { padding-top: 20px !important; padding-bottom: 30px !important; }
 
   /* 4-column grid on mobile */
   .masonry {
@@ -4351,7 +4395,7 @@ body  { font-family: var(--font-body); }
 
 @media (max-width: 480px) {
   .masonry { column-count: 4 !important; column-gap: 4px !important; }
-  .mn-btn { width: 36px; height: 36px; }
+  .mn-btn { height: 42px; } /* slightly smaller on 480px, width stays 100% of grid cell */
 }
 
 
@@ -4720,22 +4764,10 @@ body  { font-family: var(--font-body); }
   to   { transform: rotate(360deg); }
 }
 
-/* 8-icon mobile nav grid */
-@media (max-width: 768px) {
-  .mobile-nav-bar {
-    display: grid !important;
-    grid-template-columns: repeat(8, 1fr) !important;
-    padding: 4px 2px env(safe-area-inset-bottom, 4px) !important;
-  }
-  .mn-btn {
-    width: 100% !important;
-    min-width: 0 !important;
-  }
-}
+/* 400px: reduce icon size slightly — grid handles width automatically */
 @media (max-width: 400px) {
-  .mobile-nav-bar { grid-template-columns: repeat(8, 1fr) !important; }
-  .mn-btn { width: 34px !important; height: 34px !important; }
-  .mn-btn svg { width: 15px !important; height: 15px !important; }
+  .mn-btn { height: 40px; }
+  .mn-btn svg { width: 16px !important; height: 16px !important; }
 }
 
 /* mobile-search-close removed — replaced by full-screen search screen */
