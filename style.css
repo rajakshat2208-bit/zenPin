@@ -3148,9 +3148,11 @@ body  { font-family: var(--font-body); }
    */
   .modal-nav-btn { display: none; }
   .modal-x-btn { top: 12px; right: 12px; position: fixed; }
-}
 
-  /* Tap zones — hidden by default, shown inside this media query */
+  /* Tap zones — mobile only. Moved inside this media query (previous bug:
+     the closing brace above was misplaced, leaking these rules to ALL
+     screen sizes, which made the right tap zone overlap .modal-detail-col
+     on desktop and intercept clicks/wheel scroll meant for the detail panel). */
   .modal-tap-prev,
   .modal-tap-next {
     display: block;
@@ -3167,7 +3169,7 @@ body  { font-family: var(--font-body); }
   .modal-tap-next { right: 0; }
 }  /* end @media (max-width: 640px) */
 
-/* Tap zones hidden on desktop — arrows handle navigation there */
+/* Tap zones hidden on desktop by default — only shown inside the media query above */
 .modal-tap-prev, .modal-tap-next { display: none; }
 
 /* ════════════════════════════════════════════════════════════
